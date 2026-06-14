@@ -1,0 +1,49 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: workforce-db
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${SA_PASSWORD}
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+  backend:
+    image: workforce-backend
+    container_name: workforce-api
+    restart: unless-stopped
+    build:
+      context: ./backend
+      dockerfile: src/WorkForceManager.WebApi/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=WorkForceManager;User Id=sa;Password=${SA_PASSWORD};Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=true
+      - JwtSettings__Secret=${JWT_SECRET}
+      - JwtSettings__Issuer=WorkForceManager
+      - JwtSettings__Audience=WorkForceManagerClient
+      - Cors__AllowedOrigins__0=${PUBLIC_URL}
+      - EnableSwagger=${ENABLE_SWAGGER:-true}
+      - Seed__Enabled=${SEED_ENABLED:-true}
+    volumes:
+      - uploads-data:/app/wwwroot/uploads
+    depends_on:
+      - db
+
+  frontend:
+    image: workforce-frontend
+    container_name: workforce-web
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_API_URL=/api/v1
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mssql-data:
+  uploads-data:

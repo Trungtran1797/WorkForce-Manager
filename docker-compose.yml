@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: workforce-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=WorkforceSA_Password123!
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+  backend:
+    image: workforce-backend
+    container_name: workforce-api
+    build:
+      context: ./backend
+      dockerfile: src/WorkForceManager.WebApi/Dockerfile
+    ports:
+      - "5244:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=WorkForceManager;User Id=sa;Password=WorkforceSA_Password123!;Encrypt=True;TrustServerCertificate=True;
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - db
+
+  frontend:
+    image: workforce-frontend
+    container_name: workforce-web
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5244/api/v1
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mssql-data:

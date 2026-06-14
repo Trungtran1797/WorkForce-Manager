@@ -1,0 +1,6 @@
+@WorkForceManager.WebApi_HostAddress = http://localhost:5244
+
+GET {{WorkForceManager.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

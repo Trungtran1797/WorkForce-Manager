@@ -1,0 +1,59 @@
+name: WorkForce Manager CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  backend-ci:
+    name: Backend Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - name: Restore dependencies
+        run: dotnet restore backend/WorkForceManager.slnx
+
+      - name: Build solution
+        run: dotnet build backend/WorkForceManager.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test backend/WorkForceManager.slnx --configuration Release --no-build --verbosity normal
+
+  frontend-ci:
+    name: Frontend Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix frontend
+
+      - name: Run linter
+        run: npm run lint --prefix frontend
+
+      - name: Run tests
+        run: npm run test --prefix frontend
+
+      - name: Build static files
+        run: npm run build --prefix frontend
+        env:
+          VITE_API_URL: https://api.workforcemanager.local/api/v1

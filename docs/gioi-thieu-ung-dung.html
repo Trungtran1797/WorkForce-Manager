@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WorkForce Manager — Giới thiệu ứng dụng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0a0f1e;
+    --bg-secondary: #0d1529;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2236;
+    --border: rgba(255,255,255,0.08);
+    --border-light: rgba(255,255,255,0.04);
+    --text-primary: #f0f4ff;
+    --text-secondary: #8b9bbf;
+    --text-muted: #4a5568;
+    --blue: #2563EB;
+    --blue-light: #3b82f6;
+    --blue-glow: rgba(37,99,235,0.25);
+    --green: #16A34A;
+    --green-glow: rgba(22,163,74,0.2);
+    --yellow: #F59E0B;
+    --yellow-glow: rgba(245,158,11,0.2);
+    --red: #DC2626;
+    --red-glow: rgba(220,38,38,0.2);
+    --purple: #8b5cf6;
+    --purple-glow: rgba(139,92,246,0.2);
+    --cyan: #06b6d4;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+
+  /* HEADER */
+  .header {
+    background: rgba(10,15,30,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 1.5rem;
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    gap: 1rem;
+  }
+  .logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; box-shadow: 0 0 20px var(--blue-glow);
+  }
+  .logo-text { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+  .logo-sub { font-size: 0.65rem; color: var(--text-secondary); font-weight: 400; }
+  .header-link {
+    font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);
+    text-decoration: none; padding: 0.35rem 0.85rem; border-radius: 8px;
+    border: 1px solid var(--border); transition: all .2s;
+  }
+  .header-link:hover { color: var(--blue-light); border-color: var(--blue); }
+
+  /* HERO */
+  .hero {
+    max-width: 1200px; margin: 0 auto; padding: 4rem 1.5rem 2rem;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; font-weight: 600; color: var(--blue-light);
+    background: var(--blue-glow); border: 1px solid rgba(37,99,235,0.3);
+    padding: 0.35rem 0.9rem; border-radius: 20px; margin-bottom: 1.25rem;
+  }
+  .hero h1 {
+    font-size: 2.75rem; font-weight: 800; letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 30%, var(--blue-light) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p.lead {
+    font-size: 1.05rem; color: var(--text-secondary); max-width: 720px;
+    margin: 0 auto 0.5rem;
+  }
+  .hero .company {
+    margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);
+  }
+  .hero .company a { color: var(--blue-light); text-decoration: none; }
+
+  /* SECTIONS */
+  .section { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  .section h2 {
+    font-size: 1.5rem; font-weight: 700; margin-bottom: 0.4rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section .section-sub { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.75rem; }
+  .section h2 .icon {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; background: var(--blue-glow); flex-shrink: 0;
+  }
+
+  /* GRID CARDS */
+  .grid { display: grid; gap: 1rem; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 600px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem; transition: all .2s;
+  }
+  .card:hover { background: var(--bg-card-hover); border-color: rgba(37,99,235,0.3); transform: translateY(-2px); }
+  .card .card-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 0.75rem;
+  }
+  .card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.35rem; }
+  .card p { font-size: 0.82rem; color: var(--text-secondary); }
+  .card ul { margin-top: 0.5rem; padding-left: 1.1rem; }
+  .card ul li { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
+
+  .bg-blue { background: var(--blue-glow); color: var(--blue-light); }
+  .bg-green { background: var(--green-glow); color: var(--green); }
+  .bg-yellow { background: var(--yellow-glow); color: var(--yellow); }
+  .bg-red { background: var(--red-glow); color: var(--red); }
+  .bg-purple { background: var(--purple-glow); color: var(--purple); }
+
+  /* ROLE CARDS */
+  .role-card { border-radius: 14px; padding: 1.5rem; border: 1px solid var(--border); background: var(--bg-card); }
+  .role-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+  .role-tag {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    padding: 0.15rem 0.55rem; border-radius: 6px; letter-spacing: 0.04em;
+  }
+  .role-card ul { padding-left: 1.2rem; margin-top: 0.75rem; }
+  .role-card ul li { font-size: 0.83rem; color: var(--text-secondary); margin-bottom: 0.35rem; }
+
+  /* TECH STACK */
+  .tech-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .tech-pill {
+    font-size: 0.78rem; font-weight: 500; color: var(--text-secondary);
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 0.4rem 0.85rem; border-radius: 20px;
+  }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  td { color: var(--text-primary); }
+  .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; padding: 0.5rem 1rem; }
+
+  code {
+    background: rgba(255,255,255,0.06); padding: 0.15rem 0.4rem; border-radius: 4px;
+    font-size: 0.82rem; color: var(--blue-light); font-family: 'Consolas', monospace;
+  }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border); margin-top: 2rem;
+    padding: 2rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">⚙️</div>
+      <div>
+        <div class="logo-text">WorkForce Manager</div>
+        <div class="logo-sub">SAIGON SPICES</div>
+      </div>
+    </a>
+    <a class="header-link" href="huong-dan-su-dung.html">📘 Hướng dẫn sử dụng →</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">✨ Modern SaaS · Quản lý Công việc &amp; Nhân sự</div>
+  <h1>WorkForce Manager</h1>
+  <p class="lead">
+    Hệ thống quản lý công việc, nhân sự và tiến độ dự án toàn diện — từ chấm công, dự án, công việc
+    đến lương bổng, hợp đồng và đánh giá hiệu suất (OKRs &amp; KPI). Giao diện hiện đại, hỗ trợ
+    Dark/Light mode, phân quyền theo vai trò rõ ràng.
+  </p>
+  <p class="company">
+    Phát triển cho <strong>SAIGON SPICES</strong> — nhà cung cấp gia vị hồ tiêu chất lượng cao,
+    <a href="https://saigonspices.com.vn/" target="_blank">saigonspices.com.vn</a>
+  </p>
+</section>
+
+<!-- TECH STACK -->
+<section class="section">
+  <h2><span class="icon bg-blue">🧩</span> Công nghệ sử dụng</h2>
+  <p class="section-sub">Kiến trúc Clean Architecture, hiệu năng cao, dễ mở rộng cho 1000+ người dùng.</p>
+  <div class="tech-row">
+    <span class="tech-pill">React + Vite</span>
+    <span class="tech-pill">TypeScript (Strict Mode)</span>
+    <span class="tech-pill">Tailwind CSS</span>
+    <span class="tech-pill">Shadcn/UI</span>
+    <span class="tech-pill">Lucide Icons</span>
+    <span class="tech-pill">ASP.NET Core 9</span>
+    <span class="tech-pill">Entity Framework Core</span>
+    <span class="tech-pill">SQL Server</span>
+    <span class="tech-pill">CQRS + MediatR</span>
+    <span class="tech-pill">JWT + Refresh Token</span>
+    <span class="tech-pill">SignalR Realtime</span>
+    <span class="tech-pill">Docker + CI/CD</span>
+  </div>
+</section>
+
+<!-- ROLES -->
+<section class="section">
+  <h2><span class="icon bg-purple">👥</span> Vai trò &amp; Phân quyền</h2>
+  <p class="section-sub">Hệ thống có 3 vai trò chính, mỗi vai trò có giao diện và quyền hạn riêng.</p>
+  <div class="grid grid-3">
+    <div class="role-card">
+      <h3>🛡️ Super Admin <span class="role-tag bg-red">Toàn quyền</span></h3>
+      <ul>
+        <li>Quản lý người dùng &amp; phân quyền</li>
+        <li>Quản lý phòng ban</li>
+        <li>Quản lý dự án &amp; công việc</li>
+        <li>Quản lý lương, hợp đồng, ca làm việc</li>
+        <li>Xem toàn bộ báo cáo hệ thống</li>
+      </ul>
+    </div>
+    <div class="role-card">
+      <h3>📋 Manager <span class="role-tag bg-yellow">Quản lý</span></h3>
+      <ul>
+        <li>Tạo &amp; quản lý dự án</li>
+        <li>Phân công công việc cho nhân viên</li>
+        <li>Theo dõi tiến độ &amp; hiệu suất</li>
+        <li>Duyệt nghỉ phép, làm thêm giờ</li>
+        <li>Tạo đánh giá hiệu suất, OKRs, khóa đào tạo</li>
+      </ul>
+    </div>
+    <div class="role-card">
+      <h3>👤 Employee <span class="role-tag bg-green">Nhân viên</span></h3>
+      <ul>
+        <li>Xem công việc được giao &amp; cập nhật tiến độ</li>
+        <li>Chấm công (Check In/Out qua IP/GPS)</li>
+        <li>Đăng ký nghỉ phép, làm thêm giờ</li>
+        <li>Xem phiếu lương, hợp đồng cá nhân</li>
+        <li>Cập nhật OKR cá nhân, nộp tự đánh giá, đăng ký đào tạo</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- MODULES -->
+<section class="section">
+  <h2><span class="icon bg-green">🗂️</span> Các module chính</h2>
+  <p class="section-sub">13 module bao phủ toàn bộ vòng đời quản lý nhân sự &amp; công việc.</p>
+  <div class="grid grid-4">
+    <div class="card">
+      <div class="card-icon bg-blue">📊</div>
+      <h3>Dashboard</h3>
+      <p>KPI Cards, biểu đồ tiến độ tuần, hoạt động gần đây theo thời gian thực.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-blue">🧑‍💼</div>
+      <h3>Quản lý Nhân viên</h3>
+      <p>CRUD, tìm kiếm/lọc, phân trang, Import/Export Excel.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-blue">🏢</div>
+      <h3>Quản lý Phòng ban</h3>
+      <p>Quản lý phòng ban, trưởng phòng, danh sách nhân sự.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-purple">📁</div>
+      <h3>Quản lý Dự án</h3>
+      <p>CRUD dự án, gán nhân sự, theo dõi tiến độ &amp; ngân sách.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-purple">✅</div>
+      <h3>Quản lý Công việc</h3>
+      <p>List View, Kanban Board, Calendar, Gantt Chart — kéo thả đổi trạng thái.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-green">⏱️</div>
+      <h3>Chấm công</h3>
+      <p>Check In/Out theo IP Wi-Fi văn phòng hoặc GPS công trường.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-green">🌴</div>
+      <h3>Nghỉ phép</h3>
+      <p>Quy trình duyệt Employee → Manager → HR, theo dõi trạng thái.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-yellow">🕑</div>
+      <h3>Ca làm việc &amp; Tăng ca</h3>
+      <p>Cấu hình ca hành chính/kíp/đêm, đăng ký &amp; duyệt làm thêm giờ (OT).</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-yellow">💰</div>
+      <h3>Lương &amp; Hợp đồng</h3>
+      <p>Hợp đồng lao động, cấu hình lương/thuế TNCN, tính lương &amp; xuất phiếu lương.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-cyan bg-blue">🎯</div>
+      <h3>OKRs</h3>
+      <p>Thiết lập mục tiêu (Objective) &amp; kết quả then chốt (Key Results), theo dõi tiến trình.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-purple">⭐</div>
+      <h3>Đánh giá Hiệu suất</h3>
+      <p>Đánh giá 360° (Self/Manager/Peer), biểu đồ radar theo tiêu chí.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-green">🎓</div>
+      <h3>Đào tạo</h3>
+      <p>Tạo khóa học, đăng ký, hoàn thành kèm mã chứng chỉ.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-red">🔔</div>
+      <h3>Thông báo Realtime</h3>
+      <p>Thông báo công việc mới, sắp hạn, quá hạn, duyệt nghỉ phép qua SignalR.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-blue">📈</div>
+      <h3>Báo cáo</h3>
+      <p>Hiệu suất nhân viên, tiến độ dự án, thống kê phòng ban — xuất Excel/PDF.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO ACCESS -->
+<section class="section">
+  <h2><span class="icon bg-yellow">🚀</span> Truy cập bản demo</h2>
+  <p class="section-sub">Bản demo được triển khai trên cloud — quý khách chỉ cần mở link bên dưới bằng trình duyệt, không cần cài đặt gì.</p>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-icon bg-blue">🌐</div>
+      <h3>Đường dẫn ứng dụng</h3>
+      <!-- TODO: cập nhật link thật sau khi deploy VPS xong, ví dụ http://123.45.67.89/ -->
+      <p><code id="demo-link">[Link demo sẽ được gửi sau khi hoàn tất triển khai]</code></p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-purple">📘</div>
+      <h3>Tài liệu API (Swagger)</h3>
+      <!-- TODO: cập nhật link thật, ví dụ http://123.45.67.89/swagger -->
+      <p><code id="demo-swagger-link">[Link Swagger sẽ được gửi sau khi hoàn tất triển khai]</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO ACCOUNTS -->
+<section class="section">
+  <h2><span class="icon bg-yellow">🔑</span> Tài khoản đăng nhập demo</h2>
+  <p class="section-sub">Dùng 1 trong 3 tài khoản dưới đây để trải nghiệm theo từng vai trò.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Vai trò</th><th>Tên đăng nhập</th><th>Mật khẩu</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>🛡️ Super Admin — toàn quyền hệ thống</td><td><code>admin</code></td><td><code>Admin@123</code></td></tr>
+        <tr><td>📋 Manager — quản lý dự án, nhân sự, duyệt đơn</td><td><code>manager</code></td><td><code>Manager@123</code></td></tr>
+        <tr><td>👤 Employee — công việc cá nhân, chấm công, nghỉ phép</td><td><code>employee</code></td><td><code>Employee@123</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- QUICK GUIDE -->
+<section class="section">
+  <h2><span class="icon bg-green">📖</span> Hướng dẫn nhanh theo vai trò</h2>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-icon bg-red">🛡️</div>
+      <h3>Đăng nhập Super Admin</h3>
+      <p>Vào menu <strong>Nhân viên</strong>, <strong>Phòng ban</strong> để xem dữ liệu mẫu; mục <strong>Báo cáo</strong> để xem thống kê &amp; xuất Excel/PDF toàn hệ thống.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-yellow">📋</div>
+      <h3>Đăng nhập Manager</h3>
+      <p>Vào <strong>Dự án</strong> → mở dự án mẫu "Quy trình xử lý đơn hàng xuất khẩu" để xem công việc cha/con, Kanban, và tab <strong>Thảo luận</strong>. Thử duyệt đơn nghỉ phép/tăng ca.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon bg-green">👤</div>
+      <h3>Đăng nhập Employee</h3>
+      <p>Thử <strong>Chấm công</strong> (Check In/Out), gửi <strong>đơn nghỉ phép</strong>, xem <strong>phiếu lương</strong> và cập nhật tiến độ <strong>OKR</strong> cá nhân.</p>
+    </div>
+  </div>
+  <p class="section-sub" style="margin-top:1.25rem;">
+    Xem hướng dẫn chi tiết từng bước: <a href="huong-dan-su-dung.html" style="color:var(--blue-light); text-decoration:none;">Hướng dẫn sử dụng đầy đủ →</a>
+  </p>
+</section>
+
+<div class="footer">
+  WorkForce Manager © 2026 — SAIGON SPICES &nbsp;·&nbsp; Xem thêm <a href="huong-dan-su-dung.html" style="color:var(--blue-light); text-decoration:none;">Hướng dẫn sử dụng</a>
+</div>
+
+</body>
+</html>

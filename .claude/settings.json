@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit(frontend/**)",
+      "Edit(backend/**)",
+      "Edit(docs/**)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(dotnet *)",
+      "Bash(git *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/format_on_save.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

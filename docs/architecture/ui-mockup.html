@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="vi" class="">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WorkForce Manager - UI Mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: '#2563EB',
+          success: '#16A34A',
+          warning: '#F59E0B',
+          danger: '#DC2626'
+        }
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .nav-link.active { background-color: rgb(37 99 235 / 0.1); color: #2563EB; font-weight: 600; }
+  .dark .nav-link.active { background-color: rgb(37 99 235 / 0.2); color: #60a5fa; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .kanban-col { min-width: 260px; }
+</style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0">
+    <div class="h-16 flex items-center gap-2 px-5 border-b border-gray-200 dark:border-gray-800">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold">W</div>
+      <span class="font-semibold text-lg">WorkForce</span>
+    </div>
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 text-sm">
+      <button onclick="showTab('dashboard')" class="nav-link active w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="dashboard">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+      </button>
+      <button onclick="showTab('employees')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="employees">
+        <i data-lucide="users" class="w-4 h-4"></i> Nhân viên
+      </button>
+      <button onclick="showTab('departments')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="departments">
+        <i data-lucide="building-2" class="w-4 h-4"></i> Phòng ban
+      </button>
+      <button onclick="showTab('projects')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="projects">
+        <i data-lucide="folder-kanban" class="w-4 h-4"></i> Dự án
+      </button>
+      <button onclick="showTab('tasks')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="tasks">
+        <i data-lucide="list-checks" class="w-4 h-4"></i> Công việc
+      </button>
+      <button onclick="showTab('attendance')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="attendance">
+        <i data-lucide="clock" class="w-4 h-4"></i> Chấm công
+      </button>
+      <button onclick="showTab('leave')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="leave">
+        <i data-lucide="calendar-off" class="w-4 h-4"></i> Nghỉ phép
+      </button>
+      <button onclick="showTab('reports')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="reports">
+        <i data-lucide="file-bar-chart" class="w-4 h-4"></i> Báo cáo
+      </button>
+      <button onclick="showTab('login')" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" data-tab="login">
+        <i data-lucide="log-in" class="w-4 h-4"></i> Login (preview)
+      </button>
+    </nav>
+    <div class="p-3 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-500">
+      Mockup tĩnh - WorkForce Manager
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 shrink-0">
+      <div class="flex items-center gap-3 flex-1 max-w-md">
+        <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+        <input type="text" placeholder="Tìm kiếm..." class="bg-transparent outline-none text-sm w-full" />
+      </div>
+      <div class="flex items-center gap-4">
+        <button onclick="toggleDark()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+          <i data-lucide="sun" class="w-5 h-5 dark:hidden"></i>
+          <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+        </button>
+        <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 relative">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+        </button>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold">A</div>
+          <div class="text-sm">
+            <div class="font-medium">Admin User</div>
+            <div class="text-xs text-gray-500">Super Admin</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-6">
+
+      <!-- DASHBOARD -->
+      <section id="tab-dashboard" class="tab-content active space-y-6">
+        <div>
+          <h1 class="text-2xl font-semibold">Dashboard</h1>
+          <p class="text-gray-500 text-sm">Tổng quan hệ thống</p>
+        </div>
+        <!-- KPI cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-500">Tổng nhân viên</span>
+              <i data-lucide="users" class="w-5 h-5 text-primary"></i>
+            </div>
+            <div class="text-3xl font-bold mt-2">128</div>
+            <div class="text-xs text-success mt-1">+4 tháng này</div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-500">Đang thực hiện</span>
+              <i data-lucide="loader" class="w-5 h-5 text-primary"></i>
+            </div>
+            <div class="text-3xl font-bold mt-2">42</div>
+            <div class="text-xs text-gray-500 mt-1">công việc</div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-500">Quá hạn</span>
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-danger"></i>
+            </div>
+            <div class="text-3xl font-bold mt-2 text-danger">7</div>
+            <div class="text-xs text-gray-500 mt-1">cần xử lý</div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-500">Dự án đang triển khai</span>
+              <i data-lucide="folder-kanban" class="w-5 h-5 text-success"></i>
+            </div>
+            <div class="text-3xl font-bold mt-2">9</div>
+            <div class="text-xs text-success mt-1">tổng 15 dự án</div>
+          </div>
+        </div>
+        <!-- charts + recent activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <h3 class="font-semibold mb-4">Tiến độ công việc theo tuần</h3>
+            <div class="h-56 flex items-end gap-3">
+              <div class="flex-1 bg-primary/20 rounded-t-md" style="height:40%"></div>
+              <div class="flex-1 bg-primary/40 rounded-t-md" style="height:65%"></div>
+              <div class="flex-1 bg-primary/60 rounded-t-md" style="height:50%"></div>
+              <div class="flex-1 bg-primary rounded-t-md" style="height:85%"></div>
+              <div class="flex-1 bg-primary/60 rounded-t-md" style="height:70%"></div>
+              <div class="flex-1 bg-primary/40 rounded-t-md" style="height:55%"></div>
+              <div class="flex-1 bg-primary/30 rounded-t-md" style="height:30%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-2">
+              <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <h3 class="font-semibold mb-4">Hoạt động gần đây</h3>
+            <ul class="space-y-3 text-sm">
+              <li class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-success/10 text-success flex items-center justify-center"><i data-lucide="check" class="w-4 h-4"></i></div>
+                <div><span class="font-medium">Nguyễn Văn A</span> hoàn thành "Thiết kế UI Login"<div class="text-xs text-gray-500">5 phút trước</div></div>
+              </li>
+              <li class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                <div><span class="font-medium">Trần Thị B</span> tạo dự án mới "Website TMĐT"<div class="text-xs text-gray-500">1 giờ trước</div></div>
+              </li>
+              <li class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-warning/10 text-warning flex items-center justify-center"><i data-lucide="clock" class="w-4 h-4"></i></div>
+                <div><span class="font-medium">Lê Văn C</span> xin nghỉ phép 2 ngày<div class="text-xs text-gray-500">3 giờ trước</div></div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- EMPLOYEES -->
+      <section id="tab-employees" class="tab-content space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold">Nhân viên</h1>
+            <p class="text-gray-500 text-sm">Quản lý thông tin nhân sự</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 text-sm flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Import</button>
+            <button class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 text-sm flex items-center gap-2"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
+            <button class="px-3 py-2 rounded-lg bg-primary text-white text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Thêm nhân viên</button>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 flex flex-wrap gap-3">
+          <input placeholder="Tìm theo tên, mã NV..." class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-sm flex-1 min-w-[200px]" />
+          <select class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-sm">
+            <option>Tất cả phòng ban</option>
+            <option>Kỹ thuật</option>
+            <option>Kinh doanh</option>
+          </select>
+          <select class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-sm">
+            <option>Tất cả trạng thái</option>
+            <option>Đang làm việc</option>
+            <option>Đã nghỉ</option>
+          </select>
+        </div>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-800/50 text-left text-gray-500">
+              <tr>
+                <th class="px-4 py-3">Mã NV</th>
+                <th class="px-4 py-3">Họ tên</th>
+                <th class="px-4 py-3">Phòng ban</th>
+                <th class="px-4 py-3">Chức vụ</th>
+                <th class="px-4 py-3">Email</th>
+                <th class="px-4 py-3">Trạng thái</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr>
+                <td class="px-4 py-3 font-medium">NV001</td>
+                <td class="px-4 py-3">Nguyễn Văn A</td>
+                <td class="px-4 py-3">Kỹ thuật</td>
+                <td class="px-4 py-3">Lập trình viên</td>
+                <td class="px-4 py-3">a.nguyen@company.com</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-success/10 text-success">Đang làm việc</span></td>
+                <td class="px-4 py-3 text-right"><i data-lucide="more-horizontal" class="w-4 h-4 inline"></i></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">NV002</td>
+                <td class="px-4 py-3">Trần Thị B</td>
+                <td class="px-4 py-3">Kinh doanh</td>
+                <td class="px-4 py-3">Trưởng phòng</td>
+                <td class="px-4 py-3">b.tran@company.com</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-success/10 text-success">Đang làm việc</span></td>
+                <td class="px-4 py-3 text-right"><i data-lucide="more-horizontal" class="w-4 h-4 inline"></i></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">NV003</td>
+                <td class="px-4 py-3">Lê Văn C</td>
+                <td class="px-4 py-3">Kỹ thuật</td>
+                <td class="px-4 py-3">Tester</td>
+                <td class="px-4 py-3">c.le@company.com</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">Đã nghỉ</span></td>
+                <td class="px-4 py-3 text-right"><i data-lucide="more-horizontal" class="w-4 h-4 inline"></i></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
+            <span>Hiển thị 1-3 / 128</span>
+            <div class="flex gap-1">
+              <button class="px-3 py-1 rounded border border-gray-200 dark:border-gray-800">Trước</button>
+              <button class="px-3 py-1 rounded border border-gray-200 dark:border-gray-800 bg-primary text-white">1</button>
+              <button class="px-3 py-1 rounded border border-gray-200 dark:border-gray-800">2</button>
+              <button class="px-3 py-1 rounded border border-gray-200 dark:border-gray-800">Sau</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DEPARTMENTS -->
+      <section id="tab-departments" class="tab-content space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold">Phòng ban</h1>
+            <p class="text-gray-500 text-sm">Quản lý cơ cấu phòng ban</p>
+          </div>
+          <button class="px-3 py-2 rounded-lg bg-primary text-white text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Thêm phòng ban</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><i data-lucide="code" class="w-5 h-5"></i></div>
+              <div>
+                <div class="font-semibold">Phòng Kỹ thuật</div>
+                <div class="text-xs text-gray-500">Trưởng phòng: Nguyễn Văn A</div>
+              </div>
+            </div>
+            <div class="text-sm text-gray-500">42 nhân sự</div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-success/10 text-success flex items-center justify-center"><i data-lucide="briefcase" class="w-5 h-5"></i></div>
+              <div>
+                <div class="font-semibold">Phòng Kinh doanh</div>
+                <div class="text-xs text-gray-500">Trưởng phòng: Trần Thị B</div>
+              </div>
+            </div>
+            <div class="text-sm text-gray-500">28 nhân sự</div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-warning/10 text-warning flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></div>
+              <div>
+                <div class="font-semibold">Phòng Nhân sự</div>
+                <div class="text-xs text-gray-500">Trưởng phòng: Phạm Thị D</div>
+              </div>
+            </div>
+            <div class="text-sm text-gray-500">8 nhân sự</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROJECTS -->
+      <section id="tab-projects" class="tab-content space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold">Dự án</h1>
+            <p class="text-gray-500 text-sm">Theo dõi dự án và tiến độ</p>
+          </div>
+          <button class="px-3 py-2 rounded-lg bg-primary text-white text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tạo dự án</button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <div class="font-semibold">DA001 - Website TMĐT</div>
+                <div class="text-xs text-gray-500">Chủ đầu tư: Công ty ABC</div>
+              </div>
+              <span class="px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">Đang triển khai</span>
+            </div>
+            <div class="text-xs text-gray-500 mb-2">01/05/2026 - 30/09/2026 • Ngân sách: 1.2 tỷ</div>
+            <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+              <div class="bg-primary h-2 rounded-full" style="width:65%"></div>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">Hoàn thành 65%</div>
+            <div class="flex -space-x-2 mt-3">
+              <div class="w-7 h-7 rounded-full bg-primary text-white text-xs flex items-center justify-center border-2 border-white dark:border-gray-900">A</div>
+              <div class="w-7 h-7 rounded-full bg-success text-white text-xs flex items-center justify-center border-2 border-white dark:border-gray-900">B</div>
+              <div class="w-7 h-7 rounded-full bg-warning text-white text-xs flex items-center justify-center border-2 border-white dark:border-gray-900">C</div>
+              <div class="w-7 h-7 rounded-full bg-gray-300 text-gray-700 text-xs flex items-center justify-center border-2 border-white dark:border-gray-900">+5</div>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <div class="font-semibold">DA002 - Hệ thống ERP nội bộ</div>
+                <div class="text-xs text-gray-500">Chủ đầu tư: Nội bộ</div>
+              </div>
+              <span class="px-2 py-1 rounded-full text-xs bg-warning/10 text-warning">Sắp đến hạn</span>
+            </div>
+            <div class="text-xs text-gray-500 mb-2">01/01/2026 - 30/06/2026 • Ngân sách: 800 triệu</div>
+            <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+              <div class="bg-warning h-2 rounded-full" style="width:90%"></div>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">Hoàn thành 90%</div>
+            <div class="flex -space-x-2 mt-3">
+              <div class="w-7 h-7 rounded-full bg-primary text-white text-xs flex items-center justify-center border-2 border-white dark:border-gray-900">A</div>
+              <div class="w-7 h-7 rounded-full bg-danger text-white text-xs flex items-center justify-center border-2 border-white dark:border-gray-900">D</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TASKS (Kanban) -->
+      <section id="tab-tasks" class="tab-content space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold">Công việc</h1>
+            <p class="text-gray-500 text-sm">Kanban board - DA001 Website TMĐT</p>
+          </div>
+          <div class="flex gap-2 text-sm">
+            <button class="px-3 py-1.5 rounded-lg bg-primary text-white">Kanban</button>
+            <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800">List</button>
+            <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800">Calendar</button>
+            <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800">Gantt</button>
+          </div>
+        </div>
+        <div class="flex gap-4 overflow-x-auto pb-2">
+          <div class="kanban-col bg-gray-100 dark:bg-gray-900 rounded-xl p-3">
+            <div class="font-semibold text-sm mb-3 flex items-center justify-between">Todo <span class="text-xs bg-gray-200 dark:bg-gray-800 rounded-full px-2">3</span></div>
+            <div class="space-y-2">
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm text-sm">
+                <div class="font-medium">Thiết kế Database</div>
+                <div class="text-xs text-gray-500 mt-1">Hạn: 20/06/2026</div>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs bg-danger/10 text-danger">Cao</span>
+              </div>
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm text-sm">
+                <div class="font-medium">Viết tài liệu API</div>
+                <div class="text-xs text-gray-500 mt-1">Hạn: 25/06/2026</div>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs bg-warning/10 text-warning">Trung bình</span>
+              </div>
+            </div>
+          </div>
+          <div class="kanban-col bg-gray-100 dark:bg-gray-900 rounded-xl p-3">
+            <div class="font-semibold text-sm mb-3 flex items-center justify-between">In Progress <span class="text-xs bg-gray-200 dark:bg-gray-800 rounded-full px-2">2</span></div>
+            <div class="space-y-2">
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm text-sm">
+                <div class="font-medium">Xây dựng API Authentication</div>
+                <div class="text-xs text-gray-500 mt-1">Nguyễn Văn A • 60%</div>
+                <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-2"><div class="bg-primary h-1.5 rounded-full" style="width:60%"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="kanban-col bg-gray-100 dark:bg-gray-900 rounded-xl p-3">
+            <div class="font-semibold text-sm mb-3 flex items-center justify-between">Review <span class="text-xs bg-gray-200 dark:bg-gray-800 rounded-full px-2">1</span></div>
+            <div class="space-y-2">
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm text-sm">
+                <div class="font-medium">Thiết kế UI Login</div>
+                <div class="text-xs text-gray-500 mt-1">Trần Thị B</div>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs bg-warning/10 text-warning">Review</span>
+              </div>
+            </div>
+          </div>
+          <div class="kanban-col bg-gray-100 dark:bg-gray-900 rounded-xl p-3">
+            <div class="font-semibold text-sm mb-3 flex items-center justify-between">Done <span class="text-xs bg-gray-200 dark:bg-gray-800 rounded-full px-2">4</span></div>
+            <div class="space-y-2">
+              <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm text-sm opacity-70">
+                <div class="font-medium line-through">Khởi tạo dự án</div>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs bg-success/10 text-success">Hoàn thành</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ATTENDANCE -->
+      <section id="tab-attendance" class="tab-content space-y-4">
+        <div>
+          <h1 class="text-2xl font-semibold">Chấm công</h1>
+          <p class="text-gray-500 text-sm">Check In / Check Out</p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 flex flex-col items-center justify-center text-center">
+            <div class="text-4xl font-bold mb-2">08:02:15</div>
+            <div class="text-sm text-gray-500 mb-4">Thứ Bảy, 13/06/2026</div>
+            <button class="px-4 py-2 rounded-lg bg-success text-white text-sm flex items-center gap-2"><i data-lucide="log-in" class="w-4 h-4"></i> Check In</button>
+            <div class="text-xs text-gray-500 mt-3">GPS: 10.776, 106.700 • QR Code hỗ trợ</div>
+          </div>
+          <div class="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 dark:bg-gray-800/50 text-left text-gray-500">
+                <tr>
+                  <th class="px-4 py-3">Ngày</th>
+                  <th class="px-4 py-3">Check In</th>
+                  <th class="px-4 py-3">Check Out</th>
+                  <th class="px-4 py-3">Số giờ</th>
+                  <th class="px-4 py-3">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr>
+                  <td class="px-4 py-3">12/06/2026</td>
+                  <td class="px-4 py-3">08:01</td>
+                  <td class="px-4 py-3">17:35</td>
+                  <td class="px-4 py-3">8.5</td>
+                  <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-success/10 text-success">Đủ công</span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3">11/06/2026</td>
+                  <td class="px-4 py-3">08:45</td>
+                  <td class="px-4 py-3">17:30</td>
+                  <td class="px-4 py-3">7.7</td>
+                  <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-warning/10 text-warning">Đi muộn</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEAVE -->
+      <section id="tab-leave" class="tab-content space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold">Nghỉ phép</h1>
+            <p class="text-gray-500 text-sm">Đăng ký và duyệt nghỉ phép</p>
+          </div>
+          <button class="px-3 py-2 rounded-lg bg-primary text-white text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Đăng ký nghỉ</button>
+        </div>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-800/50 text-left text-gray-500">
+              <tr>
+                <th class="px-4 py-3">Nhân viên</th>
+                <th class="px-4 py-3">Loại nghỉ</th>
+                <th class="px-4 py-3">Từ ngày</th>
+                <th class="px-4 py-3">Đến ngày</th>
+                <th class="px-4 py-3">Trạng thái</th>
+                <th class="px-4 py-3">Hành động</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr>
+                <td class="px-4 py-3">Lê Văn C</td>
+                <td class="px-4 py-3">Nghỉ phép</td>
+                <td class="px-4 py-3">15/06/2026</td>
+                <td class="px-4 py-3">16/06/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-warning/10 text-warning">Chờ duyệt (Manager)</span></td>
+                <td class="px-4 py-3 flex gap-2">
+                  <button class="px-2 py-1 rounded bg-success/10 text-success text-xs">Duyệt</button>
+                  <button class="px-2 py-1 rounded bg-danger/10 text-danger text-xs">Từ chối</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3">Trần Thị B</td>
+                <td class="px-4 py-3">Nghỉ ốm</td>
+                <td class="px-4 py-3">10/06/2026</td>
+                <td class="px-4 py-3">10/06/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-success/10 text-success">Đã hoàn thành</span></td>
+                <td class="px-4 py-3 text-gray-400 text-xs">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="tab-reports" class="tab-content space-y-4">
+        <div>
+          <h1 class="text-2xl font-semibold">Báo cáo</h1>
+          <p class="text-gray-500 text-sm">Xuất báo cáo thống kê</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="font-semibold mb-1">Hiệu suất nhân viên</div>
+            <div class="text-xs text-gray-500 mb-4">Báo cáo theo tháng/quý</div>
+            <div class="flex gap-2">
+              <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-xs flex items-center gap-1"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Excel</button>
+              <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-xs flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF</button>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="font-semibold mb-1">Tiến độ dự án</div>
+            <div class="text-xs text-gray-500 mb-4">Tổng hợp tất cả dự án</div>
+            <div class="flex gap-2">
+              <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-xs flex items-center gap-1"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Excel</button>
+              <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-xs flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF</button>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="font-semibold mb-1">Báo cáo chấm công</div>
+            <div class="text-xs text-gray-500 mb-4">Theo phòng ban / cá nhân</div>
+            <div class="flex gap-2">
+              <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-xs flex items-center gap-1"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Excel</button>
+              <button class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-xs flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOGIN PREVIEW -->
+      <section id="tab-login" class="tab-content">
+        <div class="min-h-[70vh] flex items-center justify-center">
+          <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 space-y-5">
+            <div class="text-center">
+              <div class="w-12 h-12 rounded-xl bg-primary mx-auto flex items-center justify-center text-white font-bold text-xl mb-3">W</div>
+              <h2 class="text-xl font-semibold">Đăng nhập WorkForce Manager</h2>
+              <p class="text-sm text-gray-500">Quản lý công việc & nhân sự</p>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="text-sm font-medium">Email</label>
+                <input type="email" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-sm" placeholder="you@company.com" />
+              </div>
+              <div>
+                <label class="text-sm font-medium">Mật khẩu</label>
+                <input type="password" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-sm" placeholder="••••••••" />
+              </div>
+            </div>
+            <button class="w-full px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium">Đăng nhập</button>
+            <div class="text-center text-xs text-gray-500">Quên mật khẩu?</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+
+  function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+    document.querySelector('.nav-link[data-tab="' + name + '"]').classList.add('active');
+  }
+
+  function toggleDark() {
+    document.documentElement.classList.toggle('dark');
+  }
+</script>
+</body>
+</html>

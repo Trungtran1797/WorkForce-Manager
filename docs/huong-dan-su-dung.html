@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WorkForce Manager — Hướng dẫn sử dụng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0a0f1e;
+    --bg-secondary: #0d1529;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2236;
+    --border: rgba(255,255,255,0.08);
+    --text-primary: #f0f4ff;
+    --text-secondary: #8b9bbf;
+    --text-muted: #4a5568;
+    --blue: #2563EB;
+    --blue-light: #3b82f6;
+    --blue-glow: rgba(37,99,235,0.25);
+    --green: #16A34A;
+    --green-glow: rgba(22,163,74,0.2);
+    --yellow: #F59E0B;
+    --yellow-glow: rgba(245,158,11,0.2);
+    --red: #DC2626;
+    --red-glow: rgba(220,38,38,0.2);
+    --purple: #8b5cf6;
+    --purple-glow: rgba(139,92,246,0.2);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.7;
+  }
+
+  /* HEADER */
+  .header {
+    background: rgba(10,15,30,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100; padding: 0 1.5rem;
+  }
+  .header-inner {
+    max-width: 1300px; margin: 0 auto; display: flex; align-items: center;
+    justify-content: space-between; height: 64px; gap: 1rem;
+  }
+  .logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; box-shadow: 0 0 20px var(--blue-glow);
+  }
+  .logo-text { font-size: 1rem; font-weight: 700; }
+  .logo-sub { font-size: 0.65rem; color: var(--text-secondary); }
+  .header-link {
+    font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);
+    text-decoration: none; padding: 0.35rem 0.85rem; border-radius: 8px;
+    border: 1px solid var(--border); transition: all .2s;
+  }
+  .header-link:hover { color: var(--blue-light); border-color: var(--blue); }
+
+  /* LAYOUT */
+  .layout {
+    max-width: 1300px; margin: 0 auto; display: grid;
+    grid-template-columns: 260px 1fr; gap: 2rem; padding: 2rem 1.5rem 4rem;
+  }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  /* SIDEBAR TOC */
+  .sidebar {
+    position: sticky; top: 90px; align-self: start;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem; max-height: calc(100vh - 110px); overflow-y: auto;
+  }
+  .sidebar h4 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.75rem; }
+  .sidebar a {
+    display: block; font-size: 0.83rem; color: var(--text-secondary);
+    text-decoration: none; padding: 0.4rem 0.5rem; border-radius: 6px; margin-bottom: 0.1rem;
+  }
+  .sidebar a:hover { color: var(--blue-light); background: var(--blue-glow); }
+
+  /* MAIN CONTENT */
+  .content h1 {
+    font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #fff 30%, var(--blue-light) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .content > p.intro { color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem; max-width: 760px; }
+
+  .step-section {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.75rem; margin-bottom: 1.5rem; scroll-margin-top: 90px;
+  }
+  .step-section h2 {
+    font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .step-section h2 .icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
+  }
+  .step-section .role-row { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .role-pill {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    padding: 0.18rem 0.6rem; border-radius: 6px; letter-spacing: 0.04em;
+  }
+  .step-section ol, .step-section ul { padding-left: 1.3rem; margin: 0.5rem 0; }
+  .step-section ol li, .step-section ul li { font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.5rem; }
+  .step-section ol li::marker { color: var(--blue-light); font-weight: 700; }
+  .step-section p { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+  .step-section h3 { font-size: 0.95rem; font-weight: 600; margin: 1rem 0 0.4rem; }
+
+  .tip {
+    margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 10px;
+    font-size: 0.83rem; display: flex; gap: 0.6rem; align-items: flex-start;
+  }
+  .tip.info { background: var(--blue-glow); border: 1px solid rgba(37,99,235,0.3); color: #cdd9ff; }
+  .tip.warn { background: var(--yellow-glow); border: 1px solid rgba(245,158,11,0.3); color: #ffe6b3; }
+  .tip.success { background: var(--green-glow); border: 1px solid rgba(22,163,74,0.3); color: #c6f3d6; }
+
+  code {
+    background: rgba(255,255,255,0.06); padding: 0.15rem 0.4rem; border-radius: 4px;
+    font-size: 0.82rem; color: var(--blue-light); font-family: 'Consolas', monospace;
+  }
+
+  .bg-blue { background: var(--blue-glow); color: var(--blue-light); }
+  .bg-green { background: var(--green-glow); color: var(--green); }
+  .bg-yellow { background: var(--yellow-glow); color: var(--yellow); }
+  .bg-red { background: var(--red-glow); color: var(--red); }
+  .bg-purple { background: var(--purple-glow); color: var(--purple); }
+
+  .badge-admin { background: var(--red-glow); color: var(--red); }
+  .badge-manager { background: var(--yellow-glow); color: var(--yellow); }
+  .badge-employee { background: var(--green-glow); color: var(--green); }
+
+  .footer {
+    border-top: 1px solid var(--border); margin-top: 1rem;
+    padding: 2rem 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="gioi-thieu-ung-dung.html">
+      <div class="logo-icon">⚙️</div>
+      <div>
+        <div class="logo-text">WorkForce Manager</div>
+        <div class="logo-sub">SAIGON SPICES</div>
+      </div>
+    </a>
+    <a class="header-link" href="gioi-thieu-ung-dung.html">← Giới thiệu ứng dụng</a>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- TOC -->
+  <aside class="sidebar">
+    <h4>Nội dung</h4>
+    <a href="#dang-nhap">1. Đăng nhập &amp; vai trò</a>
+    <a href="#dashboard">2. Dashboard</a>
+    <a href="#nhan-vien">3. Nhân viên &amp; Phòng ban</a>
+    <a href="#du-an">4. Dự án</a>
+    <a href="#cong-viec">5. Công việc (Kanban/Gantt)</a>
+    <a href="#cham-cong">6. Chấm công</a>
+    <a href="#nghi-phep">7. Nghỉ phép</a>
+    <a href="#ca-lam-viec">8. Ca làm việc &amp; Tăng ca</a>
+    <a href="#luong">9. Lương &amp; Hợp đồng</a>
+    <a href="#okr">10. OKRs</a>
+    <a href="#danh-gia">11. Đánh giá hiệu suất</a>
+    <a href="#dao-tao">12. Đào tạo</a>
+    <a href="#thong-bao">13. Thông báo</a>
+    <a href="#bao-cao">14. Báo cáo</a>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <h1>Hướng dẫn sử dụng</h1>
+    <p class="intro">
+      Tài liệu hướng dẫn từng bước sử dụng các module trong WorkForce Manager, dành cho 3 vai trò:
+      <strong style="color:#fda4af">Super Admin</strong>, <strong style="color:#fcd34d">Manager</strong>,
+      <strong style="color:#86efac">Employee</strong>.
+    </p>
+
+    <!-- 1. ĐĂNG NHẬP -->
+    <section class="step-section" id="dang-nhap">
+      <h2><span class="icon bg-blue">🔐</span> 1. Đăng nhập &amp; phân quyền</h2>
+      <ol>
+        <li>Truy cập <code>http://localhost:5173</code> (môi trường dev).</li>
+        <li>Nhập <strong>tên đăng nhập</strong> và <strong>mật khẩu</strong>, nhấn <strong>Đăng nhập</strong>.</li>
+        <li>Hệ thống sẽ điều hướng vào Dashboard với menu sidebar hiển thị theo vai trò của bạn.</li>
+        <li>Phiên đăng nhập dùng JWT — token tự động làm mới (refresh) khi gần hết hạn; nếu refresh thất bại bạn sẽ được đưa về trang đăng nhập.</li>
+      </ol>
+      <h3>Tài khoản demo</h3>
+      <ul>
+        <li><span class="role-pill badge-admin">Super Admin</span> <code>admin</code> / <code>Admin@123</code> — toàn quyền</li>
+        <li><span class="role-pill badge-manager">Manager</span> <code>manager</code> / <code>Manager@123</code> — quản lý dự án, nhân sự, duyệt nghỉ phép/OT</li>
+        <li><span class="role-pill badge-employee">Employee</span> <code>employee</code> / <code>Employee@123</code> — thao tác cá nhân</li>
+      </ul>
+      <div class="tip info">💡 Có thể chuyển <strong>Dark/Light mode</strong> bằng nút trên Header. Giao diện responsive — trên mobile, sidebar thu gọn thành menu drawer.</div>
+    </section>
+
+    <!-- 2. DASHBOARD -->
+    <section class="step-section" id="dashboard">
+      <h2><span class="icon bg-blue">📊</span> 2. Dashboard</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee</span>
+      </div>
+      <p>Trang chủ sau khi đăng nhập, hiển thị tổng quan tình hình công việc &amp; nhân sự.</p>
+      <ol>
+        <li><strong>KPI Cards</strong>: tổng số nhân viên, công việc đang thực hiện, công việc quá hạn, công việc hoàn thành, dự án đang triển khai.</li>
+        <li><strong>Biểu đồ tiến độ tuần</strong>: số công việc hoàn thành theo từng ngày trong tuần.</li>
+        <li><strong>Hoạt động gần đây</strong>: danh sách cập nhật mới nhất (giao việc, đổi trạng thái, duyệt nghỉ phép...).</li>
+      </ol>
+      <div class="tip info">💡 Dữ liệu Dashboard được lấy real-time từ API — không cần refresh trang để thấy số liệu mới nhất sau khi thao tác ở module khác.</div>
+    </section>
+
+    <!-- 3. NHÂN VIÊN -->
+    <section class="step-section" id="nhan-vien">
+      <h2><span class="icon bg-blue">🧑‍💼</span> 3. Quản lý Nhân viên &amp; Phòng ban</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+      </div>
+      <h3>Quản lý Nhân viên</h3>
+      <ol>
+        <li>Vào menu <strong>Nhân viên</strong>. Danh sách hiển thị dạng bảng có phân trang.</li>
+        <li><strong>Tìm kiếm/Lọc</strong>: nhập từ khóa hoặc chọn phòng ban/trạng thái ở thanh filter trên bảng.</li>
+        <li><strong>Thêm nhân viên</strong>: nhấn <strong>+ Thêm mới</strong>, điền thông tin (mã NV, họ tên, ngày sinh, giới tính, CCCD, SĐT, email, địa chỉ, phòng ban, chức vụ, ngày vào làm) → <strong>Lưu</strong>.</li>
+        <li><strong>Sửa/Xóa</strong>: dùng menu hành động (⋮) ở cuối mỗi dòng. Xóa là <em>soft delete</em> — dữ liệu vẫn lưu trữ để phục vụ audit.</li>
+        <li><strong>Import/Export Excel</strong>: dùng nút <strong>Import</strong>/<strong>Export</strong> phía trên bảng để nhập/xuất danh sách nhân viên dạng Excel.</li>
+      </ol>
+      <h3>Quản lý Phòng ban</h3>
+      <ol>
+        <li>Vào menu <strong>Phòng ban</strong> để xem danh sách phòng ban, trưởng phòng và số lượng nhân sự.</li>
+        <li>Thêm/sửa phòng ban: chọn tên phòng ban và trưởng phòng (chọn từ danh sách nhân viên hiện có).</li>
+      </ol>
+      <div class="tip warn">⚠️ Chỉ <strong>Super Admin</strong> và <strong>Manager</strong> thấy menu này. Employee không có quyền tạo/sửa/xóa nhân viên (API trả 403 nếu cố truy cập).</div>
+    </section>
+
+    <!-- 4. DỰ ÁN -->
+    <section class="step-section" id="du-an">
+      <h2><span class="icon bg-purple">📁</span> 4. Quản lý Dự án</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee (xem)</span>
+      </div>
+      <ol>
+        <li>Vào menu <strong>Dự án</strong> để xem danh sách dự án (mã, tên, chủ đầu tư, thời gian, trạng thái, ngân sách).</li>
+        <li><strong>Tạo dự án</strong> (Admin/Manager): nhấn <strong>+ Tạo dự án</strong>, nhập đầy đủ thông tin và mô tả → <strong>Lưu</strong>.</li>
+        <li><strong>Gán nhân sự</strong>: mở chi tiết dự án → tab <strong>Thành viên</strong> → chọn nhân viên để thêm vào dự án.</li>
+        <li><strong>Theo dõi tiến độ</strong>: chi tiết dự án hiển thị % hoàn thành dựa trên số công việc Done/Tổng số công việc thuộc dự án.</li>
+        <li>Employee chỉ xem được các dự án mình tham gia, không có nút sửa/xóa.</li>
+      </ol>
+    </section>
+
+    <!-- 5. CÔNG VIỆC -->
+    <section class="step-section" id="cong-viec">
+      <h2><span class="icon bg-purple">✅</span> 5. Quản lý Công việc (List / Kanban / Calendar / Gantt)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee</span>
+      </div>
+      <ol>
+        <li>Vào menu <strong>Công việc</strong>. Chọn 1 trong 4 tab hiển thị: <strong>List</strong>, <strong>Kanban</strong>, <strong>Calendar</strong>, <strong>Gantt</strong>.</li>
+        <li><strong>Tạo công việc</strong> (Admin/Manager): nhấn <strong>+ Công việc mới</strong>, nhập tên, mô tả, người thực hiện, độ ưu tiên, deadline → <strong>Lưu</strong>. Công việc khởi tạo ở trạng thái <strong>Todo</strong>.</li>
+        <li><strong>Kanban Board</strong>: kéo-thả thẻ công việc giữa các cột <code>Todo → In Progress → Review → Done / Cancelled</code> để đổi trạng thái — lưu ngay vào hệ thống.</li>
+        <li><strong>Cập nhật % hoàn thành</strong>: mở chi tiết công việc, kéo thanh trượt % hoặc nhập số trực tiếp (Employee được phép tự cập nhật công việc của mình).</li>
+        <li><strong>Calendar View</strong>: xem công việc theo deadline trên lịch tháng.</li>
+        <li><strong>Gantt Chart</strong>: xem timeline các công việc theo thời gian bắt đầu/kết thúc của dự án.</li>
+      </ol>
+      <div class="tip info">💡 Màu trạng thái: <span style="color:#9ca3af">Todo</span> = xám, <span style="color:#3b82f6">In Progress</span> = xanh dương, <span style="color:#F59E0B">Review</span> = vàng, <span style="color:#16A34A">Done</span> = xanh lá, <span style="color:#DC2626">Cancelled/Overdue</span> = đỏ.</div>
+    </section>
+
+    <!-- 6. CHẤM CÔNG -->
+    <section class="step-section" id="cham-cong">
+      <h2><span class="icon bg-green">⏱️</span> 6. Chấm công (Attendance)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-employee">Employee</span>
+        <span class="role-pill badge-manager">Manager (xem báo cáo)</span>
+      </div>
+      <ol>
+        <li>Vào menu <strong>Chấm công</strong>.</li>
+        <li><strong>Check In</strong>: nhấn nút <strong>Check In</strong> đầu ca làm. Trình duyệt sẽ hỏi quyền truy cập <strong>vị trí (GPS)</strong> — chọn <strong>Cho phép</strong> để hệ thống xác thực vị trí công trường/văn phòng.</li>
+        <li>Hệ thống tự ghi nhận IP và (nếu có) tọa độ GPS; nếu vị trí không hợp lệ (ngoài Wi-Fi văn phòng hoặc bán kính công trường), bản chấm công sẽ được đánh dấu cảnh báo nhưng vẫn ghi nhận giờ vào.</li>
+        <li>Cuối ca, nhấn <strong>Check Out</strong> để hệ thống tính tổng giờ làm trong ngày.</li>
+        <li>Bảng <strong>Lịch sử chấm công</strong> hiển thị danh sách các ngày đã chấm công, giờ vào/ra, tổng giờ, trạng thái vị trí.</li>
+      </ol>
+      <div class="tip warn">⚠️ Nếu trình duyệt chặn quyền vị trí, bạn vẫn Check In được bằng IP nhưng hệ thống sẽ không xác thực được GPS.</div>
+    </section>
+
+    <!-- 7. NGHỈ PHÉP -->
+    <section class="step-section" id="nghi-phep">
+      <h2><span class="icon bg-green">🌴</span> 7. Nghỉ phép (Leave)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-employee">Employee</span>
+        <span class="role-pill badge-manager">Manager (duyệt)</span>
+        <span class="role-pill badge-admin">Admin (duyệt HR)</span>
+      </div>
+      <h3>Đối với Employee</h3>
+      <ol>
+        <li>Vào menu <strong>Nghỉ phép</strong> → nhấn <strong>+ Đăng ký nghỉ</strong>.</li>
+        <li>Chọn loại nghỉ (<strong>Nghỉ phép</strong> / <strong>Nghỉ ốm</strong> / <strong>Nghỉ không lương</strong>), khoảng thời gian, lý do → <strong>Gửi</strong>.</li>
+        <li>Theo dõi trạng thái đơn: <code>Pending → PendingHr → Completed</code> (hoặc <code>Rejected</code>).</li>
+      </ol>
+      <h3>Đối với Manager / Admin</h3>
+      <ol>
+        <li>Vào menu <strong>Nghỉ phép</strong> → tab <strong>Chờ duyệt</strong>.</li>
+        <li><strong>Manager</strong> duyệt đơn của nhân viên thuộc phòng mình quản lý → đơn chuyển sang <code>PendingHr</code>.</li>
+        <li><strong>Admin (HR)</strong> duyệt bước cuối → đơn chuyển <code>Completed</code>. Có thể <strong>Từ chối</strong> ở bất kỳ bước nào kèm ghi chú lý do.</li>
+      </ol>
+      <div class="tip success">✅ Quy trình duyệt: <strong>Employee → Manager → HR → Completed</strong>, đúng theo thiết kế phân quyền.</div>
+    </section>
+
+    <!-- 8. CA LÀM VIỆC -->
+    <section class="step-section" id="ca-lam-viec">
+      <h2><span class="icon bg-yellow">🕑</span> 8. Ca làm việc &amp; Tăng ca (Shift &amp; Overtime)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee</span>
+      </div>
+      <h3>Ca làm việc &amp; Địa điểm (Admin/Manager)</h3>
+      <ol>
+        <li>Menu <strong>Ca làm việc</strong>: tạo/sửa các ca (hành chính, ca kíp, ca đêm) với giờ bắt đầu/kết thúc.</li>
+        <li>Menu <strong>Địa điểm</strong>: khai báo địa điểm văn phòng/công trường (IP CIDR hoặc tọa độ GPS + bán kính cho phép) dùng để xác thực khi Check In.</li>
+        <li><strong>Phân ca</strong>: gán ca làm việc cho từng nhân viên theo ngày/tuần.</li>
+      </ol>
+      <h3>Đăng ký &amp; duyệt Tăng ca (mọi vai trò)</h3>
+      <ol>
+        <li>Menu <strong>Tăng ca</strong> → Employee nhấn <strong>+ Đăng ký OT</strong>, chọn ngày &amp; số giờ làm thêm, lý do → <strong>Gửi</strong>.</li>
+        <li>Manager/Admin vào tab <strong>Chờ duyệt</strong>, nhấn <strong>Duyệt</strong> hoặc <strong>Từ chối</strong>.</li>
+        <li>Khi được duyệt, số giờ OT tự động cộng vào bảng công của ngày tương ứng (dùng để tính lương).</li>
+      </ol>
+    </section>
+
+    <!-- 9. LƯƠNG -->
+    <section class="step-section" id="luong">
+      <h2><span class="icon bg-yellow">💰</span> 9. Lương &amp; Hợp đồng (Payroll &amp; Contracts)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee (xem phiếu lương)</span>
+      </div>
+      <h3>Hợp đồng &amp; Cấu hình lương (Admin/Manager)</h3>
+      <ol>
+        <li>Menu <strong>Hợp đồng</strong>: tạo hợp đồng lao động (thử việc/chính thức/phụ lục) cho từng nhân viên, kèm thời hạn và loại hợp đồng.</li>
+        <li>Menu <strong>Cấu hình lương</strong>: khai báo lương cơ bản, phụ cấp, mức đóng bảo hiểm cho mỗi nhân viên.</li>
+      </ol>
+      <h3>Tính lương tháng (Admin/Manager)</h3>
+      <ol>
+        <li>Menu <strong>Tiền lương</strong> → chọn tháng/năm → nhấn <strong>Tạo bảng lương</strong>.</li>
+        <li>Hệ thống tự tổng hợp công chấm + giờ OT đã duyệt, áp dụng thuế TNCN lũy tiến, bảo hiểm, phụ cấp để tính lương thực nhận cho từng nhân viên.</li>
+        <li>Xem chi tiết từng phiếu lương (Payslip), nhấn <strong>Duyệt</strong> để chuyển trạng thái <code>Approved</code>.</li>
+        <li>Nhấn <strong>Gửi email</strong> để gửi phiếu lương cho nhân viên (môi trường dev ghi log, không gửi SMTP thật).</li>
+      </ol>
+      <h3>Đối với Employee</h3>
+      <ol>
+        <li>Menu <strong>Phiếu lương của tôi</strong>: xem danh sách phiếu lương đã <strong>Approved</strong>, click vào từng phiếu để xem chi tiết các khoản (lương cơ bản, phụ cấp, OT, thuế, bảo hiểm, thực nhận).</li>
+      </ol>
+      <div class="tip info">💡 Việc tạo bảng lương là <strong>idempotent</strong> — chạy lại cho cùng tháng sẽ không tạo trùng phiếu đã <code>Approved</code>/<code>Paid</code>.</div>
+    </section>
+
+    <!-- 10. OKR -->
+    <section class="step-section" id="okr">
+      <h2><span class="icon bg-blue">🎯</span> 10. OKRs (Objectives &amp; Key Results)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee</span>
+      </div>
+      <ol>
+        <li>Vào menu <strong>OKRs</strong> để xem danh sách Mục tiêu (Objectives) theo kỳ (quý/năm).</li>
+        <li><strong>Tạo Objective</strong> (Admin/Manager): nhấn <strong>+ Mục tiêu mới</strong>, nhập tên mục tiêu, kỳ, người/nhóm phụ trách, sau đó thêm các <strong>Key Results</strong> (chỉ số đo lường, giá trị mục tiêu, đơn vị, trọng số).</li>
+        <li><strong>Cập nhật tiến độ</strong> (mọi vai trò sở hữu KR): trên mỗi Key Result, nhập giá trị hiện tại mới → nhấn <strong>Cập nhật</strong>. Thanh tiến độ (%) tự động tính lại.</li>
+        <li><strong>Xóa Objective</strong> (Admin/Manager): dùng nút xóa trên thẻ mục tiêu — chỉ tài khoản có quyền <code>CanManagePerformance</code> mới thấy nút này.</li>
+      </ol>
+      <div class="tip info">💡 Employee có thể tự cập nhật tiến độ Key Result của mình nhưng không thể tạo/xóa Objective mới.</div>
+    </section>
+
+    <!-- 11. ĐÁNH GIÁ HIỆU SUẤT -->
+    <section class="step-section" id="danh-gia">
+      <h2><span class="icon bg-purple">⭐</span> 11. Đánh giá hiệu suất (Performance Review)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee</span>
+      </div>
+      <h3>Admin/Manager — Tạo đánh giá</h3>
+      <ol>
+        <li>Menu <strong>Đánh giá hiệu suất</strong> → tab <strong>Đánh giá đội nhóm</strong> → nhấn <strong>+ Tạo đánh giá</strong>.</li>
+        <li>Chọn nhân viên, kỳ đánh giá, loại đánh giá (<strong>Self</strong> / <strong>Manager</strong> / <strong>Peer</strong>) và các tiêu chí chấm điểm (kèm trọng số).</li>
+      </ol>
+      <h3>Employee — Nộp đánh giá</h3>
+      <ol>
+        <li>Menu <strong>Đánh giá hiệu suất</strong> → tab <strong>Đánh giá của tôi</strong>.</li>
+        <li>Mở phiếu đánh giá ở trạng thái <strong>Pending</strong>, chấm điểm từng tiêu chí (thang điểm), ghi nhận xét → nhấn <strong>Nộp đánh giá</strong>.</li>
+        <li>Hệ thống tự tính <strong>Điểm tổng (OverallScore)</strong> theo trọng số và xếp loại (<strong>RatingLevel</strong>).</li>
+        <li>Xem kết quả qua <strong>biểu đồ radar</strong> so sánh các tiêu chí.</li>
+      </ol>
+    </section>
+
+    <!-- 12. ĐÀO TẠO -->
+    <section class="step-section" id="dao-tao">
+      <h2><span class="icon bg-green">🎓</span> 12. Đào tạo (Training)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee</span>
+      </div>
+      <h3>Admin/Manager</h3>
+      <ol>
+        <li>Menu <strong>Đào tạo</strong> → nhấn <strong>+ Thêm khóa đào tạo</strong>, nhập tên, mô tả, giảng viên, thời gian bắt đầu/kết thúc → <strong>Lưu</strong>.</li>
+        <li>Xem danh sách nhân viên đã đăng ký từng khóa, nhấn <strong>Cập nhật trạng thái</strong> trên dòng nhân viên để đánh dấu <strong>Hoàn thành</strong> kèm <strong>mã chứng chỉ</strong>.</li>
+      </ol>
+      <h3>Employee</h3>
+      <ol>
+        <li>Menu <strong>Đào tạo</strong> → xem danh sách khóa học đang mở.</li>
+        <li>Nhấn <strong>Đăng ký</strong> để tham gia khóa học. Sau khi hoàn thành (do Admin/Manager xác nhận), trạng thái và mã chứng chỉ sẽ hiển thị trên hồ sơ.</li>
+      </ol>
+    </section>
+
+    <!-- 13. THÔNG BÁO -->
+    <section class="step-section" id="thong-bao">
+      <h2><span class="icon bg-red">🔔</span> 13. Thông báo (Notifications)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+        <span class="role-pill badge-employee">Employee</span>
+      </div>
+      <ol>
+        <li>Biểu tượng 🔔 ở Header hiển thị số thông báo chưa đọc, cập nhật <strong>realtime qua SignalR</strong> (không cần tải lại trang).</li>
+        <li>Các loại thông báo: công việc mới được giao, công việc sắp đến hạn/quá hạn, kết quả duyệt nghỉ phép/OT, tin nhắn hệ thống.</li>
+        <li>Click vào thông báo để mở nhanh nội dung liên quan; nhấn <strong>Đánh dấu đã đọc tất cả</strong> để xóa số đếm.</li>
+        <li>Thông báo cũng hiện dưới dạng Toast (góc màn hình) và HTML5 Notification (nếu trình duyệt được cấp quyền).</li>
+      </ol>
+    </section>
+
+    <!-- 14. BÁO CÁO -->
+    <section class="step-section" id="bao-cao">
+      <h2><span class="icon bg-blue">📈</span> 14. Báo cáo (Reports)</h2>
+      <div class="role-row">
+        <span class="role-pill badge-admin">Admin</span>
+        <span class="role-pill badge-manager">Manager</span>
+      </div>
+      <ol>
+        <li>Menu <strong>Báo cáo</strong> gồm các loại: hiệu suất nhân viên, tiến độ dự án, tỷ lệ hoàn thành công việc, thống kê phòng ban, báo cáo chấm công.</li>
+        <li>Chọn khoảng thời gian/bộ lọc tương ứng, dữ liệu hiển thị dạng bảng + biểu đồ.</li>
+        <li><strong>Xuất Excel</strong>: nhấn nút <strong>Xuất Excel</strong> — file CSV có BOM UTF-8 để hiển thị đúng tiếng Việt khi mở bằng Excel.</li>
+        <li><strong>Xuất PDF</strong>: nhấn nút <strong>Xuất PDF</strong> — mở cửa sổ in (Ctrl/Cmd+P) đã định dạng sẵn để lưu thành PDF.</li>
+      </ol>
+      <div class="tip success">✅ Toàn bộ bảng/danh sách trong hệ thống đều có trạng thái <strong>Loading (skeleton)</strong>, <strong>Empty</strong> (chưa có dữ liệu) và <strong>Error</strong> (có nút thử lại) để trải nghiệm luôn rõ ràng.</div>
+    </section>
+
+  </main>
+</div>
+
+<div class="footer">
+  WorkForce Manager © 2026 — SAIGON SPICES &nbsp;·&nbsp; <a href="gioi-thieu-ung-dung.html" style="color:var(--blue-light); text-decoration:none;">← Giới thiệu ứng dụng</a>
+</div>
+
+</body>
+</html>

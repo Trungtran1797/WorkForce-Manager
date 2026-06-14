@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WorkForceManager.Application/WorkForceManager.Application.csproj" />
+    <Project Path="src/WorkForceManager.Domain/WorkForceManager.Domain.csproj" />
+    <Project Path="src/WorkForceManager.Infrastructure/WorkForceManager.Infrastructure.csproj" />
+    <Project Path="src/WorkForceManager.WebApi/WorkForceManager.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WorkForceManager.Domain.Tests/WorkForceManager.Domain.Tests.csproj" />
+    <Project Path="tests/WorkForceManager.Application.Tests/WorkForceManager.Application.Tests.csproj" />
+    <Project Path="tests/WorkForceManager.WebApi.IntegrationTests/WorkForceManager.WebApi.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkForce Manager — Project Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0a0f1e;
+      --bg-secondary: #0d1529;
+      --bg-card: #111827;
+      --bg-card-hover: #1a2236;
+      --border: rgba(255,255,255,0.08);
+      --border-light: rgba(255,255,255,0.04);
+      --text-primary: #f0f4ff;
+      --text-secondary: #8b9bbf;
+      --text-muted: #4a5568;
+      --blue: #2563EB;
+      --blue-light: #3b82f6;
+      --blue-glow: rgba(37,99,235,0.25);
+      --green: #10b981;
+      --green-glow: rgba(16,185,129,0.2);
+      --yellow: #f59e0b;
+      --yellow-glow: rgba(245,158,11,0.2);
+      --red: #ef4444;
+      --red-glow: rgba(239,68,68,0.2);
+      --purple: #8b5cf6;
+      --purple-glow: rgba(139,92,246,0.2);
+      --cyan: #06b6d4;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ─── HEADER ─── */
+    .header {
+      background: rgba(10,15,30,0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0 2rem;
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 1rem;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 0 20px var(--blue-glow);
+    }
+    .logo-text { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+    .logo-sub { font-size: 0.65rem; color: var(--text-secondary); font-weight: 400; }
+
+    .nav-pills { display: flex; gap: 0.25rem; }
+    .nav-pill {
+      padding: 0.35rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .nav-pill:hover, .nav-pill.active {
+      background: rgba(37,99,235,0.12);
+      color: var(--blue-light);
+    }
+
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .badge-live {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--green);
+      background: var(--green-glow);
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+    }
+    .dot-live {
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.75); }
+    }
+
+    .btn-launch {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 1rem;
+      background: var(--blue);
+      color: white;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px var(--blue-glow);
+    }
+    .btn-launch:hover { background: var(--blue-light); transform: translateY(-1px); box-shadow: 0 4px 24px var(--blue-glow); }
+
+    /* ─── MAIN LAYOUT ─── */
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    /* ─── HERO BANNER ─── */
+    .hero {
+      background: linear-gradient(135deg, #0d1a3a 0%, #0a0f1e 60%, #1a0a2e 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -10%;
+      width: 50%; height: 200%;
+      background: radial-gradient(ellipse at center, rgba(37,99,235,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -30%; right: -10%;
+      width: 40%; height: 160%;
+      background: radial-gradient(ellipse at center, rgba(139,92,246,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--blue-light);
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.25);
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f0f4ff 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+    .hero p { color: var(--text-secondary); font-size: 0.95rem; max-width: 600px; }
+    .hero-meta {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1.75rem;
+      flex-wrap: wrap;
+    }
+    .hero-stat { display: flex; flex-direction: column; gap: 0.15rem; }
+    .hero-stat-val { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); }
+    .hero-stat-lbl { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+
+    /* ─── OVERALL PROGRESS ─── */
+    .progress-bar-wrap {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+    }
+    .progress-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .progress-bar-title { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .progress-bar-pct { font-size: 1.1rem; font-weight: 700; color: var(--blue-light); }
+    .progress-track {
+      width: 100%; height: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+      border-radius: 10px;
+      position: relative;
+      transition: width 1s ease;
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 20px; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+      animation: shimmer 2s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ─── SECTION HEADERS ─── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-title-icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .section-subtitle { font-size: 0.78rem; color: var(--text-secondary); }
+
+    /* ─── CARDS GRID ─── */
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    @media (max-width: 1100px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) {
+      .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 1.6rem; }
+    }
+
+    /* ─── KPI CARD ─── */
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .kpi-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-2px); }
+    .kpi-card:hover::before { opacity: 1; }
+    .kpi-card.blue::before { background: radial-gradient(ellipse at top left, var(--blue-glow) 0%, transparent 60%); }
+    .kpi-card.green::before { background: radial-gradient(ellipse at top left, var(--green-glow) 0%, transparent 60%); }
+    .kpi-card.yellow::before { background: radial-gradient(ellipse at top left, var(--yellow-glow) 0%, transparent 60%); }
+    .kpi-card.red::before { background: radial-gradient(ellipse at top left, var(--red-glow) 0%, transparent 60%); }
+    .kpi-card.purple::before { background: radial-gradient(ellipse at top left, var(--purple-glow) 0%, transparent 60%); }
+
+    .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+    .kpi-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .kpi-icon.blue { background: rgba(37,99,235,0.15); }
+    .kpi-icon.green { background: rgba(16,185,129,0.15); }
+    .kpi-icon.yellow { background: rgba(245,158,11,0.15); }
+    .kpi-icon.red { background: rgba(239,68,68,0.15); }
+    .kpi-icon.purple { background: rgba(139,92,246,0.15); }
+
+    .kpi-trend {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+    }
+    .kpi-trend.up { color: var(--green); background: var(--green-glow); }
+    .kpi-trend.down { color: var(--red); background: var(--red-glow); }
+    .kpi-trend.neutral { color: var(--yellow); background: var(--yellow-glow); }
+
+    .kpi-value { font-size: 1.8rem; font-weight: 800; color: var(--text-primary); line-height: 1; margin-bottom: 0.3rem; }
+    .kpi-label { font-size: 0.78rem; color: var(--text-secondary); font-weight: 500; }
+
+    /* ─── STEP CARDS ─── */
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .step-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-2px); }
+
+    .step-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .step-number {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .step-number.done { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+    .step-number.todo { background: rgba(37,99,235,0.1); color: var(--blue-light); border: 1px solid rgba(37,99,235,0.2); }
+    .step-number.partial { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+
+    .step-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
+    .step-subtitle { font-size: 0.76rem; color: var(--text-secondary); }
+
+    .step-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      margin-bottom: 0.85rem;
+    }
+    .step-status.done { color: var(--green); background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); }
+    .step-status.todo { color: var(--blue-light); background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); }
+    .step-status.partial { color: var(--yellow); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+
+    .step-tasks { list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
+    .step-task {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .step-task.done { color: rgba(240,244,255,0.55); }
+    .task-check {
+      width: 17px; height: 17px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+    .task-check.done { background: rgba(16,185,129,0.2); color: var(--green); }
+    .task-check.todo { background: rgba(255,255,255,0.05); color: transparent; border: 1px solid rgba(255,255,255,0.1); }
+
+    /* ─── MINI PROGRESS ─── */
+    .mini-track { background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; height: 5px; margin-top: 1rem; }
+    .mini-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+    .mini-fill.green { background: var(--green); }
+    .mini-fill.blue { background: var(--blue-light); }
+    .mini-fill.yellow { background: var(--yellow); }
+
+    /* ─── TECH STACK SECTION ─── */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+    .tech-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    .tech-item:hover { border-color: rgba(255,255,255,0.14); background: var(--bg-card-hover); }
+    .tech-emoji { font-size: 1.2rem; }
+
+    /* ─── PANEL ─── */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    /* ─── QUICK ACTIONS ─── */
+    .qa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+    .qa-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.85rem 1.1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .qa-btn:hover { border-color: var(--blue); background: rgba(37,99,235,0.08); color: var(--blue-light); transform: translateY(-2px); }
+    .qa-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .qa-btn:hover .qa-icon { background: rgba(37,99,235,0.15); }
+
+    /* ─── CREDENTIALS ─── */
+    .cred-table { width: 100%; border-collapse: collapse; }
+    .cred-table th {
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 0 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .cred-table td {
+      padding: 0.65rem 0;
+      font-size: 0.82rem;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+    .cred-table tr:last-child td { border-bottom: none; }
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: 20px;
+    }
+    .role-badge.admin { color: var(--purple); background: var(--purple-glow); border: 1px solid rgba(139,92,246,0.25); }
+    .role-badge.manager { color: var(--blue-light); background: var(--blue-glow); border: 1px solid rgba(59,130,246,0.25); }
+    .role-badge.employee { color: var(--green); background: var(--green-glow); border: 1px solid rgba(16,185,129,0.25); }
+    .mono {
+      font-family: 'Courier New', monospace;
+      background: rgba(255,255,255,0.05);
+      padding: 0.2rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.78rem;
+      color: var(--text-primary);
+    }
+
+    /* ─── ENDPOINTS TABLE ─── */
+    .ep-table { width: 100%; border-collapse: collapse; }
+    .ep-table th {
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 0 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .ep-table td {
+      padding: 0.55rem 0;
+      font-size: 0.8rem;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+    .ep-table tr:last-child td { border-bottom: none; }
+    .method {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      letter-spacing: 0.04em;
+      font-family: monospace;
+    }
+    .method.get { color: var(--green); background: rgba(16,185,129,0.1); }
+    .method.post { color: var(--blue-light); background: rgba(59,130,246,0.1); }
+    .method.put { color: var(--yellow); background: rgba(245,158,11,0.1); }
+    .method.delete { color: var(--red); background: rgba(239,68,68,0.1); }
+    .method.patch { color: var(--purple); background: rgba(139,92,246,0.1); }
+
+    /* ─── FOLDER TREE ─── */
+    .folder-tree { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.9; }
+    .folder-tree .dir { color: var(--blue-light); font-weight: 600; }
+    .folder-tree .file { color: var(--text-secondary); }
+    .folder-tree .comment { color: var(--text-muted); }
+
+    /* ─── TIMELINE ─── */
+    .timeline { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px; top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--blue), var(--purple), transparent);
+    }
+    .tl-item { display: flex; gap: 1rem; padding: 0 0 1.25rem; position: relative; }
+    .tl-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .tl-dot.done { background: rgba(16,185,129,0.2); border: 2px solid rgba(16,185,129,0.5); }
+    .tl-dot.next { background: rgba(37,99,235,0.2); border: 2px solid rgba(37,99,235,0.4); }
+    .tl-body { padding-top: 0.5rem; }
+    .tl-title { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; }
+    .tl-desc { font-size: 0.76rem; color: var(--text-secondary); }
+
+    /* ─── FOOTER ─── */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      margin-top: 1rem;
+    }
+    .footer-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .footer-text { font-size: 0.78rem; color: var(--text-muted); }
+    .footer-links { display: flex; gap: 1rem; }
+    .footer-link {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-link:hover { color: var(--blue-light); }
+
+    /* ─── TABS ─── */
+    .tab-bar { display: flex; gap: 0.25rem; padding: 0.35rem; background: rgba(255,255,255,0.04); border-radius: 10px; margin-bottom: 1.25rem; width: fit-content; }
+    .tab-btn {
+      padding: 0.4rem 1rem;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* ─── ANIMATE IN ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.5s ease forwards; }
+    .fade-up:nth-child(1) { animation-delay: 0s; }
+    .fade-up:nth-child(2) { animation-delay: 0.06s; }
+    .fade-up:nth-child(3) { animation-delay: 0.12s; }
+    .fade-up:nth-child(4) { animation-delay: 0.18s; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">🏢</div>
+      <div>
+        <div class="logo-text">WorkForce Manager</div>
+        <div class="logo-sub">Project Dashboard v1.0</div>
+      </div>
+    </a>
+    <nav class="nav-pills">
+      <button class="nav-pill active" onclick="scrollToId('overview')">Tổng quan</button>
+      <button class="nav-pill" onclick="scrollToId('progress')">Tiến độ</button>
+      <button class="nav-pill" onclick="scrollToId('tech')">Tech Stack</button>
+      <button class="nav-pill" onclick="scrollToId('api')">API</button>
+      <button class="nav-pill" onclick="scrollToId('guide')">Hướng dẫn</button>
+    </nav>
+    <div class="header-actions">
+      <div class="badge-live"><span class="dot-live"></span>Đang phát triển</div>
+      <a class="btn-launch" href="http://localhost:5174" target="_blank">🚀 Mở App</a>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO SECTION -->
+  <section id="overview" class="hero fade-up">
+    <div class="hero-content">
+      <div class="hero-badge">🏗️ HRM · ERP · Project Management</div>
+      <h1>WorkForce Manager</h1>
+      <p>Hệ thống quản lý nhân sự, công việc và tiến độ dự án hiện đại dành cho doanh nghiệp xây dựng, kỹ thuật và phần mềm. Clean Architecture · CQRS · Realtime SignalR.</p>
+      <div class="hero-meta">
+        <div class="hero-stat">
+          <span class="hero-stat-val" style="color:#10b981">10/13</span>
+          <span class="hero-stat-lbl">Bước hoàn thành</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-val" style="color:#3b82f6">77%</span>
+          <span class="hero-stat-lbl">Tiến độ tổng thể</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-val">10+</span>
+          <span class="hero-stat-lbl">Modules chức năng</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-val">3</span>
+          <span class="hero-stat-lbl">Vai trò người dùng</span>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-header">
+          <span class="progress-bar-title">🎯 Tiến độ tổng thể dự án</span>
+          <span class="progress-bar-pct">77%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:77%"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI CARDS -->
+  <div class="grid-4">
+    <div class="kpi-card blue fade-up">
+      <div class="kpi-top">
+        <div class="kpi-icon blue">👥</div>
+        <span class="kpi-trend up">✓ Done</span>
+      </div>
+      <div class="kpi-value">5+</div>
+      <div class="kpi-label">Nhân viên demo</div>
+    </div>
+    <div class="kpi-card green fade-up">
+      <div class="kpi-top">
+        <div class="kpi-icon green">✅</div>
+        <span class="kpi-trend up">+10 bước</span>
+      </div>
+      <div class="kpi-value">10</div>
+      <div class="kpi-label">Bước đã hoàn thành</div>
+    </div>
+    <div class="kpi-card yellow fade-up">
+      <div class="kpi-top">
+        <div class="kpi-icon yellow">🔧</div>
+        <span class="kpi-trend neutral">3 bước</span>
+      </div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-label">Bước tiếp theo (11-13)</div>
+    </div>
+    <div class="kpi-card purple fade-up">
+      <div class="kpi-top">
+        <div class="kpi-icon purple">📦</div>
+        <span class="kpi-trend up">Ready</span>
+      </div>
+      <div class="kpi-value">Docker</div>
+      <div class="kpi-label">Container & CI/CD</div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="panel fade-up">
+    <div class="section-header">
+      <span class="section-title">
+        <span class="section-title-icon" style="background:rgba(37,99,235,0.12);">⚡</span>
+        Truy cập nhanh
+      </span>
+    </div>
+    <div class="qa-grid">
+      <a class="qa-btn" href="http://localhost:5174" target="_blank">
+        <span class="qa-icon" style="background:rgba(37,99,235,0.12);">🌐</span> Mở Frontend App
+      </a>
+      <a class="qa-btn" href="http://localhost:5244/swagger" target="_blank">
+        <span class="qa-icon" style="background:rgba(16,185,129,0.12);">📘</span> Swagger API Docs
+      </a>
+      <a class="qa-btn" href="http://localhost:5174/dashboard" target="_blank">
+        <span class="qa-icon" style="background:rgba(139,92,246,0.12);">📊</span> Dashboard
+      </a>
+      <a class="qa-btn" href="http://localhost:5174/employees" target="_blank">
+        <span class="qa-icon" style="background:rgba(245,158,11,0.12);">👤</span> Quản lý nhân viên
+      </a>
+      <a class="qa-btn" href="http://localhost:5174/tasks" target="_blank">
+        <span class="qa-icon" style="background:rgba(6,182,212,0.12);">✔️</span> Quản lý công việc
+      </a>
+      <a class="qa-btn" href="http://localhost:5174/attendance" target="_blank">
+        <span class="qa-icon" style="background:rgba(239,68,68,0.12);">📍</span> Chấm công
+      </a>
+      <a class="qa-btn" href="http://localhost:5174/leave" target="_blank">
+        <span class="qa-icon" style="background:rgba(16,185,129,0.12);">🗓️</span> Nghỉ phép
+      </a>
+      <a class="qa-btn" href="http://localhost:5174/reports" target="_blank">
+        <span class="qa-icon" style="background:rgba(37,99,235,0.12);">📈</span> Báo cáo
+      </a>
+    </div>
+  </div>
+
+  <!-- PROGRESS STEPS -->
+  <div id="progress">
+    <div class="section-header">
+      <span class="section-title">
+        <span class="section-title-icon" style="background:rgba(16,185,129,0.12);">📋</span>
+        Tiến độ Thực hiện (13 Bước)
+      </span>
+      <span class="section-subtitle">10 hoàn thành · 3 đang chờ</span>
+    </div>
+
+    <!-- Completed Steps -->
+    <div style="margin-bottom:0.75rem;">
+      <div style="font-size:0.75rem;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem;">
+        ✅ Đã hoàn thành (Bước 1–10)
+      </div>
+      <div class="grid-3" style="margin-bottom:1rem;">
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">1-2</div>
+            <div>
+              <div class="step-title">Nền tảng Backend + Database</div>
+              <div class="step-subtitle">Clean Architecture · EF Core · SQL Server</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>Clean Architecture 4-layer solution</li>
+            <li class="step-task done"><span class="task-check done">✓</span>CQRS + MediatR + Repository Pattern</li>
+            <li class="step-task done"><span class="task-check done">✓</span>11 Entity, migration InitialCreate</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Seed data (5 phòng ban, 5 nhân viên)</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">3</div>
+            <div>
+              <div class="step-title">Authentication & Authorization</div>
+              <div class="step-subtitle">JWT · Refresh Token · RBAC</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>JWT access 15 phút + refresh token</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Rate limit /auth/*, role policies</li>
+            <li class="step-task done"><span class="task-check done">✓</span>AuthContext + ProtectedRoute</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Login/logout/refresh test pass</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">4</div>
+            <div>
+              <div class="step-title">Employee & Department</div>
+              <div class="step-subtitle">CRUD · Phân trang · Tìm kiếm</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>CRUD đầy đủ + phân trang/lọc</li>
+            <li class="step-task done"><span class="task-check done">✓</span>React Query (gỡ toàn bộ mock)</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Filter phòng ban, 403 khi không phép</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">5</div>
+            <div>
+              <div class="step-title">Project & Task Management</div>
+              <div class="step-subtitle">Kanban · Calendar · Gantt</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>CRUD dự án + gán/xoá thành viên</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Kanban kéo-thả lưu DB</li>
+            <li class="step-task done"><span class="task-check done">✓</span>4 views: List/Kanban/Calendar/Gantt</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">6</div>
+            <div>
+              <div class="step-title">Attendance & Leave</div>
+              <div class="step-subtitle">Check-in/out · Workflow duyệt phép</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>Check-in/out tính giờ làm</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Employee → Manager → HR approval</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Đã kết nối backend + frontend thật</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">7</div>
+            <div>
+              <div class="step-title">Dashboard & Reports</div>
+              <div class="step-subtitle">KPI · Charts · Export Excel/PDF</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>KPI Cards + WeeklyProgressChart</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Export Excel UTF-8 BOM + PDF</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Skeleton Loading + Premium UI</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">8</div>
+            <div>
+              <div class="step-title">Realtime Notifications</div>
+              <div class="step-subtitle">SignalR · Toast UI · HTML5</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>SignalR Hub + NotificationService</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Toast UI + HTML5 Notification</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Kết nối frontend useSignalR hook</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">9</div>
+            <div>
+              <div class="step-title">Testing</div>
+              <div class="step-subtitle">xUnit (Backend) · Vitest (Frontend)</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>xUnit unit + integration tests</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Vitest + React Testing Library</li>
+            <li class="step-task done"><span class="task-check done">✓</span>100% pass, 0 errors</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number done">10</div>
+            <div>
+              <div class="step-title">Deployment</div>
+              <div class="step-subtitle">Docker · docker-compose · GitHub Actions</div>
+            </div>
+          </div>
+          <span class="step-status done">✅ Hoàn thành & Verified</span>
+          <ul class="step-tasks">
+            <li class="step-task done"><span class="task-check done">✓</span>Dockerfile + docker-compose.yml</li>
+            <li class="step-task done"><span class="task-check done">✓</span>GitHub Actions CI/CD</li>
+            <li class="step-task done"><span class="task-check done">✓</span>Production-ready container</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill green" style="width:100%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Steps -->
+    <div>
+      <div style="font-size:0.75rem;font-weight:600;color:var(--blue-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">
+        🔧 Bước tiếp theo (11–13 — HRM Nâng cao)
+      </div>
+      <div class="grid-3">
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number todo">11</div>
+            <div>
+              <div class="step-title">Ca làm việc & Overtime</div>
+              <div class="step-subtitle">WorkShift · EmployeeShift · OvertimeRequest</div>
+            </div>
+          </div>
+          <span class="step-status todo">⏳ Chưa bắt đầu</span>
+          <ul class="step-tasks">
+            <li class="step-task"><span class="task-check todo"></span>Tạo entity WorkShift, EmployeeShift, OT</li>
+            <li class="step-task"><span class="task-check todo"></span>API quản lý ca + đăng ký/duyệt OT</li>
+            <li class="step-task"><span class="task-check todo"></span>UI phân ca, xem lịch và đăng ký OT</li>
+            <li class="step-task"><span class="task-check todo"></span>Kiểm soát check-in theo IP/GPS</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill blue" style="width:0%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number todo">12</div>
+            <div>
+              <div class="step-title">Hợp đồng & Tính lương</div>
+              <div class="step-subtitle">LaborContract · Payroll · Payslip</div>
+            </div>
+          </div>
+          <span class="step-status todo">⏳ Chưa bắt đầu</span>
+          <ul class="step-tasks">
+            <li class="step-task"><span class="task-check todo"></span>Entity hợp đồng lao động</li>
+            <li class="step-task"><span class="task-check todo"></span>Logic tính lương BHXH, thuế TNCN</li>
+            <li class="step-task"><span class="task-check todo"></span>Tổng hợp bảng công → tính lương tháng</li>
+            <li class="step-task"><span class="task-check todo"></span>Xuất phiếu lương PDF, gửi email</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill blue" style="width:0%"></div></div>
+        </div>
+
+        <div class="step-card fade-up">
+          <div class="step-header">
+            <div class="step-number todo">13</div>
+            <div>
+              <div class="step-title">Đánh giá hiệu suất & OKRs</div>
+              <div class="step-subtitle">KPI · OKRs · 360-degree Review</div>
+            </div>
+          </div>
+          <span class="step-status todo">⏳ Chưa bắt đầu</span>
+          <ul class="step-tasks">
+            <li class="step-task"><span class="task-check todo"></span>Objective & KeyResult entities</li>
+            <li class="step-task"><span class="task-check todo"></span>API cập nhật tiến độ OKRs</li>
+            <li class="step-task"><span class="task-check todo"></span>Biểu mẫu đánh giá 360°</li>
+            <li class="step-task"><span class="task-check todo"></span>Quản lý đào tạo + chứng chỉ</li>
+          </ul>
+          <div class="mini-track"><div class="mini-fill blue" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div id="tech" class="panel fade-up">
+    <div class="section-header">
+      <span class="section-title">
+        <span class="section-title-icon" style="background:rgba(139,92,246,0.12);">⚙️</span>
+        Tech Stack
+      </span>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;">Frontend</div>
+      <div class="tech-grid">
+        <div class="tech-item"><span class="tech-emoji">⚛️</span>React 18</div>
+        <div class="tech-item"><span class="tech-emoji">⚡</span>Vite</div>
+        <div class="tech-item"><span class="tech-emoji">📘</span>TypeScript</div>
+        <div class="tech-item"><span class="tech-emoji">🎨</span>Tailwind CSS</div>
+        <div class="tech-item"><span class="tech-emoji">🧩</span>Shadcn/UI</div>
+        <div class="tech-item"><span class="tech-emoji">🔍</span>React Query</div>
+        <div class="tech-item"><span class="tech-emoji">📡</span>SignalR Client</div>
+        <div class="tech-item"><span class="tech-emoji">🧪</span>Vitest</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;">Backend</div>
+      <div class="tech-grid">
+        <div class="tech-item"><span class="tech-emoji">🏗️</span>ASP.NET Core 9</div>
+        <div class="tech-item"><span class="tech-emoji">🔷</span>C# 13</div>
+        <div class="tech-item"><span class="tech-emoji">📋</span>MediatR CQRS</div>
+        <div class="tech-item"><span class="tech-emoji">🗄️</span>EF Core 9</div>
+        <div class="tech-item"><span class="tech-emoji">🔒</span>JWT Auth</div>
+        <div class="tech-item"><span class="tech-emoji">📡</span>SignalR</div>
+        <div class="tech-item"><span class="tech-emoji">✅</span>xUnit</div>
+        <div class="tech-item"><span class="tech-emoji">📄</span>Swagger</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;">Infrastructure</div>
+      <div class="tech-grid">
+        <div class="tech-item"><span class="tech-emoji">🗃️</span>SQL Server</div>
+        <div class="tech-item"><span class="tech-emoji">🐳</span>Docker</div>
+        <div class="tech-item"><span class="tech-emoji">🔄</span>GitHub Actions</div>
+        <div class="tech-item"><span class="tech-emoji">🌐</span>Nginx</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API ENDPOINTS -->
+  <div id="api" class="panel fade-up">
+    <div class="section-header">
+      <span class="section-title">
+        <span class="section-title-icon" style="background:rgba(6,182,212,0.12);">📘</span>
+        API Endpoints chính
+      </span>
+      <a href="http://localhost:5244/swagger" target="_blank" class="btn-launch" style="font-size:0.75rem;padding:0.3rem 0.8rem;">Swagger UI ↗</a>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab(event,'auth')">Auth</button>
+      <button class="tab-btn" onclick="switchTab(event,'emp')">Nhân viên</button>
+      <button class="tab-btn" onclick="switchTab(event,'task')">Công việc</button>
+      <button class="tab-btn" onclick="switchTab(event,'attend')">Chấm công</button>
+      <button class="tab-btn" onclick="switchTab(event,'leave')">Nghỉ phép</button>
+    </div>
+
+    <div id="tab-auth" class="tab-content active">
+      <table class="ep-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/auth/login</span></td><td>Đăng nhập lấy JWT token</td></tr>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/auth/refresh</span></td><td>Làm mới access token</td></tr>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/auth/logout</span></td><td>Đăng xuất + revoke token</td></tr>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/auth/me</span></td><td>Thông tin người dùng hiện tại</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="tab-emp" class="tab-content">
+      <table class="ep-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/employees</span></td><td>Danh sách nhân viên (phân trang)</td></tr>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/employees/{id}</span></td><td>Chi tiết nhân viên</td></tr>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/employees</span></td><td>Thêm nhân viên mới</td></tr>
+          <tr><td><span class="method put">PUT</span></td><td><span class="mono">/api/employees/{id}</span></td><td>Cập nhật thông tin</td></tr>
+          <tr><td><span class="method delete">DEL</span></td><td><span class="mono">/api/employees/{id}</span></td><td>Xoá mềm nhân viên</td></tr>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/departments</span></td><td>Danh sách phòng ban</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="tab-task" class="tab-content">
+      <table class="ep-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/tasks</span></td><td>Danh sách công việc</td></tr>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/tasks</span></td><td>Tạo công việc mới</td></tr>
+          <tr><td><span class="method patch">PATCH</span></td><td><span class="mono">/api/tasks/{id}/status</span></td><td>Cập nhật trạng thái (Kanban)</td></tr>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/projects</span></td><td>Danh sách dự án</td></tr>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/projects/{id}/members</span></td><td>Gán thành viên vào dự án</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="tab-attend" class="tab-content">
+      <table class="ep-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/attendances/check-in</span></td><td>Check-in đầu ngày</td></tr>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/attendances/check-out</span></td><td>Check-out cuối ngày</td></tr>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/attendances</span></td><td>Lịch sử chấm công</td></tr>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/reports/attendance</span></td><td>Báo cáo chấm công</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="tab-leave" class="tab-content">
+      <table class="ep-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method get">GET</span></td><td><span class="mono">/api/leave-requests</span></td><td>Danh sách đơn nghỉ phép</td></tr>
+          <tr><td><span class="method post">POST</span></td><td><span class="mono">/api/leave-requests</span></td><td>Gửi đơn xin nghỉ</td></tr>
+          <tr><td><span class="method put">PUT</span></td><td><span class="mono">/api/leave-requests/{id}/approve</span></td><td>Manager/HR duyệt đơn</td></tr>
+          <tr><td><span class="method put">PUT</span></td><td><span class="mono">/api/leave-requests/{id}/reject</span></td><td>Từ chối đơn nghỉ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GUIDE SECTION -->
+  <div id="guide" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+    <!-- Credentials -->
+    <div class="panel fade-up">
+      <div class="section-title" style="margin-bottom:1rem;">
+        <span class="section-title-icon" style="background:rgba(245,158,11,0.12);">🔑</span>
+        Tài khoản demo
+      </div>
+      <table class="cred-table">
+        <thead>
+          <tr>
+            <th>Vai trò</th>
+            <th>Username</th>
+            <th>Password</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="role-badge admin">👑 Super Admin</span></td>
+            <td><span class="mono">admin</span></td>
+            <td><span class="mono">Admin@123</span></td>
+          </tr>
+          <tr>
+            <td><span class="role-badge manager">🎯 Manager</span></td>
+            <td><span class="mono">manager</span></td>
+            <td><span class="mono">Manager@123</span></td>
+          </tr>
+          <tr>
+            <td><span class="role-badge employee">👤 Employee</span></td>
+            <td><span class="mono">employee</span></td>
+            <td><span class="mono">Employee@123</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- How to Run -->
+    <div class="panel fade-up">
+      <div class="section-title" style="margin-bottom:1rem;">
+        <span class="section-title-icon" style="background:rgba(16,185,129,0.12);">🚀</span>
+        Cách khởi động dự án
+      </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot done">1</div>
+          <div class="tl-body">
+            <div class="tl-title">Khởi động Backend API</div>
+            <div class="tl-desc"><span class="mono">dotnet run --project backend/src/WorkForceManager.WebApi</span><br/>→ Swagger: <span class="mono">localhost:5244/swagger</span></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done">2</div>
+          <div class="tl-body">
+            <div class="tl-title">Khởi động Frontend</div>
+            <div class="tl-desc"><span class="mono">cd frontend && npm run dev</span><br/>→ App: <span class="mono">localhost:5174</span></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done">3</div>
+          <div class="tl-body">
+            <div class="tl-title">Hoặc chạy với Docker</div>
+            <div class="tl-desc"><span class="mono">docker-compose up -d</span><br/>→ Tất cả services khởi động tự động</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot next">4</div>
+          <div class="tl-body">
+            <div class="tl-title">Đăng nhập và kiểm tra</div>
+            <div class="tl-desc">Dùng tài khoản demo bên trái để đăng nhập và kiểm tra từng module.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROJECT STRUCTURE -->
+  <div class="panel fade-up">
+    <div class="section-title" style="margin-bottom:1.25rem;">
+      <span class="section-title-icon" style="background:rgba(37,99,235,0.12);">📁</span>
+      Cấu trúc thư mục dự án
+    </div>
+    <div class="folder-tree">
+      <div><span class="dir">📁 08- QL NhanSu/</span> <span class="comment">— Root workspace</span></div>
+      <div>&nbsp;&nbsp;├── <span class="dir">📁 backend/</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="dir">📁 src/</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">📦 WorkForceManager.Domain/</span> <span class="comment">— Entities, Interfaces</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">📦 WorkForceManager.Application/</span> <span class="comment">— CQRS Handlers, DTOs</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">📦 WorkForceManager.Infrastructure/</span> <span class="comment">— EF Core, Repos, SignalR</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="dir">📦 WorkForceManager.WebApi/</span> <span class="comment">— Controllers, Program.cs</span></div>
+      <div>&nbsp;&nbsp;├── <span class="dir">📁 frontend/</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="dir">📁 src/</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">📁 features/</span> <span class="comment">— auth, employees, tasks, attendance, leave, reports...</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">📁 components/ui/</span> <span class="comment">— Shadcn/UI components</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">📁 layouts/</span> <span class="comment">— Header, Sidebar, AppShell</span></div>
+      <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="dir">📁 hooks/</span> <span class="comment">— useSignalR, useToast...</span></div>
+      <div>&nbsp;&nbsp;├── <span class="dir">📁 docs/</span> <span class="comment">— ERD, Architecture diagrams</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">🐳 docker-compose.yml</span></div>
+      <div>&nbsp;&nbsp;├── <span class="file">📋 CLAUDE.md</span> <span class="comment">— Project spec & rules</span></div>
+      <div>&nbsp;&nbsp;└── <span class="file">📊 PROJECT-DASHBOARD.html</span> <span class="comment">← File này</span></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="footer-text">© 2026 WorkForce Manager · Built with ❤️ · Clean Architecture + CQRS</span>
+    <div class="footer-links">
+      <a class="footer-link" href="http://localhost:5174" target="_blank">🌐 App</a>
+      <a class="footer-link" href="http://localhost:5244/swagger" target="_blank">📘 API</a>
+      <a class="footer-link" href="http://localhost:5174/dashboard" target="_blank">📊 Dashboard</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Tab switching
+  function switchTab(event, tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+  }
+
+  // Smooth scroll to section
+  function scrollToId(id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  // Animate progress bars on load
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.querySelectorAll('.mini-fill, .progress-fill').forEach(el => {
+        const w = el.style.width;
+        el.style.width = '0';
+        setTimeout(() => { el.style.width = w; }, 50);
+      });
+    }, 200);
+  });
+
+  // Update last modified timestamp
+  document.addEventListener('DOMContentLoaded', () => {
+    const now = new Date().toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' });
+    const footer = document.querySelector('.footer-text');
+    if (footer) footer.textContent += ' · Mở lúc: ' + now;
+  });
+</script>
+</body>
+</html>
