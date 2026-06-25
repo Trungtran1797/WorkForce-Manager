@@ -112,10 +112,10 @@ function AttachmentRow({
   attachment: ProjectAttachment | TaskAttachment
   onDownload: () => void
 }) {
-  const Icon = getFileIcon(attachment.fileName)
+  const FileIcon = getFileIcon(attachment.fileName)
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-2 py-1.5 text-xs">
-      <Icon className="size-4 shrink-0 text-muted-foreground" />
+      <FileIcon className="size-4 shrink-0 text-muted-foreground" />
       <span className="max-w-[200px] truncate">{attachment.fileName}</span>
       <span className="text-muted-foreground">{formatFileSize(attachment.fileSizeBytes)}</span>
       <button

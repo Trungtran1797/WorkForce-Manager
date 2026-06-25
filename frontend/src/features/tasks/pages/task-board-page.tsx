@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus, Search } from 'lucide-react'
 
@@ -40,12 +40,12 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
 export function TaskBoardPage() {
   const { user } = useAuth()
   const canEdit = useCanEdit('Tasks')
-  const { data: serverTasks = [], isLoading, isError, refetch } = useTasks()
+  const { data: serverTasksData, isLoading, isError, refetch } = useTasks()
+  const serverTasks = useMemo(() => serverTasksData ?? [], [serverTasksData])
   const updateStatus = useUpdateTaskStatus()
   const createTask = useCreateTask()
 
   const [searchParams] = useSearchParams()
-  const [tasks, setTasks] = useState<Task[]>([])
   const [search, setSearch] = useState(searchParams.get('search') ?? '')
   const [myTasksOnly, setMyTasksOnly] = useState(false)
   const [projectFilter, setProjectFilter] = useState('')
@@ -53,15 +53,11 @@ export function TaskBoardPage() {
   const [monthFilter, setMonthFilter] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  useEffect(() => {
-    setTasks(serverTasks)
-  }, [serverTasks])
-
   const filteredTasks = useMemo(() => {
     const term = search.trim().toLowerCase()
     const projectTerm = projectFilter.trim().toLowerCase()
 
-    return tasks.filter((task) => {
+    return serverTasks.filter((task) => {
       if (term && !task.code.toLowerCase().includes(term) && !task.title.toLowerCase().includes(term)) {
         return false
       }
@@ -88,15 +84,13 @@ export function TaskBoardPage() {
 
       return true
     })
-  }, [tasks, search, myTasksOnly, projectFilter, statusFilter, monthFilter, user])
+  }, [serverTasks, search, myTasksOnly, projectFilter, statusFilter, monthFilter, user])
 
   const handleStatusChange = (taskId: number, status: TaskStatus): void => {
     updateStatus.mutate({ id: taskId, status })
   }
 
-  const handleKanbanTasksChange = (updated: Task[]): void => {
-    setTasks((prev) => prev.map((task) => updated.find((item) => item.id === task.id) ?? task))
-  }
+  const handleKanbanTasksChange = (_tasks: Task[]): void => { /* React Query refetches after status change */ }
 
   const handleCreate = async (values: TaskFormValues): Promise<void> => {
     await createTask.mutateAsync(values)

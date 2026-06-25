@@ -171,14 +171,18 @@ export function DashboardPage() {
     refetch: refetchActivities,
   } = useRecentActivities()
 
-  const { data: myTasks = [], isLoading: myTasksLoading } = useTasks(
-    user?.employeeId ? { assigneeId: user.employeeId } : {}
+  const taskFilter = useMemo(
+    () => (user?.employeeId != null ? { assigneeId: user.employeeId } : {}),
+    [user]
   )
-  const { data: myLeaveRequests = [], isLoading: myLeaveLoading } = useMyLeaveRequests()
+  const { data: myTasksData, isLoading: myTasksLoading } = useTasks(taskFilter)
+  const myTasks = useMemo(() => myTasksData ?? [], [myTasksData])
+  const { data: myLeaveRequestsData, isLoading: myLeaveLoading } = useMyLeaveRequests()
+  const myLeaveRequests = useMemo(() => myLeaveRequestsData ?? [], [myLeaveRequestsData])
 
   const [agendaMonth, setAgendaMonth] = useState(() => new Date())
 
-  const today = startOfDay(new Date())
+  const today = useMemo(() => startOfDay(new Date()), [])
 
   const monthAgendaItems = useMemo(
     () =>
