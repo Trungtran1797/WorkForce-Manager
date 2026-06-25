@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -23,7 +23,18 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { apiClient } from '@/lib/api-client'
 import type { OvertimeFormValues } from '@/features/overtime/types'
+
+interface ProjectOption { id: number; name: string }
+interface TaskOption { id: number; title: string }
 
 const overtimeFormSchema = z
   .object({
@@ -31,6 +42,8 @@ const overtimeFormSchema = z
     startTime: z.string().min(1, 'Vui lòng nhập giờ bắt đầu'),
     endTime: z.string().min(1, 'Vui lòng nhập giờ kết thúc'),
     reason: z.string().min(1, 'Vui lòng nhập lý do'),
+    projectId: z.string(),
+    taskId: z.string(),
   })
   .refine((data) => data.endTime > data.startTime, {
     message: 'Giờ kết thúc phải sau giờ bắt đầu',
@@ -42,6 +55,8 @@ const DEFAULT_VALUES: OvertimeFormValues = {
   startTime: '18:00',
   endTime: '20:00',
   reason: '',
+  projectId: '',
+  taskId: '',
 }
 
 interface OvertimeRequestDialogProps {
@@ -52,10 +67,30 @@ interface OvertimeRequestDialogProps {
 
 export function OvertimeRequestDialog({ open, onOpenChange, onSubmit }: OvertimeRequestDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [tasks, setTasks] = useState<TaskOption[]>([])
+
   const form = useForm<OvertimeFormValues>({
     resolver: zodResolver(overtimeFormSchema),
     defaultValues: DEFAULT_VALUES,
   })
+
+  const selectedProjectId = form.watch('projectId')
+
+  useEffect(() => {
+    if (!open) return
+    apiClient.get<ProjectOption[]>('/projects')
+      .then((data) => setProjects(Array.isArray(data) ? data : []))
+      .catch(() => setProjects([]))
+  }, [open])
+
+  useEffect(() => {
+    form.setValue('taskId', '')
+    if (!selectedProjectId) { setTasks([]); return }
+    apiClient.get<TaskOption[]>(`/tasks?projectId=${selectedProjectId}`)
+      .then((data) => setTasks(Array.isArray(data) ? data : []))
+      .catch(() => setTasks([]))
+  }, [selectedProjectId, form])
 
   const handleSubmit = async (values: OvertimeFormValues): Promise<void> => {
     setIsSubmitting(true)
@@ -125,6 +160,66 @@ export function OvertimeRequestDialog({ open, onOpenChange, onSubmit }: Overtime
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="projectId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dự án</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn dự án (không bắt buộc)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {projects.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="taskId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Công việc</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!selectedProjectId || tasks.length === 0}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          !selectedProjectId
+                            ? 'Chọn dự án trước'
+                            : tasks.length === 0
+                            ? 'Không có công việc'
+                            : 'Chọn công việc (không bắt buộc)'
+                        } />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tasks.map((t) => (
+                        <SelectItem key={t.id} value={String(t.id)}>
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

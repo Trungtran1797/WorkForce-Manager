@@ -18,6 +18,9 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { logStatusChange, logProgressChange, logTaskEdit } from '@/features/tasks/lib/activity-log'
+import { canEditTask } from '@/features/tasks/lib/permissions'
+import { useAuth } from '@/features/auth/context/auth-context'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import type { Task, TaskFormValues } from '@/features/tasks/types'
 import type { TaskStatus } from '@/types/common'
 
@@ -30,6 +33,8 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogProps) {
+  const { user } = useAuth()
+  const canEditTasksModule = useCanEdit('Tasks')
   const updateTask = useUpdateTask()
   const deleteTask = useDeleteTask()
   const updateTaskStatus = useUpdateTaskStatus()
@@ -46,6 +51,8 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
   }, [task?.id])
 
   if (!task) return null
+
+  const canEdit = canEditTasksModule || canEditTask(task, user)
 
   const displayProgress = override?.progress ?? task.progress
   const displayStatus = override?.status ?? task.status
@@ -134,14 +141,16 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
                 <TaskStatusBadge status={displayStatus} />
                 <TaskPriorityBadge priority={task.priority} />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-                  Sửa
-                </Button>
-                <Button size="sm" variant="destructive" onClick={handleDelete} disabled={deleteTask.isPending}>
-                  {deleteTask.isPending ? 'Đang xóa...' : 'Xóa'}
-                </Button>
-              </div>
+              {canEdit && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                    Sửa
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={handleDelete} disabled={deleteTask.isPending}>
+                    {deleteTask.isPending ? 'Đang xóa...' : 'Xóa'}
+                  </Button>
+                </div>
+              )}
             </div>
           </DialogHeader>
 
@@ -176,7 +185,7 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
                 <Select
                   value={displayStatus}
                   onValueChange={(val) => void handleStatusChange(val as TaskStatus)}
-                  disabled={updateTaskStatus.isPending}
+                  disabled={!canEdit || updateTaskStatus.isPending}
                 >
                   <SelectTrigger className="h-8 w-[160px] mt-1">
                     <SelectValue />
@@ -211,7 +220,7 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
                       <button
                         key={preset}
                         type="button"
-                        disabled={updateTaskStatus.isPending}
+                        disabled={!canEdit || updateTaskStatus.isPending}
                         onClick={() => void handleProgressPreset(preset)}
                         className={cn(
                           'h-7 min-w-[2.75rem] rounded-md border px-2 text-xs font-semibold transition-all',
@@ -221,7 +230,7 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
                               ? 'border-success bg-success/20 text-success'
                               : 'border-primary bg-primary/15 text-primary'
                             : 'border-border bg-muted/40 text-muted-foreground hover:border-primary/60 hover:text-primary',
-                          updateTaskStatus.isPending && 'opacity-50 cursor-not-allowed'
+                          (!canEdit || updateTaskStatus.isPending) && 'opacity-50 cursor-not-allowed'
                         )}
                         aria-pressed={isActive}
                         aria-label={`Đặt tiến độ ${preset}%`}

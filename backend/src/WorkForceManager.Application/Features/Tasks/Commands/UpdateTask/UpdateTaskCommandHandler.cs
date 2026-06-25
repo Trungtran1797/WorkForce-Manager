@@ -10,10 +10,12 @@ namespace WorkForceManager.Application.Features.Tasks.Commands.UpdateTask;
 public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateTaskCommandHandler(IApplicationDbContext context)
+    public UpdateTaskCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<TaskDto> Handle(UpdateTaskCommand request, CancellationToken cancellationToken)
@@ -21,6 +23,11 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         var task = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException("Công việc", request.Id);
+
+        if (!TaskPermission.CanEdit(task, _currentUserService))
+        {
+            throw new ForbiddenAccessException("Bạn không có quyền chỉnh sửa công việc này.");
+        }
 
         var oldParentTaskId = task.ParentTaskId;
 

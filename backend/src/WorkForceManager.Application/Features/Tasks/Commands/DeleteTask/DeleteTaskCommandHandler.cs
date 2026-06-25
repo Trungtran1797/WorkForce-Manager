@@ -9,10 +9,12 @@ namespace WorkForceManager.Application.Features.Tasks.Commands.DeleteTask;
 public class DeleteTaskCommandHandler : IRequestHandler<DeleteTaskCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public DeleteTaskCommandHandler(IApplicationDbContext context)
+    public DeleteTaskCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Unit> Handle(DeleteTaskCommand request, CancellationToken cancellationToken)
@@ -20,6 +22,11 @@ public class DeleteTaskCommandHandler : IRequestHandler<DeleteTaskCommand, Unit>
         var task = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException("Công việc", request.Id);
+
+        if (!TaskPermission.CanEdit(task, _currentUserService))
+        {
+            throw new ForbiddenAccessException("Bạn không có quyền xóa công việc này.");
+        }
 
         // Retrieve all descendant tasks (subtasks of any depth)
         var allDescendantTasks = new List<WorkForceManager.Domain.Entities.TaskItem>();

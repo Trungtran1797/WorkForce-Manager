@@ -39,7 +39,13 @@ public class DeleteProjectAttachmentCommandHandler : IRequestHandler<DeleteProje
             throw new ForbiddenAccessException("Bạn không có quyền xóa file đính kèm này.");
         }
 
-        var subFolder = $"{SubFolderPrefix}/{request.ProjectId}";
+        var projectCode = await _context.Projects
+            .AsNoTracking()
+            .Where(p => p.Id == request.ProjectId)
+            .Select(p => p.Code)
+            .FirstOrDefaultAsync(cancellationToken) ?? request.ProjectId.ToString();
+
+        var subFolder = $"{SubFolderPrefix}/{projectCode}";
         _fileStorageService.DeleteFile(attachment.StoredFileName, subFolder);
 
         _context.ProjectAttachments.Remove(attachment);

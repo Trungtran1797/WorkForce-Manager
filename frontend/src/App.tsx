@@ -28,6 +28,8 @@ import { OkrsPage } from '@/features/okrs/pages/okrs-page'
 import { PerformancePage } from '@/features/performance/pages/performance-page'
 import { TrainingPage } from '@/features/training/pages/training-page'
 import { NotificationsPage } from '@/features/notifications/pages/notifications-page'
+import { PermissionMatrixPage } from '@/features/permissions/pages/permission-matrix-page'
+import { SystemSettingsPage } from '@/features/settings/pages/system-settings-page'
 
 function App() {
   return (
@@ -60,6 +62,13 @@ function App() {
                   <Route path="/training" element={<TrainingPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
+                </Route>
+              </Route>
+
+              <Route element={<ProtectedRoute module="PermissionMatrix" level="Edit" />}>
+                <Route element={<AppShell />}>
+                  <Route path="/settings/permissions" element={<PermissionMatrixPage />} />
+                  <Route path="/settings/system" element={<SystemSettingsPage />} />
                 </Route>
               </Route>
 

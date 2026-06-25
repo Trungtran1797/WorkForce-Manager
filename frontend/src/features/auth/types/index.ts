@@ -8,6 +8,7 @@ export interface AuthUser {
   employeeId: number | null
   departmentId: number | null
   fullName: string | null
+  permissions: Record<string, 'None' | 'View' | 'Edit'>
 }
 
 export interface AuthResponse {

@@ -11,13 +11,16 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
     private readonly IApplicationDbContext _context;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IDateTimeService _dateTime;
+    private readonly IPermissionService _permissionService;
 
     public RefreshTokenCommandHandler(
-        IApplicationDbContext context, IJwtTokenService jwtTokenService, IDateTimeService dateTime)
+        IApplicationDbContext context, IJwtTokenService jwtTokenService, IDateTimeService dateTime,
+        IPermissionService permissionService)
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
         _dateTime = dateTime;
+        _permissionService = permissionService;
     }
 
     public async Task<AuthResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -54,6 +57,10 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         });
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new AuthResponse(accessToken, newRefreshToken, expiresAt, user.ToAuthUserDto());
+        var permissions = await _permissionService.GetEffectivePermissionsAsync(
+            user.Role, user.Employee?.DepartmentId, cancellationToken);
+        var permissionsDto = permissions.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
+
+        return new AuthResponse(accessToken, newRefreshToken, expiresAt, user.ToAuthUserDto(permissionsDto));
     }
 }

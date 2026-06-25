@@ -21,13 +21,13 @@ public class GetMyOvertimeQueryHandler : IRequestHandler<GetMyOvertimeQuery, Lis
     {
         var employeeId = _currentUserService.EmployeeId;
         if (employeeId is null or 0)
-        {
-            throw new ForbiddenAccessException("Người dùng không liên kết với thông tin nhân viên.");
-        }
+            return [];
 
         var items = await _context.OvertimeRequests
             .AsNoTracking()
             .Include(o => o.Employee)
+            .Include(o => o.Project)
+            .Include(o => o.Task)
             .Where(o => o.EmployeeId == employeeId)
             .OrderByDescending(o => o.Date)
             .ThenByDescending(o => o.Id)

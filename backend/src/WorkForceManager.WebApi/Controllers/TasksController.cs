@@ -14,6 +14,8 @@ using WorkForceManager.Application.Features.Tasks.Discussions.Queries.GetTaskAtt
 using WorkForceManager.Application.Features.Tasks.Discussions.Queries.GetTaskComments;
 using WorkForceManager.Application.Features.Tasks.Queries.GetTaskById;
 using WorkForceManager.Application.Features.Tasks.Queries.GetTasks;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -22,6 +24,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class TasksController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll(
         [FromQuery] int? projectId,
         [FromQuery] int? assigneeId,
@@ -35,6 +38,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetTaskByIdQuery(id), ct);
@@ -42,6 +46,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateTaskCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -49,6 +54,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskCommand command, CancellationToken ct)
     {
         if (id != command.Id)
@@ -60,6 +66,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateTaskStatusRequest request, CancellationToken ct)
     {
         var result = await Mediator.Send(new UpdateTaskStatusCommand(id, request.Status, request.Progress), ct);
@@ -67,6 +74,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteTaskCommand(id), ct);
@@ -74,6 +82,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpGet("{id:int}/comments")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetComments(
         int id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
@@ -83,6 +92,7 @@ public class TasksController : ApiControllerBase
 
     [HttpPost("{id:int}/comments")]
     [Consumes("multipart/form-data")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> AddComment(
         int id, [FromForm] string? content, [FromForm] List<IFormFile>? files, CancellationToken ct)
     {
@@ -91,6 +101,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}/comments/{commentId:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> DeleteComment(int id, int commentId, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteTaskCommentCommand(id, commentId), ct);
@@ -98,6 +109,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> DeleteAttachment(int id, int attachmentId, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteTaskAttachmentCommand(id, attachmentId), ct);
@@ -105,6 +117,7 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpGet("{id:int}/attachments/{attachmentId:int}/download")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Tasks) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> DownloadAttachment(int id, int attachmentId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetTaskAttachmentDownloadQuery(id, attachmentId), ct);

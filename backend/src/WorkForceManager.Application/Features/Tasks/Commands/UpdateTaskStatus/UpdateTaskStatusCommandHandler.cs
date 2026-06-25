@@ -11,11 +11,16 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
 {
     private readonly IApplicationDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateTaskStatusCommandHandler(IApplicationDbContext context, INotificationService notificationService)
+    public UpdateTaskStatusCommandHandler(
+        IApplicationDbContext context,
+        INotificationService notificationService,
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _notificationService = notificationService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<TaskDto> Handle(UpdateTaskStatusCommand request, CancellationToken cancellationToken)
@@ -28,6 +33,11 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
         var task = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException("Công việc", request.Id);
+
+        if (!TaskPermission.CanEdit(task, _currentUserService))
+        {
+            throw new ForbiddenAccessException("Bạn không có quyền chỉnh sửa công việc này.");
+        }
 
         task.Status = status;
 

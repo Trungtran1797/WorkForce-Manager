@@ -8,7 +8,8 @@ using WorkForceManager.Application.Features.LeaveRequests.Common;
 using WorkForceManager.Application.Features.LeaveRequests.Queries.GetMyLeaveRequests;
 using WorkForceManager.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 using WorkForceManager.Application.Features.LeaveRequests.Queries.GetLeaveRequests;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -17,6 +18,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class LeaveRequestsController : ApiControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Leave) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateLeaveRequestCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -24,7 +26,7 @@ public class LeaveRequestsController : ApiControllerBase
     }
 
     [HttpPost("{id:int}/approve")]
-    [Authorize(Policy = AuthorizationPolicies.RequireManager)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Leave) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Approve(int id, CancellationToken ct)
     {
         var result = await Mediator.Send(new ApproveLeaveRequestCommand(id), ct);
@@ -32,7 +34,7 @@ public class LeaveRequestsController : ApiControllerBase
     }
 
     [HttpPost("{id:int}/reject")]
-    [Authorize(Policy = AuthorizationPolicies.RequireManager)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Leave) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Reject(int id, [FromBody] RejectLeaveRequestRequestDto request, CancellationToken ct)
     {
         var result = await Mediator.Send(new RejectLeaveRequestCommand(id, request.Reason), ct);
@@ -40,6 +42,7 @@ public class LeaveRequestsController : ApiControllerBase
     }
 
     [HttpGet("my")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Leave) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetMy(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMyLeaveRequestsQuery(), ct);
@@ -47,7 +50,7 @@ public class LeaveRequestsController : ApiControllerBase
     }
 
     [HttpGet("pending")]
-    [Authorize(Policy = AuthorizationPolicies.RequireManager)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Leave) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetPending(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetPendingLeaveRequestsQuery(), ct);
@@ -55,7 +58,7 @@ public class LeaveRequestsController : ApiControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.RequireManager)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Leave) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] GetLeaveRequestsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);

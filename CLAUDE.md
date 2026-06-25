@@ -380,6 +380,13 @@ Employee → Manager Approval → HR Approval → Completed
   - Thêm 6 file test mới (employee-list-page, leave-page, project-list-page, task-form-dialog, attendance-page, notifications-page) - vitest tăng từ 26 → 43 test pass (17 file).
   - *(Đã verify: `npx tsc -b` 0 lỗi, `npm run build` thành công, `npx vitest run` 43/43 pass; backend `dotnet build` 0 warning 0 error. Docker/VPS (Bước 15) chưa build/test thật do máy dev không có Docker - cần thực hiện khi deploy lên VPS thật theo `docs/huong-dan-deploy-vps.md`)*
 
+- [x] **Bước 17 — Hệ thống Phân quyền động (Dynamic Permission Matrix)**
+  - Domain: enum `PermissionLevel` (None/View/Edit) + `PermissionModule` (20 module), entity `RolePermission` + `DepartmentPermissionOverride`, migration `AddPermissionMatrix`, seed 60 dòng Role x Module (theo `docs/phan-quyen-truy-cap.md` Bảng 1) + 13 dòng override theo phòng ban (Bảng 2).
+  - Application: `IPermissionService`/`PermissionService` (IMemoryCache, effective = max(role-level, dept-override), generation-token invalidation), `Features/Permissions/` (GetPermissionMatrix, UpdatePermissionMatrix, GetMyPermissions), `AuthUserDto` bổ sung `Permissions: Dictionary<string,string>` trả về khi login/refresh/register/me.
+  - Authorization: `PermissionRequirement` + `PermissionAuthorizationHandler` + `PermissionPolicyProvider` (policy động `Permission:{Module}:{Level}`, SuperAdmin bypass), `PermissionsController` (`GET/PUT /permissions/matrix` SuperAdmin, `GET /permissions/me`). 18 controller đã đổi từ `RequireRole`/`CanManage*` sang `Permission:{Module}:View|Edit` theo từng action.
+  - Frontend: module `features/permissions/` (types, api, `usePermission`/`useCanEdit`/`useCanView`, trang `/settings/permissions` 2 tab "Theo vai trò"/"Theo phòng ban"), sidebar lọc menu theo quyền hiệu lực, `ProtectedRoute` hỗ trợ `module`/`level`, áp dụng `useCanEdit('<Module>')` ẩn nút Thêm/Sửa/Xóa cho 16 trang CRUD (Employees, Departments, Projects, Tasks, Attendance, Leave, Overtime, Shifts, OfficeLocations, Contracts, Payroll, SalaryConfigs, Okrs, Performance, Training, Reports).
+  - *(Đã hoàn thành và verify: backend `dotnet build` 0 warning, `dotnet test` 67/67 pass (+16 test mới); frontend `npx tsc -b` 0 lỗi, `npx vitest run` 51/51 pass (+8 test mới, 20 file). Không triển khai data-scope filtering (Manager chỉ thấy data phòng mình) - để làm sau theo Mục 3 docs/phan-quyen-truy-cap.md)*
+
 
 ---
 

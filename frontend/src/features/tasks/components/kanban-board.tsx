@@ -11,6 +11,9 @@ import {
 
 import { KanbanColumn } from '@/features/tasks/components/kanban-column'
 import { KanbanTaskCard } from '@/features/tasks/components/kanban-task-card'
+import { canEditTask } from '@/features/tasks/lib/permissions'
+import { useAuth } from '@/features/auth/context/auth-context'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import type { Task } from '@/features/tasks/types'
 import type { TaskStatus } from '@/types/common'
 
@@ -29,6 +32,8 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ tasks, onTasksChange, onStatusChange }: KanbanBoardProps) {
+  const { user } = useAuth()
+  const canEditTasksModule = useCanEdit('Tasks')
   const [activeTask, setActiveTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
@@ -52,7 +57,7 @@ export function KanbanBoard({ tasks, onTasksChange, onStatusChange }: KanbanBoar
 
     const activeTaskItem = tasks.find((item) => item.id === active.id)
 
-    if (!activeTaskItem) {
+    if (!activeTaskItem || !(canEditTasksModule || canEditTask(activeTaskItem, user))) {
       return
     }
 
@@ -94,6 +99,7 @@ export function KanbanBoard({ tasks, onTasksChange, onStatusChange }: KanbanBoar
             status={column.status}
             title={column.title}
             tasks={tasks.filter((task) => task.status === column.status)}
+            canEditTask={(task) => canEditTasksModule || canEditTask(task, user)}
           />
         ))}
       </div>

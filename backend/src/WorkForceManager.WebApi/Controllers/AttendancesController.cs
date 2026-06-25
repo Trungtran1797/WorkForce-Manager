@@ -6,7 +6,8 @@ using WorkForceManager.Application.Features.Attendances.Commands.CheckOut;
 using WorkForceManager.Application.Features.Attendances.Common;
 using WorkForceManager.Application.Features.Attendances.Queries.GetMyAttendance;
 using WorkForceManager.Application.Features.Attendances.Queries.GetAttendances;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -15,6 +16,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class AttendancesController : ApiControllerBase
 {
     [HttpPost("check-in")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Attendance) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> CheckIn([FromBody] CheckInRequestDto request, CancellationToken ct)
     {
         var result = await Mediator.Send(new CheckInCommand(request.Note, request.Latitude, request.Longitude), ct);
@@ -22,6 +24,7 @@ public class AttendancesController : ApiControllerBase
     }
 
     [HttpPost("check-out")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Attendance) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> CheckOut([FromBody] CheckOutRequestDto request, CancellationToken ct)
     {
         var result = await Mediator.Send(new CheckOutCommand(request.Note), ct);
@@ -29,6 +32,7 @@ public class AttendancesController : ApiControllerBase
     }
 
     [HttpGet("my")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Attendance) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetMy(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMyAttendanceQuery(), ct);
@@ -36,7 +40,7 @@ public class AttendancesController : ApiControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.RequireManager)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Attendance) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] GetAttendancesQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);

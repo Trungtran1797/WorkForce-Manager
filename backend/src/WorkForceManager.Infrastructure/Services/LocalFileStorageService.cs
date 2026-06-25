@@ -6,12 +6,14 @@ using WorkForceManager.Application.Common.Interfaces;
 namespace WorkForceManager.Infrastructure.Services;
 
 /// <summary>
-/// Lưu trữ file đính kèm trên local disk dưới {ContentRootPath}/wwwroot/uploads/{subFolder}/.
-/// Production có thể thay bằng implementation Azure Blob/S3 mà không đổi Application layer.
+/// Lưu trữ file đính kèm trên local disk.
+/// - subFolder bắt đầu bằng "projects/{projectCode}" (code dạng chữ, vd. "DA004") → lưu vào OneDrive.
+/// - subFolder dạng cũ "projects/{id}" (số nguyên) hoặc các loại khác → lưu vào wwwroot/uploads.
 /// </summary>
 public class LocalFileStorageService : IFileStorageService
 {
     private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10MB
+    private const string ProjectSubFolderPrefix = "projects/";
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -20,11 +22,16 @@ public class LocalFileStorageService : IFileStorageService
 
     private readonly IHostEnvironment _hostEnvironment;
     private readonly ILogger<LocalFileStorageService> _logger;
+    private readonly IProjectFolderService _projectFolderService;
 
-    public LocalFileStorageService(IHostEnvironment hostEnvironment, ILogger<LocalFileStorageService> logger)
+    public LocalFileStorageService(
+        IHostEnvironment hostEnvironment,
+        ILogger<LocalFileStorageService> logger,
+        IProjectFolderService projectFolderService)
     {
         _hostEnvironment = hostEnvironment;
         _logger = logger;
+        _projectFolderService = projectFolderService;
     }
 
     public async Task<(string StoredFileName, long SizeBytes)> SaveFileAsync(
@@ -97,8 +104,25 @@ public class LocalFileStorageService : IFileStorageService
         }
     }
 
-    private string GetFolderPath(string subFolder) =>
-        Path.Combine(_hostEnvironment.ContentRootPath, "wwwroot", "uploads", subFolder);
+    private string GetFolderPath(string subFolder)
+    {
+        // subFolder dạng "projects/{projectCode}" (code chứa chữ cái, ví dụ "DA004")
+        // → thử resolve về OneDrive; nếu thành công dùng OneDrive, ngược lại fallback wwwroot.
+        if (subFolder.StartsWith(ProjectSubFolderPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var code = subFolder[ProjectSubFolderPrefix.Length..];
+
+            // Chỉ xử lý code dạng chữ-số (DA004, 26-001...); bỏ qua id thuần số từ dữ liệu cũ.
+            if (!int.TryParse(code, out _))
+            {
+                var oneDrivePath = _projectFolderService.ResolveAttachmentPath(code);
+                if (oneDrivePath is not null)
+                    return oneDrivePath;
+            }
+        }
+
+        return Path.Combine(_hostEnvironment.ContentRootPath, "wwwroot", "uploads", subFolder);
+    }
 
     private static string SanitizeFileName(string fileName)
     {

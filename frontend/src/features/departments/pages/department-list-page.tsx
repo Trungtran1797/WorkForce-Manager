@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Briefcase,
   Building2,
@@ -31,6 +32,7 @@ import {
   useDepartments,
   useUpdateDepartment,
 } from '@/features/departments/api/department-queries'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import type { Department, DepartmentFormValues } from '@/features/departments/types'
 
 const ICON_MAP: Record<Department['icon'], LucideIcon> = {
@@ -49,14 +51,16 @@ const COLOR_MAP: Record<Department['colorVariant'], string> = {
 }
 
 export function DepartmentListPage() {
+  const canEdit = useCanEdit('Departments')
   const { data: departments = [], isLoading, isError, refetch } = useDepartments()
   const createMutation = useCreateDepartment()
   const updateMutation = useUpdateDepartment()
   const deleteMutation = useDeleteDepartment()
 
+  const [searchParams] = useSearchParams()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
 
   const filteredDepartments = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -120,10 +124,12 @@ export function DepartmentListPage() {
           <h1 className="text-2xl font-semibold">Phòng ban</h1>
           <p className="text-sm text-muted-foreground">Quản lý cơ cấu phòng ban và trưởng phòng</p>
         </div>
-        <Button size="sm" onClick={handleOpenAddDialog}>
-          <Plus className="size-4" />
-          Thêm phòng ban
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={handleOpenAddDialog}>
+            <Plus className="size-4" />
+            Thêm phòng ban
+          </Button>
+        )}
       </div>
 
       <div className="relative max-w-sm">
@@ -150,8 +156,8 @@ export function DepartmentListPage() {
             icon={Building2}
             title="Chưa có phòng ban nào"
             description="Tạo phòng ban đầu tiên để bắt đầu cơ cấu tổ chức."
-            actionLabel="Thêm phòng ban"
-            onAction={handleOpenAddDialog}
+            actionLabel={canEdit ? 'Thêm phòng ban' : undefined}
+            onAction={canEdit ? handleOpenAddDialog : undefined}
           />
         </Card>
       )}
@@ -190,6 +196,7 @@ export function DepartmentListPage() {
                   <DepartmentCard
                     department={group.parent}
                     highlighted
+                    canEdit={canEdit}
                     onEdit={handleOpenEditDialog}
                     onDelete={handleDelete}
                   />
@@ -198,6 +205,7 @@ export function DepartmentListPage() {
                   <DepartmentCard
                     key={department.id}
                     department={department}
+                    canEdit={canEdit}
                     onEdit={handleOpenEditDialog}
                     onDelete={handleDelete}
                   />
@@ -221,11 +229,12 @@ export function DepartmentListPage() {
 interface DepartmentCardProps {
   department: Department
   highlighted?: boolean
+  canEdit: boolean
   onEdit: (department: Department) => void
   onDelete: (department: Department) => void
 }
 
-function DepartmentCard({ department, highlighted, onEdit, onDelete }: DepartmentCardProps) {
+function DepartmentCard({ department, highlighted, canEdit, onEdit, onDelete }: DepartmentCardProps) {
   const Icon = ICON_MAP[department.icon] ?? Building2
 
   return (
@@ -247,19 +256,21 @@ function DepartmentCard({ department, highlighted, onEdit, onDelete }: Departmen
             </div>
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Hành động">
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(department)}>Sửa thông tin</DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" onClick={() => onDelete(department)}>
-              Xóa
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {canEdit && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Hành động">
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(department)}>Sửa thông tin</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => onDelete(department)}>
+                Xóa
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       <p className="text-sm text-muted-foreground">{department.description}</p>
       <div className="text-sm font-medium">{department.employeeCount} nhân sự</div>

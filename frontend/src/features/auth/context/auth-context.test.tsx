@@ -64,6 +64,7 @@ describe('AuthContext', () => {
       employeeId: null,
       departmentId: null,
       fullName: 'Super Admin',
+      permissions: {},
     })
 
     await act(async () => {
@@ -92,6 +93,7 @@ describe('AuthContext', () => {
         employeeId: null,
         departmentId: null,
         fullName: 'Super Admin',
+        permissions: {},
       }
     })
 

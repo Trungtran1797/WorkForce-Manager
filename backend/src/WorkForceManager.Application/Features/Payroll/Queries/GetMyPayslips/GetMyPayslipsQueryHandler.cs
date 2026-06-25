@@ -22,9 +22,7 @@ public class GetMyPayslipsQueryHandler : IRequestHandler<GetMyPayslipsQuery, Lis
     {
         var employeeId = _currentUserService.EmployeeId;
         if (employeeId is null or 0)
-        {
-            throw new ForbiddenAccessException("Người dùng không liên kết với thông tin nhân viên.");
-        }
+            return [];
 
         // Nhân viên chỉ thấy phiếu đã duyệt/đã trả, không thấy bản nháp.
         var payslips = await _context.Payslips

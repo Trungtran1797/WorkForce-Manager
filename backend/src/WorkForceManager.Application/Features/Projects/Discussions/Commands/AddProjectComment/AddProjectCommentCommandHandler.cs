@@ -60,7 +60,7 @@ public class AddProjectCommentCommandHandler : IRequestHandler<AddProjectComment
 
         if (request.Files is { Count: > 0 })
         {
-            var subFolder = $"{SubFolderPrefix}/{request.ProjectId}";
+            var subFolder = $"{SubFolderPrefix}/{project.Code}";
 
             foreach (var file in request.Files)
             {

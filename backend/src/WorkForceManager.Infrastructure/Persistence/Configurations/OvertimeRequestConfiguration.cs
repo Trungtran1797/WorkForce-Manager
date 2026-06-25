@@ -21,6 +21,16 @@ public class OvertimeRequestConfiguration : IEntityTypeConfiguration<OvertimeReq
             .HasForeignKey(o => o.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(o => o.Project)
+            .WithMany()
+            .HasForeignKey(o => o.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(o => o.Task)
+            .WithMany()
+            .HasForeignKey(o => o.TaskId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(o => new { o.EmployeeId, o.Date });
         builder.HasIndex(o => o.Status);
     }

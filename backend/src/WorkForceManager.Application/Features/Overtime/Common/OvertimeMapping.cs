@@ -19,5 +19,9 @@ public static class OvertimeMapping
         o.Status.ToString(),
         o.ApproverId,
         o.ApprovedDate?.ToString("yyyy-MM-dd HH:mm"),
-        o.RejectReason);
+        o.RejectReason,
+        o.ProjectId,
+        o.Project?.Name,
+        o.TaskId,
+        o.Task?.Title);
 }

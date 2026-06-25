@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table'
 import { ApiError } from '@/lib/api-client'
 import { OfficeLocationDialog } from '@/features/office-locations/components/office-location-dialog'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import {
   useDeleteOfficeLocation,
   useOfficeLocations,
@@ -23,6 +24,7 @@ import {
 import type { OfficeLocation, OfficeLocationFormValues } from '@/features/office-locations/types'
 
 export function OfficeLocationPage() {
+  const canEdit = useCanEdit('OfficeLocations')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<OfficeLocation | null>(null)
 
@@ -67,17 +69,25 @@ export function OfficeLocationPage() {
             Cấu hình dải IP văn phòng và tọa độ GPS công trường để ràng buộc check-in.
           </p>
         </div>
-        <Button size="sm" onClick={openCreate}>
-          <Plus className="size-4" />
-          Thêm địa điểm
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={openCreate}>
+            <Plus className="size-4" />
+            Thêm địa điểm
+          </Button>
+        )}
       </div>
 
       <Card className="p-0 overflow-hidden">
         {isLoading && <TableSkeleton rows={4} columns={6} />}
         {isError && <ErrorState onRetry={() => void refetch()} />}
         {!isLoading && !isError && locations.length === 0 && (
-          <EmptyState icon={MapPin} title="Chưa có địa điểm" description="Thêm địa điểm để ràng buộc vị trí check-in." actionLabel="Thêm địa điểm" onAction={openCreate} />
+          <EmptyState
+            icon={MapPin}
+            title="Chưa có địa điểm"
+            description="Thêm địa điểm để ràng buộc vị trí check-in."
+            actionLabel={canEdit ? 'Thêm địa điểm' : undefined}
+            onAction={canEdit ? openCreate : undefined}
+          />
         )}
         {!isLoading && !isError && locations.length > 0 && (
           <Table>
@@ -88,7 +98,7 @@ export function OfficeLocationPage() {
                 <TableHead>Tọa độ GPS</TableHead>
                 <TableHead>Bán kính</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Hành động</TableHead>
+                {canEdit && <TableHead className="text-right">Hành động</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -109,21 +119,23 @@ export function OfficeLocationPage() {
                       {location.isActive ? 'Đang ràng buộc' : 'Tắt'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(location)}>
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(location)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {canEdit && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(location)}>
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(location)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

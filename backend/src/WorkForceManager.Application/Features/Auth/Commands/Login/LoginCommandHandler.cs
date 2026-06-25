@@ -12,17 +12,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IDateTimeService _dateTime;
+    private readonly IPermissionService _permissionService;
 
     public LoginCommandHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         IJwtTokenService jwtTokenService,
-        IDateTimeService dateTime)
+        IDateTimeService dateTime,
+        IPermissionService permissionService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _dateTime = dateTime;
+        _permissionService = permissionService;
     }
 
     public async Task<AuthResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -56,6 +59,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
         });
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new AuthResponse(accessToken, refreshToken, expiresAt, user.ToAuthUserDto());
+        var permissions = await _permissionService.GetEffectivePermissionsAsync(
+            user.Role, user.Employee?.DepartmentId, cancellationToken);
+        var permissionsDto = permissions.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
+
+        return new AuthResponse(accessToken, refreshToken, expiresAt, user.ToAuthUserDto(permissionsDto));
     }
 }

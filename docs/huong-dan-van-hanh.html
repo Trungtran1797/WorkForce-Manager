@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkForce Manager — Hướng dẫn vận hành</title>
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-light: #EFF6FF;
+      --primary-dark: #1D4ED8;
+      --success: #16A34A;
+      --success-light: #F0FDF4;
+      --warning: #F59E0B;
+      --warning-light: #FFFBEB;
+      --danger: #DC2626;
+      --danger-light: #FEF2F2;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-300: #D1D5DB;
+      --gray-500: #6B7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --code-bg: #1E293B;
+      --code-text: #E2E8F0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-700);
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, #1E40AF 100%);
+      color: white;
+      padding: 48px 0 40px;
+      text-align: center;
+    }
+    .header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .header h1 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+    .header p { font-size: 16px; opacity: 0.85; }
+
+    /* ── Nav ── */
+    .toc {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0;
+    }
+    .toc-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .toc a {
+      display: block;
+      padding: 14px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-500);
+      text-decoration: none;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .toc a:hover { color: var(--primary); border-color: var(--primary); }
+
+    /* ── Layout ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 48px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--gray-200);
+    }
+    .section-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .section-icon.blue   { background: var(--primary-light); }
+    .section-icon.green  { background: var(--success-light); }
+    .section-icon.yellow { background: var(--warning-light); }
+    .section-icon.red    { background: var(--danger-light); }
+    .section-title { font-size: 22px; font-weight: 700; color: var(--gray-900); }
+    .section-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+
+    /* ── Cards ── */
+    .card {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Steps ── */
+    .steps { counter-reset: step; }
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .step-num {
+      counter-increment: step;
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-body { flex: 1; }
+    .step-body h4 { font-size: 15px; font-weight: 600; color: var(--gray-900); margin-bottom: 8px; }
+    .step-body p { font-size: 14px; color: var(--gray-500); margin-bottom: 10px; }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--code-bg);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 8px 0;
+      overflow-x: auto;
+    }
+    .code-block code {
+      color: var(--code-text);
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre;
+    }
+    .code-block .comment { color: #64748B; }
+    .code-block .cmd     { color: #7DD3FC; }
+    .code-block .str     { color: #86EFAC; }
+    .code-block .kw      { color: #F472B6; }
+
+    /* ── Inline code ── */
+    code {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      color: var(--danger);
+    }
+
+    /* ── Alerts ── */
+    .alert {
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      display: flex;
+      gap: 10px;
+      font-size: 14px;
+    }
+    .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .alert.info    { background: var(--primary-light); border-left: 4px solid var(--primary); }
+    .alert.success { background: var(--success-light); border-left: 4px solid var(--success); }
+    .alert.warning { background: var(--warning-light); border-left: 4px solid var(--warning); }
+    .alert.danger  { background: var(--danger-light);  border-left: 4px solid var(--danger);  }
+    .alert strong  { display: block; margin-bottom: 3px; color: var(--gray-900); }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th {
+      background: var(--gray-100);
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--gray-700);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-50); }
+    td code { font-size: 12px; }
+
+    /* ── Tag ── */
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .tag-blue   { background: var(--primary-light); color: var(--primary); }
+    .tag-green  { background: var(--success-light); color: var(--success); }
+    .tag-yellow { background: var(--warning-light); color: #92400E; }
+    .tag-red    { background: var(--danger-light);  color: var(--danger); }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--gray-200); margin: 32px 0; }
+
+    ul, ol { padding-left: 20px; }
+    li { margin-bottom: 6px; font-size: 14px; }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 13px;
+      color: var(--gray-500);
+      border-top: 1px solid var(--gray-200);
+      background: white;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ HEADER ═══════════════════════════════════ -->
+<div class="header">
+  <div class="badge">SAIGON SPICES — INTERNAL</div>
+  <h1>🚀 WorkForce Manager</h1>
+  <p>Hướng dẫn đóng gói, vận hành & bảo trì hệ thống</p>
+</div>
+
+<!-- ═══════════════════════════════════ NAV ═══════════════════════════════════ -->
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#accounts">Tài khoản</a>
+    <a href="#dev">Chạy Dev</a>
+    <a href="#prod">Deploy Production</a>
+    <a href="#docker">Docker</a>
+    <a href="#env">Cấu hình .env</a>
+    <a href="#database">Database</a>
+    <a href="#troubleshoot">Xử lý lỗi</a>
+    <a href="#maintenance">Bảo trì</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════ CONTENT ═══════════════════════════════════ -->
+<div class="container">
+
+  <!-- ── Tổng quan ── -->
+  <div class="section">
+    <div class="alert info">
+      <span class="alert-icon">ℹ️</span>
+      <div>
+        <strong>Tech Stack</strong>
+        Frontend: React + Vite + TypeScript + Tailwind + Shadcn/UI &nbsp;|&nbsp;
+        Backend: ASP.NET Core 9 + EF Core &nbsp;|&nbsp;
+        Database: SQL Server &nbsp;|&nbsp;
+        Auth: JWT + Refresh Token
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📁 Cấu trúc thư mục</div>
+        <div class="code-block"><code><span class="comment"># Thư mục gốc dự án</span>
+WorkForce Manager/
+├── backend/          <span class="comment"># ASP.NET Core 9</span>
+│   └── src/
+│       ├── WorkForceManager.Domain
+│       ├── WorkForceManager.Application
+│       ├── WorkForceManager.Infrastructure
+│       └── WorkForceManager.WebApi
+├── frontend/         <span class="comment"># React + Vite</span>
+│   ├── src/
+│   ├── Dockerfile.prod
+│   ├── nginx.prod.conf
+│   └── vite.config.ts
+├── docs/             <span class="comment"># Tài liệu</span>
+├── docker-compose.prod.yml
+└── .env              <span class="comment"># Biến môi trường production</span></code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ Yêu cầu cài đặt</div>
+        <table>
+          <tr><th>Phần mềm</th><th>Phiên bản</th></tr>
+          <tr><td>Node.js</td><td><span class="tag tag-green">≥ 20 LTS</span></td></tr>
+          <tr><td>.NET SDK</td><td><span class="tag tag-blue">9.0</span></td></tr>
+          <tr><td>SQL Server</td><td><span class="tag tag-blue">2019+</span></td></tr>
+          <tr><td>Docker Desktop</td><td><span class="tag tag-yellow">Cho production</span></td></tr>
+          <tr><td>Git</td><td><span class="tag tag-green">Bất kỳ</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TÀI KHOẢN ── -->
+  <div class="section" id="accounts">
+    <div class="section-header">
+      <div class="section-icon blue">🔑</div>
+      <div>
+        <div class="section-title">Tài khoản mặc định</div>
+        <div class="section-subtitle">Seed data khởi tạo sẵn — đổi mật khẩu ngay sau khi deploy thật</div>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <tr>
+          <th>Vai trò</th><th>Username</th><th>Mật khẩu</th><th>Quyền hạn</th>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">Super Admin</span></td>
+          <td><code>admin</code></td>
+          <td><code>Admin@123</code></td>
+          <td>Toàn quyền hệ thống</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">Manager</span></td>
+          <td><code>manager</code></td>
+          <td><code>Manager@123</code></td>
+          <td>Quản lý nhân viên, duyệt phép</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-green">Employee</span></td>
+          <td><code>employee</code></td>
+          <td><code>Employee@123</code></td>
+          <td>Chấm công, xem việc, nghỉ phép</td>
+        </tr>
+      </table>
+    </div>
+    <div class="alert warning">
+      <span class="alert-icon">⚠️</span>
+      <div><strong>Lưu ý bảo mật</strong>Tài khoản trên chỉ dùng để kiểm thử nội bộ. Trước khi bàn giao cho nhân viên thật, phải đổi mật khẩu qua trang Quản lý người dùng (Super Admin).</div>
+    </div>
+  </div>
+
+  <!-- ── CHẠY DEV ── -->
+  <div class="section" id="dev">
+    <div class="section-header">
+      <div class="section-icon blue">💻</div>
+      <div>
+        <div class="section-title">Chạy môi trường Development (Localhost)</div>
+        <div class="section-subtitle">Dùng hàng ngày để phát triển — hot-reload, debug, không cần Docker</div>
+      </div>
+    </div>
+
+    <div class="alert info">
+      <span class="alert-icon">📌</span>
+      <div>Cần <strong>2 terminal song song</strong>. Backend chạy port <code>5244</code>, Frontend chạy port <code>5173</code>.</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Khởi động SQL Server</h4>
+          <p>Đảm bảo SQL Server đang chạy trên máy. Kiểm tra qua SQL Server Configuration Manager hoặc Services.</p>
+          <div class="alert success"><span class="alert-icon">✅</span><div>Connection string mặc định trong <code>backend/src/WorkForceManager.WebApi/appsettings.json</code> → <code>"Server=(localdb)\\mssqllocaldb"</code></div></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Terminal 1 — Chạy Backend</h4>
+          <p>Mở PowerShell/CMD tại thư mục gốc dự án:</p>
+          <div class="code-block"><code><span class="comment"># Chạy backend (tự động migrate DB và seed data lần đầu)</span>
+<span class="cmd">dotnet run --project backend/src/WorkForceManager.WebApi</span>
+
+<span class="comment"># Đợi đến khi thấy dòng:</span>
+<span class="str">Now listening on: http://localhost:5244</span></code></div>
+          <div class="alert info"><span class="alert-icon">📖</span><div>Swagger UI: <strong>http://localhost:5244/swagger</strong> — test API trực tiếp</div></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Terminal 2 — Chạy Frontend</h4>
+          <p>Mở PowerShell/CMD mới:</p>
+          <div class="code-block"><code><span class="comment"># Vào thư mục frontend</span>
+<span class="cmd">cd frontend</span>
+
+<span class="comment"># Lần đầu: cài dependencies (chỉ làm 1 lần hoặc sau khi thêm package)</span>
+<span class="cmd">npm install</span>
+
+<span class="comment"># Khởi động dev server</span>
+<span class="cmd">npm run dev</span>
+
+<span class="comment"># Đợi đến khi thấy:</span>
+<span class="str">Local: http://localhost:5173/</span></code></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Mở trình duyệt</h4>
+          <p>Vào địa chỉ: <strong>http://localhost:5173</strong></p>
+          <p>Đăng nhập bằng tài khoản demo ở mục <a href="#accounts">Tài khoản mặc định</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DEPLOY PRODUCTION ── -->
+  <div class="section" id="prod">
+    <div class="section-header">
+      <div class="section-icon green">🌐</div>
+      <div>
+        <div class="section-title">Deploy Production (Docker — 1 lệnh)</div>
+        <div class="section-subtitle">Chạy toàn bộ hệ thống bằng Docker Compose — không cần cài .NET hay Node</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Cài Docker Desktop (Windows) hoặc Docker Engine (Linux/VPS)</h4>
+          <p>Tải tại <strong>https://www.docker.com/products/docker-desktop/</strong></p>
+          <p>Sau khi cài xong, kiểm tra:</p>
+          <div class="code-block"><code><span class="cmd">docker --version</span>
+<span class="cmd">docker compose version</span></code></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Tạo file <code>.env</code> tại thư mục gốc</h4>
+          <p>Copy từ file mẫu và điền giá trị thực:</p>
+          <div class="code-block"><code><span class="comment"># Mật khẩu SA cho SQL Server (tối thiểu 8 ký tự, có chữ hoa + số + ký tự đặc biệt)</span>
+SA_PASSWORD=<span class="str">MatKhauManhCuaBan_2024!</span>
+
+<span class="comment"># JWT Secret key (chuỗi ngẫu nhiên dài ≥ 32 ký tự)</span>
+JWT_SECRET=<span class="str">SaigonSpices_JWT_SecretKey_WorkForce_Manager_2024</span>
+
+<span class="comment"># URL công khai của server (IP hoặc domain)</span>
+PUBLIC_URL=<span class="str">http://192.168.20.127</span>
+
+<span class="comment"># Bật/tắt Swagger (true = bật, false = tắt khi production thật)</span>
+ENABLE_SWAGGER=<span class="str">true</span>
+
+<span class="comment"># Có seed data mẫu hay không</span>
+SEED_ENABLED=<span class="str">true</span></code></div>
+          <div class="alert warning"><span class="alert-icon">⚠️</span><div><strong>Không commit file .env lên Git!</strong> File này chứa mật khẩu và secret key.</div></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Build và khởi động toàn bộ</h4>
+          <div class="code-block"><code><span class="comment"># Chạy từ thư mục gốc dự án</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml up -d --build</span>
+
+<span class="comment"># Đợi ~3-5 phút lần đầu (download images + build)
+# Xem log realtime:</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml logs -f</span></code></div>
+          <div class="alert success"><span class="alert-icon">✅</span><div>Khi thấy <code>Now listening on: http://[::]:8080</code> ở log backend là backend đã sẵn sàng.</div></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Truy cập ứng dụng</h4>
+          <table>
+            <tr><th>Địa chỉ</th><th>Mô tả</th></tr>
+            <tr><td><code>http://192.168.20.127/</code></td><td>Ứng dụng chính (React SPA)</td></tr>
+            <tr><td><code>http://192.168.20.127/swagger</code></td><td>API Documentation (nếu ENABLE_SWAGGER=true)</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DOCKER ── -->
+  <div class="section" id="docker">
+    <div class="section-header">
+      <div class="section-icon yellow">🐳</div>
+      <div>
+        <div class="section-title">Quản lý Docker Container</div>
+        <div class="section-subtitle">Các lệnh thường dùng để vận hành hàng ngày</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">▶️ Khởi động / Dừng</div>
+        <div class="code-block"><code><span class="comment"># Khởi động (không rebuild)</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml up -d</span>
+
+<span class="comment"># Dừng (giữ data)</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml down</span>
+
+<span class="comment"># Dừng và xóa volumes (MẤT DATA DB!)</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml down -v</span>
+
+<span class="comment"># Khởi động lại 1 service</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml restart workforce-web</span></code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔄 Cập nhật code mới</div>
+        <div class="code-block"><code><span class="comment"># Sau khi pull code mới từ Git:</span>
+<span class="cmd">git pull origin main</span>
+
+<span class="comment"># Rebuild và restart (downtime ~1-2 phút)</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml up -d --build --no-deps workforce-web workforce-api</span>
+
+<span class="comment"># Hoặc rebuild toàn bộ:</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml up -d --build</span></code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Xem log & trạng thái</div>
+        <div class="code-block"><code><span class="comment"># Xem trạng thái các container</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml ps</span>
+
+<span class="comment"># Xem log backend (50 dòng cuối)</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml logs --tail=50 workforce-api</span>
+
+<span class="comment"># Theo dõi log realtime</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml logs -f workforce-api</span></code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗑️ Dọn dẹp</div>
+        <div class="code-block"><code><span class="comment"># Xóa image cũ (giải phóng disk)</span>
+<span class="cmd">docker image prune -f</span>
+
+<span class="comment"># Xóa cache build (force rebuild sạch)</span>
+<span class="cmd">docker builder prune -f</span>
+
+<span class="comment"># Xem disk usage của Docker</span>
+<span class="cmd">docker system df</span></code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Tên các container</div>
+      <table>
+        <tr><th>Container</th><th>Service</th><th>Port</th><th>Mô tả</th></tr>
+        <tr><td><code>workforce-db</code></td><td>SQL Server</td><td><code>1433</code></td><td>Database — persist qua volume <code>mssql-data</code></td></tr>
+        <tr><td><code>workforce-api</code></td><td>ASP.NET Core 9</td><td><code>8080</code> (internal)</td><td>REST API + SignalR</td></tr>
+        <tr><td><code>workforce-web</code></td><td>Nginx + React SPA</td><td><code>80</code> (public)</td><td>Serve frontend + reverse proxy /api</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ENV ── -->
+  <div class="section" id="env">
+    <div class="section-header">
+      <div class="section-icon blue">🔧</div>
+      <div>
+        <div class="section-title">Cấu hình biến môi trường (.env)</div>
+        <div class="section-subtitle">Toàn bộ cấu hình production đặt trong file <code>.env</code> tại thư mục gốc</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <tr>
+          <th>Biến</th><th>Giá trị mẫu</th><th>Bắt buộc</th><th>Mô tả</th>
+        </tr>
+        <tr>
+          <td><code>SA_PASSWORD</code></td>
+          <td><code>SaigonSpices_SA_2024!</code></td>
+          <td><span class="tag tag-red">Có</span></td>
+          <td>Mật khẩu SA của SQL Server. Phải có chữ hoa + số + ký tự đặc biệt</td>
+        </tr>
+        <tr>
+          <td><code>JWT_SECRET</code></td>
+          <td><code>SaigonSpices_JWT_…</code></td>
+          <td><span class="tag tag-red">Có</span></td>
+          <td>Khóa ký JWT. Tối thiểu 32 ký tự. Đổi khóa = toàn bộ token hiện tại bị hủy</td>
+        </tr>
+        <tr>
+          <td><code>PUBLIC_URL</code></td>
+          <td><code>http://192.168.20.127</code></td>
+          <td><span class="tag tag-red">Có</span></td>
+          <td>URL truy cập từ bên ngoài. Đổi IP/domain tại đây khi chuyển server</td>
+        </tr>
+        <tr>
+          <td><code>ENABLE_SWAGGER</code></td>
+          <td><code>true</code></td>
+          <td><span class="tag tag-green">Không</span></td>
+          <td>Bật Swagger UI (<code>true</code>). Nên tắt (<code>false</code>) khi deploy ra internet</td>
+        </tr>
+        <tr>
+          <td><code>SEED_ENABLED</code></td>
+          <td><code>true</code></td>
+          <td><span class="tag tag-green">Không</span></td>
+          <td>Tự động seed data mẫu lần đầu. Sau khi đã seed xong nên đặt <code>false</code></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="alert warning">
+      <span class="alert-icon">⚠️</span>
+      <div><strong>Thay đổi .env cần restart container</strong> — Sau khi sửa <code>.env</code>, chạy lại <code>docker compose -f docker-compose.prod.yml up -d</code> để áp dụng.</div>
+    </div>
+  </div>
+
+  <!-- ── DATABASE ── -->
+  <div class="section" id="database">
+    <div class="section-header">
+      <div class="section-icon green">🗄️</div>
+      <div>
+        <div class="section-title">Quản lý Database</div>
+        <div class="section-subtitle">Migration, backup và kết nối trực tiếp</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📦 Backup Database (Production)</div>
+        <div class="code-block"><code><span class="comment"># Backup vào file .bak</span>
+<span class="cmd">docker exec workforce-db /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "$SA_PASSWORD" \
+  -C -Q "BACKUP DATABASE [WorkForceManagerDb] \
+  TO DISK='/var/opt/mssql/backup/wfm_$(date +%Y%m%d).bak'"</span>
+
+<span class="comment"># Copy file backup ra ngoài container</span>
+<span class="cmd">docker cp workforce-db:/var/opt/mssql/backup/. ./backup/</span></code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔌 Kết nối DB từ SSMS (Dev)</div>
+        <div class="code-block"><code><span class="comment"># Kết nối từ SQL Server Management Studio:</span>
+Server: <span class="str">(localdb)\mssqllocaldb</span>   <span class="comment"># Dev local</span>
+Server: <span class="str">localhost,1433</span>           <span class="comment"># Docker production</span>
+Database: <span class="str">WorkForceManagerDb</span>
+Auth: <span class="str">SQL Server Authentication</span>
+Login: <span class="str">sa</span>
+Password: <span class="str">[giá trị SA_PASSWORD]</span></code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔄 Tạo Migration mới (sau khi sửa Entity)</div>
+      <div class="code-block"><code><span class="comment"># Chạy từ thư mục gốc dự án</span>
+<span class="cmd">dotnet ef migrations add TenMigration \
+  --project backend/src/WorkForceManager.Infrastructure \
+  --startup-project backend/src/WorkForceManager.WebApi</span>
+
+<span class="comment"># Apply migration vào DB dev</span>
+<span class="cmd">dotnet ef database update \
+  --project backend/src/WorkForceManager.Infrastructure \
+  --startup-project backend/src/WorkForceManager.WebApi</span>
+
+<span class="comment"># Production: migration tự chạy khi backend khởi động (Database.MigrateAsync)</span></code></div>
+    </div>
+  </div>
+
+  <!-- ── TROUBLESHOOT ── -->
+  <div class="section" id="troubleshoot">
+    <div class="section-header">
+      <div class="section-icon red">🔥</div>
+      <div>
+        <div class="section-title">Xử lý lỗi thường gặp</div>
+        <div class="section-subtitle">Checklist kiểm tra khi gặp sự cố</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">❌ localhost:5173 — "This site can't be reached"</div>
+      <div class="alert danger"><span class="alert-icon">🔍</span><div><strong>Nguyên nhân:</strong> Vite dev server chưa chạy.</div></div>
+      <div class="code-block"><code><span class="comment"># Giải pháp: chạy lệnh trong terminal</span>
+<span class="cmd">cd frontend && npm run dev</span></code></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">❌ API lỗi 401 Unauthorized liên tục</div>
+      <div class="alert danger"><span class="alert-icon">🔍</span><div><strong>Nguyên nhân:</strong> Access token hết hạn và refresh token cũng hết hạn.</div></div>
+      <div class="code-block"><code><span class="comment"># Giải pháp: xóa token cũ trong localStorage rồi đăng nhập lại</span>
+<span class="comment"># Mở DevTools (F12) → Application → Local Storage → xóa wf_access_token và wf_refresh_token</span>
+<span class="comment"># Hoặc đăng xuất rồi đăng nhập lại</span></code></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">❌ Docker: container workforce-api liên tục restart</div>
+      <div class="code-block"><code><span class="comment"># Xem log để tìm nguyên nhân</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml logs workforce-api</span>
+
+<span class="comment"># Thường do DB chưa sẵn sàng → đợi 30s và thử lại
+# Hoặc do SA_PASSWORD trong .env không đúng format SQL Server
+# (phải có chữ hoa + số + ký tự đặc biệt, VD: SaigonSpices_SA_2024!)</span></code></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">❌ Frontend build lỗi "Cannot find module"</div>
+      <div class="code-block"><code><span class="comment"># Xóa node_modules và cài lại</span>
+<span class="cmd">cd frontend</span>
+<span class="cmd">rm -rf node_modules</span>
+<span class="cmd">npm install</span>
+<span class="cmd">npm run dev</span></code></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">❌ Trang trắng/đen sau khi deploy Docker</div>
+      <div class="code-block"><code><span class="comment"># Nguyên nhân: browser cache cũ. Hard refresh:</span>
+<span class="comment"># Windows/Linux: Ctrl + Shift + R</span>
+<span class="comment"># Mac: Cmd + Shift + R</span>
+
+<span class="comment"># Nếu vẫn lỗi: rebuild image hoàn toàn từ đầu</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml down</span>
+<span class="cmd">docker builder prune -f</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml up -d --build</span></code></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">❌ Port 80 đã bị chiếm (Windows)</div>
+      <div class="code-block"><code><span class="comment"># Tìm tiến trình đang dùng port 80</span>
+<span class="cmd">netstat -ano | findstr :80</span>
+
+<span class="comment"># Dừng IIS nếu đang chạy</span>
+<span class="cmd">iisreset /stop</span>
+
+<span class="comment"># Hoặc đổi port trong docker-compose.prod.yml</span>
+<span class="comment"># ports: "8080:80"  → truy cập http://192.168.20.127:8080</span></code></div>
+    </div>
+  </div>
+
+  <!-- ── BẢO TRÌ ── -->
+  <div class="section" id="maintenance">
+    <div class="section-header">
+      <div class="section-icon green">🔧</div>
+      <div>
+        <div class="section-title">Bảo trì định kỳ</div>
+        <div class="section-subtitle">Lịch kiểm tra và bảo trì hệ thống khuyến nghị</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <tr><th>Tần suất</th><th>Công việc</th><th>Lệnh / Cách thực hiện</th></tr>
+        <tr>
+          <td><span class="tag tag-blue">Hàng ngày</span></td>
+          <td>Kiểm tra container đang chạy</td>
+          <td><code>docker compose -f docker-compose.prod.yml ps</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-green">Hàng tuần</span></td>
+          <td>Backup database</td>
+          <td>Chạy lệnh backup ở mục Database</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-green">Hàng tuần</span></td>
+          <td>Dọn dẹp Docker image cũ</td>
+          <td><code>docker image prune -f</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">Hàng tháng</span></td>
+          <td>Kiểm tra disk space server</td>
+          <td><code>docker system df</code> + kiểm tra dung lượng ổ đĩa</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">Hàng tháng</span></td>
+          <td>Đổi mật khẩu SA và JWT Secret</td>
+          <td>Sửa file <code>.env</code> → <code>docker compose ... up -d</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">Khi cần</span></td>
+          <td>Cập nhật code từ Git</td>
+          <td><code>git pull</code> → <code>docker compose ... up -d --build</code></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📁 Vị trí dữ liệu quan trọng (Docker)</div>
+        <ul>
+          <li><strong>Database:</strong> Docker volume <code>mssql-data</code></li>
+          <li><strong>File đính kèm:</strong> Docker volume <code>uploads-data</code> → <code>wwwroot/uploads/</code></li>
+          <li><strong>Log backend:</strong> <code>docker logs workforce-api</code></li>
+          <li><strong>Config:</strong> File <code>.env</code> tại thư mục gốc</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">🆘 Liên hệ hỗ trợ kỹ thuật</div>
+        <ul>
+          <li><strong>Developer:</strong> Trungtran1797</li>
+          <li><strong>Email:</strong> trungtran1797@gmail.com</li>
+          <li><strong>Source code:</strong> Git repository (xem CLAUDE.md)</li>
+          <li><strong>Tài liệu:</strong> Thư mục <code>docs/</code> trong dự án</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── QUICK REFERENCE ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon blue">⚡</div>
+      <div>
+        <div class="section-title">Quick Reference — Lệnh hay dùng nhất</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="code-block"><code><span class="comment">══════════════════════ DEV (Localhost) ══════════════════════</span>
+<span class="cmd">dotnet run --project backend/src/WorkForceManager.WebApi</span>   <span class="comment"># Chạy backend</span>
+<span class="cmd">cd frontend && npm run dev</span>                                   <span class="comment"># Chạy frontend</span>
+<span class="cmd">cd frontend && npx vitest run</span>                                <span class="comment"># Chạy unit test</span>
+<span class="cmd">dotnet test backend</span>                                          <span class="comment"># Chạy backend test</span>
+
+<span class="comment">══════════════════════ PRODUCTION (Docker) ══════════════════</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml up -d --build</span>     <span class="comment"># Build và start</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml up -d</span>             <span class="comment"># Start (không rebuild)</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml down</span>              <span class="comment"># Dừng</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml logs -f</span>           <span class="comment"># Xem log realtime</span>
+<span class="cmd">docker compose -f docker-compose.prod.yml ps</span>                <span class="comment"># Kiểm tra trạng thái</span>
+
+<span class="comment">══════════════════════ DATABASE ══════════════════════════════</span>
+<span class="cmd">dotnet ef migrations add TenMigration --project backend/src/WorkForceManager.Infrastructure --startup-project backend/src/WorkForceManager.WebApi</span>
+<span class="cmd">dotnet ef database update --project backend/src/WorkForceManager.Infrastructure --startup-project backend/src/WorkForceManager.WebApi</span></code></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════ FOOTER ═══════════════════════════════════ -->
+<div class="footer">
+  <strong>WorkForce Manager</strong> — SAIGON SPICES Internal System<br/>
+  Cập nhật lần cuối: 25/06/2026 &nbsp;|&nbsp; Trungtran1797
+</div>
+
+</body>
+</html>

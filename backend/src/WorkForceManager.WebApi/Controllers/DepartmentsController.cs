@@ -6,7 +6,8 @@ using WorkForceManager.Application.Features.Departments.Commands.DeleteDepartmen
 using WorkForceManager.Application.Features.Departments.Commands.UpdateDepartment;
 using WorkForceManager.Application.Features.Departments.Common;
 using WorkForceManager.Application.Features.Departments.Queries.GetDepartments;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -15,6 +16,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class DepartmentsController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Departments) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] string? search, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDepartmentsQuery(search), ct);
@@ -22,7 +24,7 @@ public class DepartmentsController : ApiControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.CanManageEmployees)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Departments) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateDepartmentCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -30,7 +32,7 @@ public class DepartmentsController : ApiControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageEmployees)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Departments) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateDepartmentCommand command, CancellationToken ct)
     {
         if (id != command.Id)
@@ -42,7 +44,7 @@ public class DepartmentsController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageEmployees)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Departments) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteDepartmentCommand(id), ct);

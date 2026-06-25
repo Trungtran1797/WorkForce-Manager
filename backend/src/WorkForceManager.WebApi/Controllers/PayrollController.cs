@@ -7,7 +7,8 @@ using WorkForceManager.Application.Features.Payroll.Commands.SendPayslipEmail;
 using WorkForceManager.Application.Features.Payroll.Common;
 using WorkForceManager.Application.Features.Payroll.Queries.GetMyPayslips;
 using WorkForceManager.Application.Features.Payroll.Queries.GetPayslips;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -16,6 +17,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class PayrollController : ApiControllerBase
 {
     [HttpGet("my")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Payslips) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetMy(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMyPayslipsQuery(), ct);
@@ -23,7 +25,7 @@ public class PayrollController : ApiControllerBase
     }
 
     [HttpGet("payslips")]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePayroll)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Payslips) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetPayslips([FromQuery] GetPayslipsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
@@ -31,7 +33,7 @@ public class PayrollController : ApiControllerBase
     }
 
     [HttpPost("generate")]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePayroll)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Payslips) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Generate([FromBody] GeneratePayrollCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -39,7 +41,7 @@ public class PayrollController : ApiControllerBase
     }
 
     [HttpPost("payslips/{id:int}/approve")]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePayroll)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Payslips) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Approve(int id, CancellationToken ct)
     {
         var result = await Mediator.Send(new ApprovePayslipCommand(id), ct);
@@ -47,7 +49,7 @@ public class PayrollController : ApiControllerBase
     }
 
     [HttpPost("payslips/{id:int}/send-email")]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePayroll)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Payslips) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> SendEmail(int id, CancellationToken ct)
     {
         await Mediator.Send(new SendPayslipEmailCommand(id), ct);

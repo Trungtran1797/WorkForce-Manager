@@ -40,7 +40,13 @@ public class DeleteProjectCommentCommandHandler : IRequestHandler<DeleteProjectC
             throw new ForbiddenAccessException("Bạn không có quyền xóa bình luận này.");
         }
 
-        var subFolder = $"{SubFolderPrefix}/{request.ProjectId}";
+        var projectCode = await _context.Projects
+            .AsNoTracking()
+            .Where(p => p.Id == request.ProjectId)
+            .Select(p => p.Code)
+            .FirstOrDefaultAsync(cancellationToken) ?? request.ProjectId.ToString();
+
+        var subFolder = $"{SubFolderPrefix}/{projectCode}";
 
         foreach (var attachment in comment.Attachments.Where(a => !a.IsDeleted))
         {

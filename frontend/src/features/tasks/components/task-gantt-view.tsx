@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { differenceInCalendarDays, eachDayOfInterval, format, isWeekend } from 'date-fns'
 
 import { Card } from '@/components/ui/card'
@@ -16,26 +15,30 @@ const STATUS_BAR_COLOR: Record<TaskStatus, string> = {
 
 const DAY_WIDTH_PX = 32
 
+function parseValidDate(dateStr: string): Date | null {
+  if (!dateStr) return null
+  const d = new Date(dateStr)
+  return isNaN(d.getTime()) ? null : d
+}
+
 export function TaskGanttView({ tasks }: { tasks: Task[] }) {
-  const { days, rangeStart } = useMemo(() => {
-    const starts = tasks.map((task) => new Date(task.startDate).getTime())
-    const ends = tasks.map((task) => new Date(task.dueDate).getTime())
-    const minStart = new Date(Math.min(...starts))
-    const maxEnd = new Date(Math.max(...ends))
+  const validTasks = tasks.filter(
+    (t) => parseValidDate(t.startDate) !== null && parseValidDate(t.dueDate) !== null
+  )
 
-    return {
-      rangeStart: minStart,
-      days: eachDayOfInterval({ start: minStart, end: maxEnd }),
-    }
-  }, [tasks])
-
-  if (tasks.length === 0) {
+  if (validTasks.length === 0) {
     return (
       <Card>
         <p className="text-sm text-muted-foreground">Không có công việc để hiển thị Gantt Chart.</p>
       </Card>
     )
   }
+
+  const starts = validTasks.map((t) => parseValidDate(t.startDate)!.getTime())
+  const ends = validTasks.map((t) => parseValidDate(t.dueDate)!.getTime())
+  const rangeStart = new Date(Math.min(...starts))
+  const rangeEnd = new Date(Math.max(...ends))
+  const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd })
 
   return (
     <Card className="overflow-x-auto p-0">
@@ -60,13 +63,12 @@ export function TaskGanttView({ tasks }: { tasks: Task[] }) {
           </div>
         </div>
 
-        {/* Task rows */}
-        {tasks.map((task) => {
-          const offsetDays = differenceInCalendarDays(new Date(task.startDate), rangeStart)
-          const durationDays = Math.max(
-            1,
-            differenceInCalendarDays(new Date(task.dueDate), new Date(task.startDate)) + 1
-          )
+        {/* Task rows — only tasks with valid startDate & dueDate */}
+        {validTasks.map((task) => {
+          const start = parseValidDate(task.startDate)!
+          const end = parseValidDate(task.dueDate)!
+          const offsetDays = differenceInCalendarDays(start, rangeStart)
+          const durationDays = Math.max(1, differenceInCalendarDays(end, start) + 1)
 
           return (
             <div key={task.id} className="flex border-b border-border text-sm last:border-0">
@@ -84,7 +86,7 @@ export function TaskGanttView({ tasks }: { tasks: Task[] }) {
                     left: `${offsetDays * DAY_WIDTH_PX}px`,
                     width: `${durationDays * DAY_WIDTH_PX - 4}px`,
                   }}
-                  title={`${task.title}: ${format(new Date(task.startDate), 'dd/MM')} - ${format(new Date(task.dueDate), 'dd/MM')}`}
+                  title={`${task.title}: ${format(start, 'dd/MM')} - ${format(end, 'dd/MM')}`}
                 >
                   {task.status === 'InProgress' && (
                     <div

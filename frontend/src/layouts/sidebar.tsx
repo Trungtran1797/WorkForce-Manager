@@ -15,6 +15,8 @@ import {
   LayoutDashboard,
   ListChecks,
   MapPin,
+  Settings2,
+  ShieldCheck,
   Target,
   Timer,
   Users,
@@ -26,44 +28,47 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useUiStore } from '@/stores/ui-store'
 import { useAuth } from '@/features/auth/context/auth-context'
-import type { UserRole } from '@/features/auth/types'
 
 interface NavItem {
   to: string
   label: string
   icon: typeof LayoutDashboard
-  /** Nếu có, chỉ các role này thấy mục menu; ngược lại mọi role đều thấy. */
-  roles?: UserRole[]
+  /** Nếu có, mục menu chỉ hiển thị khi quyền hiệu lực của module này khác 'None'. */
+  module?: string
 }
 
-const MANAGE_ROLES: UserRole[] = ['SuperAdmin', 'Manager']
-const ADMIN_ONLY: UserRole[] = ['SuperAdmin']
-
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
-  { to: '/employees', label: 'Nhân viên', icon: Users, roles: MANAGE_ROLES },
-  { to: '/departments', label: 'Phòng ban', icon: Building2, roles: MANAGE_ROLES },
-  { to: '/projects', label: 'Dự án', icon: FolderKanban },
-  { to: '/tasks', label: 'Công việc', icon: ListChecks },
-  { to: '/attendance', label: 'Chấm công', icon: Clock },
-  { to: '/shifts', label: 'Ca làm việc', icon: CalendarClock, roles: MANAGE_ROLES },
-  { to: '/overtime', label: 'Tăng ca', icon: Timer },
-  { to: '/leave', label: 'Nghỉ phép', icon: CalendarOff },
-  { to: '/contracts', label: 'Hợp đồng', icon: FileText, roles: MANAGE_ROLES },
-  { to: '/payroll', label: 'Tiền lương', icon: Wallet, roles: MANAGE_ROLES },
-  { to: '/salary-configs', label: 'Cấu hình lương', icon: Coins, roles: MANAGE_ROLES },
-  { to: '/my-payslips', label: 'Phiếu lương của tôi', icon: Wallet },
-  { to: '/okrs', label: 'Mục tiêu (OKRs)', icon: Target },
-  { to: '/performance', label: 'Đánh giá hiệu suất', icon: Award },
-  { to: '/training', label: 'Đào tạo', icon: GraduationCap },
-  { to: '/office-locations', label: 'Địa điểm chấm công', icon: MapPin, roles: ADMIN_ONLY },
-  { to: '/reports', label: 'Báo cáo', icon: FileBarChart, roles: MANAGE_ROLES },
-  { to: '/notifications', label: 'Thông báo', icon: Bell },
+  { to: '/', label: 'Tổng quan', icon: LayoutDashboard, module: 'Dashboard' },
+  { to: '/employees', label: 'Nhân viên', icon: Users, module: 'Employees' },
+  { to: '/departments', label: 'Phòng ban', icon: Building2, module: 'Departments' },
+  { to: '/projects', label: 'Dự án', icon: FolderKanban, module: 'Projects' },
+  { to: '/tasks', label: 'Công việc', icon: ListChecks, module: 'Tasks' },
+  { to: '/attendance', label: 'Chấm công', icon: Clock, module: 'Attendance' },
+  { to: '/shifts', label: 'Ca làm việc', icon: CalendarClock, module: 'Shifts' },
+  { to: '/overtime', label: 'Tăng ca', icon: Timer, module: 'Overtime' },
+  { to: '/leave', label: 'Nghỉ phép', icon: CalendarOff, module: 'Leave' },
+  { to: '/contracts', label: 'Hợp đồng', icon: FileText, module: 'Contracts' },
+  { to: '/payroll', label: 'Tiền lương', icon: Wallet, module: 'Payroll' },
+  { to: '/salary-configs', label: 'Cấu hình lương', icon: Coins, module: 'SalaryConfigs' },
+  { to: '/my-payslips', label: 'Phiếu lương của tôi', icon: Wallet, module: 'Payslips' },
+  { to: '/okrs', label: 'Mục tiêu (OKRs)', icon: Target, module: 'Okrs' },
+  { to: '/performance', label: 'Đánh giá hiệu suất', icon: Award, module: 'Performance' },
+  { to: '/training', label: 'Đào tạo', icon: GraduationCap, module: 'Training' },
+  { to: '/office-locations', label: 'Địa điểm chấm công', icon: MapPin, module: 'OfficeLocations' },
+  { to: '/reports', label: 'Báo cáo', icon: FileBarChart, module: 'Reports' },
+  { to: '/notifications', label: 'Thông báo', icon: Bell, module: 'Notifications' },
+  { to: '/settings/permissions', label: 'Phân quyền', icon: ShieldCheck, module: 'PermissionMatrix' },
+  { to: '/settings/system', label: 'Cài đặt hệ thống', icon: Settings2, module: 'PermissionMatrix' },
 ]
 
 function useNavItems(): NavItem[] {
   const { user } = useAuth()
-  return NAV_ITEMS.filter((item) => !item.roles || (user != null && item.roles.includes(user.role)))
+  const permissions = user?.permissions
+
+  return NAV_ITEMS.filter((item) => {
+    if (!item.module) return true
+    return (permissions?.[item.module] ?? 'None') !== 'None'
+  })
 }
 
 function BrandLogo({ collapsed }: { collapsed?: boolean }) {

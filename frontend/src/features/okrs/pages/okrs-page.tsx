@@ -8,7 +8,7 @@ import { CardGridSkeleton, EmptyState, ErrorState } from '@/components/common/da
 import { OkrStatusBadge } from '@/components/common/status-badge'
 import { ProgressBar } from '@/components/common/progress-bar'
 import { ApiError } from '@/lib/api-client'
-import { useAuth } from '@/features/auth/context/auth-context'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { ObjectiveFormDialog } from '@/features/okrs/components/objective-form-dialog'
 import { KeyResultRow } from '@/features/okrs/components/key-result-row'
 import {
@@ -26,8 +26,7 @@ function currentPeriod(): string {
 }
 
 export function OkrsPage() {
-  const { user } = useAuth()
-  const canManage = user?.role === 'SuperAdmin' || user?.role === 'Manager'
+  const canManage = useCanEdit('Okrs')
 
   const [period, setPeriod] = useState(currentPeriod())
   const [dialogOpen, setDialogOpen] = useState(false)

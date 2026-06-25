@@ -12,11 +12,13 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthUserD
 {
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IPermissionService _permissionService;
 
-    public RegisterCommandHandler(IApplicationDbContext context, IPasswordHasher passwordHasher)
+    public RegisterCommandHandler(IApplicationDbContext context, IPasswordHasher passwordHasher, IPermissionService permissionService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
+        _permissionService = permissionService;
     }
 
     public async Task<AuthUserDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -47,6 +49,20 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthUserD
         _context.Users.Add(user);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return user.ToAuthUserDto();
+        int? departmentId = null;
+        if (user.EmployeeId.HasValue)
+        {
+            departmentId = await _context.Employees
+                .AsNoTracking()
+                .Where(e => e.Id == user.EmployeeId.Value)
+                .Select(e => (int?)e.DepartmentId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        var permissions = await _permissionService.GetEffectivePermissionsAsync(
+            user.Role, departmentId, cancellationToken);
+        var permissionsDto = permissions.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
+
+        return user.ToAuthUserDto(permissionsDto);
     }
 }

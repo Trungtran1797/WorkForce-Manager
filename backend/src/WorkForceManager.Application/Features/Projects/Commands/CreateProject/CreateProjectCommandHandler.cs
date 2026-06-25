@@ -11,10 +11,12 @@ namespace WorkForceManager.Application.Features.Projects.Commands.CreateProject;
 public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand, ProjectDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IProjectFolderService _projectFolderService;
 
-    public CreateProjectCommandHandler(IApplicationDbContext context)
+    public CreateProjectCommandHandler(IApplicationDbContext context, IProjectFolderService projectFolderService)
     {
         _context = context;
+        _projectFolderService = projectFolderService;
     }
 
     public async Task<ProjectDto> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
@@ -63,6 +65,8 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _projectFolderService.CreateProjectFolderAsync(project.Code, project.Name);
 
         return project.ToDto();
     }

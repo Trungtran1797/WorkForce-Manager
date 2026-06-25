@@ -10,11 +10,13 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, A
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IPermissionService _permissionService;
 
-    public GetCurrentUserQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public GetCurrentUserQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser, IPermissionService permissionService)
     {
         _context = context;
         _currentUser = currentUser;
+        _permissionService = permissionService;
     }
 
     public async Task<AuthUserDto> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
@@ -28,6 +30,10 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, A
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
             ?? throw new NotFoundException("Người dùng", userId);
 
-        return user.ToAuthUserDto();
+        var permissions = await _permissionService.GetEffectivePermissionsAsync(
+            user.Role, user.Employee?.DepartmentId, cancellationToken);
+        var permissionsDto = permissions.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
+
+        return user.ToAuthUserDto(permissionsDto);
     }
 }

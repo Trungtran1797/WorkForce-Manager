@@ -6,7 +6,8 @@ using WorkForceManager.Application.Features.Okrs.Commands.SaveObjective;
 using WorkForceManager.Application.Features.Okrs.Commands.UpdateKeyResultProgress;
 using WorkForceManager.Application.Features.Okrs.Common;
 using WorkForceManager.Application.Features.Okrs.Queries.GetOkrs;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -15,6 +16,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class OkrsController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Okrs) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] GetOkrsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
@@ -22,7 +24,7 @@ public class OkrsController : ApiControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePerformance)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Okrs) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Save([FromBody] SaveObjectiveCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -30,6 +32,7 @@ public class OkrsController : ApiControllerBase
     }
 
     [HttpPatch("key-results/{keyResultId:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Okrs) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> UpdateProgress(int keyResultId, [FromBody] UpdateKeyResultProgressRequest request, CancellationToken ct)
     {
         var result = await Mediator.Send(new UpdateKeyResultProgressCommand(keyResultId, request.CurrentValue), ct);
@@ -37,7 +40,7 @@ public class OkrsController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePerformance)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Okrs) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteObjectiveCommand(id), ct);

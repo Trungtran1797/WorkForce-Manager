@@ -7,7 +7,8 @@ public record AuthUserDto(
     string Role,
     int? EmployeeId,
     int? DepartmentId,
-    string? FullName);
+    string? FullName,
+    Dictionary<string, string> Permissions);
 
 public record AuthResponse(
     string AccessToken,

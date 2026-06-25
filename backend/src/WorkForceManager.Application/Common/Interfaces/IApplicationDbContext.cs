@@ -39,6 +39,9 @@ public interface IApplicationDbContext
     DbSet<ProjectAttachment> ProjectAttachments { get; }
     DbSet<TaskComment> TaskComments { get; }
     DbSet<TaskAttachment> TaskAttachments { get; }
+    DbSet<RolePermission> RolePermissions { get; }
+    DbSet<DepartmentPermissionOverride> DepartmentPermissionOverrides { get; }
+    DbSet<SystemSetting> SystemSettings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

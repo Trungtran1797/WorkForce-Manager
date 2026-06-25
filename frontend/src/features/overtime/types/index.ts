@@ -10,6 +10,10 @@ export interface OvertimeRequest {
   reason: string
   status: OvertimeStatus
   rejectReason: string | null
+  projectId: number | null
+  projectName: string | null
+  taskId: number | null
+  taskTitle: string | null
 }
 
 export interface OvertimeFormValues {
@@ -17,4 +21,6 @@ export interface OvertimeFormValues {
   startTime: string
   endTime: string
   reason: string
+  projectId: string
+  taskId: string
 }

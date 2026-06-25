@@ -20,7 +20,7 @@ public class GetAttendancesQueryHandler : IRequestHandler<GetAttendancesQuery, P
         var query = _context.Attendances
             .AsNoTracking()
             .Include(a => a.Employee)
-                .ThenInclude(e => e.Department)
+                .ThenInclude(e => e!.Department)
             .AsQueryable();
 
         // Tìm kiếm theo tên/mã nhân viên

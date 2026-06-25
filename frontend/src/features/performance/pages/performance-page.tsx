@@ -8,7 +8,7 @@ import { RatingLevelBadge, ReviewStatusBadge, ReviewTypeBadge } from '@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatDate } from '@/lib/formatters'
 import { ApiError } from '@/lib/api-client'
-import { useAuth } from '@/features/auth/context/auth-context'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { CreateReviewDialog } from '@/features/performance/components/create-review-dialog'
 import { SubmitReviewDialog } from '@/features/performance/components/submit-review-dialog'
 import { ReviewResultChart } from '@/features/performance/components/review-result-chart'
@@ -69,8 +69,7 @@ function ReviewCard({
 }
 
 export function PerformancePage() {
-  const { user } = useAuth()
-  const canManage = user?.role === 'SuperAdmin' || user?.role === 'Manager'
+  const canManage = useCanEdit('Performance')
 
   const [createOpen, setCreateOpen] = useState(false)
   const [submitOpen, setSubmitOpen] = useState(false)

@@ -6,7 +6,8 @@ using WorkForceManager.Application.Features.PerformanceReviews.Commands.SubmitRe
 using WorkForceManager.Application.Features.PerformanceReviews.Common;
 using WorkForceManager.Application.Features.PerformanceReviews.Queries.GetMyReviews;
 using WorkForceManager.Application.Features.PerformanceReviews.Queries.GetTeamReviews;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -15,6 +16,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class PerformanceReviewsController : ApiControllerBase
 {
     [HttpGet("my")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Performance) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetMy(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMyReviewsQuery(), ct);
@@ -22,7 +24,7 @@ public class PerformanceReviewsController : ApiControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePerformance)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Performance) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetTeam([FromQuery] GetTeamReviewsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
@@ -30,7 +32,7 @@ public class PerformanceReviewsController : ApiControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePerformance)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Performance) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateReviewCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -38,6 +40,7 @@ public class PerformanceReviewsController : ApiControllerBase
     }
 
     [HttpPost("{id:int}/submit")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Performance) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Submit(int id, [FromBody] SubmitReviewRequest request, CancellationToken ct)
     {
         var result = await Mediator.Send(new SubmitReviewCommand(id, request.Criteria, request.Comment), ct);

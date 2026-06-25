@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
 import type { Task } from '@/features/tasks/types'
 
-export function KanbanTaskCard({ task }: { task: Task }) {
+export function KanbanTaskCard({ task, canEdit = true }: { task: Task; canEdit?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
+    disabled: !canEdit,
   })
 
   const style = {
@@ -23,9 +24,10 @@ export function KanbanTaskCard({ task }: { task: Task }) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(canEdit ? listeners : {})}
       className={cn(
-        'cursor-grab gap-2 p-3 text-sm shadow-sm active:cursor-grabbing',
+        'gap-2 p-3 text-sm shadow-sm',
+        canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
         isDragging && 'opacity-50',
         task.status === 'Done' && 'opacity-70'
       )}

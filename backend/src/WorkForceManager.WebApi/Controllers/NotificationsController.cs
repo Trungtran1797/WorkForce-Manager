@@ -5,6 +5,8 @@ using WorkForceManager.Application.Features.Notifications.Commands.MarkAllNotifi
 using WorkForceManager.Application.Features.Notifications.Commands.MarkNotificationAsRead;
 using WorkForceManager.Application.Features.Notifications.Common;
 using WorkForceManager.Application.Features.Notifications.Queries.GetNotifications;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -13,6 +15,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class NotificationsController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Notifications) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetNotifications(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetNotificationsQuery(), ct);
@@ -20,6 +23,7 @@ public class NotificationsController : ApiControllerBase
     }
 
     [HttpPut("{id}/read")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Notifications) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> MarkAsRead(int id, CancellationToken ct)
     {
         var result = await Mediator.Send(new MarkNotificationAsReadCommand(id), ct);
@@ -27,6 +31,7 @@ public class NotificationsController : ApiControllerBase
     }
 
     [HttpPut("read-all")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Notifications) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
     {
         var result = await Mediator.Send(new MarkAllNotificationsAsReadCommand(), ct);

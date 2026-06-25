@@ -11,9 +11,10 @@ interface KanbanColumnProps {
   status: TaskStatus
   title: string
   tasks: Task[]
+  canEditTask?: (task: Task) => boolean
 }
 
-export function KanbanColumn({ status, title, tasks }: KanbanColumnProps) {
+export function KanbanColumn({ status, title, tasks, canEditTask }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
 
   return (
@@ -31,7 +32,7 @@ export function KanbanColumn({ status, title, tasks }: KanbanColumnProps) {
       <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-1 flex-col gap-2 min-h-12">
           {tasks.map((task) => (
-            <KanbanTaskCard key={task.id} task={task} />
+            <KanbanTaskCard key={task.id} task={task} canEdit={canEditTask?.(task) ?? true} />
           ))}
         </div>
       </SortableContext>

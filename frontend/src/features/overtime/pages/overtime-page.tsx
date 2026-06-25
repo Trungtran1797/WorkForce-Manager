@@ -17,6 +17,7 @@ import {
 import { formatDate } from '@/lib/formatters'
 import { OvertimeRequestDialog } from '@/features/overtime/components/overtime-request-dialog'
 import { useAuth } from '@/features/auth/context/auth-context'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { ApiError } from '@/lib/api-client'
 import {
   useApproveOvertime,
@@ -30,6 +31,7 @@ import type { OvertimeFormValues, OvertimeRequest } from '@/features/overtime/ty
 export function OvertimePage() {
   const { user } = useAuth()
   const isManagerOrAdmin = user?.role === 'Manager' || user?.role === 'SuperAdmin'
+  const canEdit = useCanEdit('Overtime')
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'my' | 'pending'>('my')
@@ -120,32 +122,34 @@ export function OvertimePage() {
               </TableCell>
               {showActions && (
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-success/30 text-success hover:bg-success/10"
-                      onClick={() => handleApprove(request.id)}
-                      disabled={isMutating}
-                    >
-                      {isMutating && approveMutation.variables === request.id ? (
-                        <Loader2 className="size-3 animate-spin" />
-                      ) : (
-                        <Check className="size-3.5" />
-                      )}
-                      Duyệt
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-destructive/30 text-destructive hover:bg-destructive/10"
-                      onClick={() => handleReject(request.id)}
-                      disabled={isMutating}
-                    >
-                      <X className="size-3.5" />
-                      Từ chối
-                    </Button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-success/30 text-success hover:bg-success/10"
+                        onClick={() => handleApprove(request.id)}
+                        disabled={isMutating}
+                      >
+                        {isMutating && approveMutation.variables === request.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Check className="size-3.5" />
+                        )}
+                        Duyệt
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                        onClick={() => handleReject(request.id)}
+                        disabled={isMutating}
+                      >
+                        <X className="size-3.5" />
+                        Từ chối
+                      </Button>
+                    </div>
+                  )}
                 </TableCell>
               )}
             </TableRow>
@@ -164,10 +168,12 @@ export function OvertimePage() {
             Đăng ký và duyệt làm thêm giờ (OT) — giờ OT được tính vào bảng công khi duyệt.
           </p>
         </div>
-        <Button size="sm" onClick={() => setDialogOpen(true)}>
-          <Plus className="size-4" />
-          Đăng ký OT
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={() => setDialogOpen(true)}>
+            <Plus className="size-4" />
+            Đăng ký OT
+          </Button>
+        )}
       </div>
 
       {isManagerOrAdmin ? (

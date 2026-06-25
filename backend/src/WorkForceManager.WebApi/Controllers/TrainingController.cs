@@ -6,7 +6,8 @@ using WorkForceManager.Application.Features.Training.Commands.EnrollTraining;
 using WorkForceManager.Application.Features.Training.Commands.SaveCourse;
 using WorkForceManager.Application.Features.Training.Common;
 using WorkForceManager.Application.Features.Training.Queries.GetCourses;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -15,6 +16,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class TrainingController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Training) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetCoursesQuery(), ct);
@@ -22,7 +24,7 @@ public class TrainingController : ApiControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePerformance)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Training) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Save([FromBody] SaveCourseCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -30,6 +32,7 @@ public class TrainingController : ApiControllerBase
     }
 
     [HttpPost("{courseId:int}/enroll")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Training) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Enroll(int courseId, [FromBody] EnrollTrainingRequest request, CancellationToken ct)
     {
         var result = await Mediator.Send(new EnrollTrainingCommand(courseId, request.EmployeeId), ct);
@@ -37,7 +40,7 @@ public class TrainingController : ApiControllerBase
     }
 
     [HttpPatch("enrollments/{enrollmentId:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManagePerformance)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Training) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> CompleteEnrollment(int enrollmentId, [FromBody] CompleteTrainingRequest request, CancellationToken ct)
     {
         var result = await Mediator.Send(new CompleteTrainingCommand(enrollmentId, request.Status, request.CertificateCode), ct);

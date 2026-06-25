@@ -59,7 +59,9 @@ public class CreateOvertimeRequestCommandHandler : IRequestHandler<CreateOvertim
             EndTime = endTime,
             Hours = Math.Round(hours, 2),
             Reason = request.Reason,
-            Status = OvertimeStatus.Pending
+            Status = OvertimeStatus.Pending,
+            ProjectId = request.ProjectId,
+            TaskId = request.TaskId
         };
 
         _context.OvertimeRequests.Add(overtime);
@@ -72,6 +74,15 @@ public class CreateOvertimeRequestCommandHandler : IRequestHandler<CreateOvertim
             "overtime",
             "/overtime",
             cancellationToken);
+
+        // Load navigation properties for mapping
+        if (overtime.ProjectId.HasValue)
+            overtime.Project = await _context.Projects
+                .FindAsync([overtime.ProjectId.Value], cancellationToken);
+
+        if (overtime.TaskId.HasValue)
+            overtime.Task = await _context.Tasks
+                .FindAsync([overtime.TaskId.Value], cancellationToken);
 
         overtime.Employee = employee;
         return overtime.ToDto();

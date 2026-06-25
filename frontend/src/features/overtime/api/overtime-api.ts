@@ -15,6 +15,10 @@ interface BackendOvertimeDto {
   approverId: number | null
   approvedDate: string | null
   rejectReason: string | null
+  projectId: number | null
+  projectName: string | null
+  taskId: number | null
+  taskTitle: string | null
 }
 
 interface BackendPaginated<T> {
@@ -38,6 +42,10 @@ function mapOvertime(dto: BackendOvertimeDto): OvertimeRequest {
     reason: dto.reason ?? '',
     status: dto.status as OvertimeStatus,
     rejectReason: dto.rejectReason,
+    projectId: dto.projectId ?? null,
+    projectName: dto.projectName ?? null,
+    taskId: dto.taskId ?? null,
+    taskTitle: dto.taskTitle ?? null,
   }
 }
 
@@ -59,6 +67,8 @@ export async function createOvertimeRequest(values: OvertimeFormValues): Promise
     startTime: values.startTime,
     endTime: values.endTime,
     reason: values.reason,
+    projectId: values.projectId ? Number(values.projectId) : null,
+    taskId: values.taskId ? Number(values.taskId) : null,
   })
   return mapOvertime(dto)
 }

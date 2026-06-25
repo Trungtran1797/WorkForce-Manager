@@ -20,10 +20,8 @@ public class GetMyAttendanceQueryHandler : IRequestHandler<GetMyAttendanceQuery,
     public async Task<List<AttendanceDto>> Handle(GetMyAttendanceQuery request, CancellationToken cancellationToken)
     {
         var employeeId = _currentUserService.EmployeeId;
-        if (employeeId == null || employeeId == 0)
-        {
-            throw new ForbiddenAccessException("Người dùng không liên kết với thông tin nhân viên.");
-        }
+        if (employeeId is null or 0)
+            return [];
 
         var attendances = await _context.Attendances
             .AsNoTracking()

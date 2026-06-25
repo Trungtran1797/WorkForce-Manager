@@ -36,3 +36,8 @@ Thumbs.db
 # ===== Uploaded files (Project Discussion attachments, etc.) =====
 backend/src/WorkForceManager.WebApi/wwwroot/uploads/**
 !backend/src/WorkForceManager.WebApi/wwwroot/uploads/.gitkeep
+
+# ===== Build artifacts / Publish output =====
+publish/
+*.zip
+*.exe

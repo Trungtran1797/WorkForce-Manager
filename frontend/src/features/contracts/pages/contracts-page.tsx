@@ -17,6 +17,7 @@ import {
 import { formatDate, formatMoney } from '@/lib/formatters'
 import { ApiError } from '@/lib/api-client'
 import { ContractFormDialog } from '@/features/contracts/components/contract-form-dialog'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { useContracts, useDeleteContract, useSaveContract } from '@/features/contracts/api/contract-queries'
 import type { Contract, ContractFormValues, ContractType } from '@/features/contracts/types'
 
@@ -27,6 +28,7 @@ const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
 }
 
 export function ContractsPage() {
+  const canEdit = useCanEdit('Contracts')
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Contract | null>(null)
@@ -70,10 +72,12 @@ export function ContractsPage() {
           <h1 className="text-2xl font-semibold">Hợp đồng lao động</h1>
           <p className="text-sm text-muted-foreground">Quản lý hồ sơ hợp đồng: thử việc, chính thức, phụ lục.</p>
         </div>
-        <Button size="sm" onClick={openCreate}>
-          <Plus className="size-4" />
-          Thêm hợp đồng
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={openCreate}>
+            <Plus className="size-4" />
+            Thêm hợp đồng
+          </Button>
+        )}
       </div>
 
       <Input
@@ -87,7 +91,13 @@ export function ContractsPage() {
         {isLoading && <TableSkeleton rows={5} columns={7} />}
         {isError && <ErrorState onRetry={() => void refetch()} />}
         {!isLoading && !isError && contracts.length === 0 && (
-          <EmptyState icon={FileText} title="Chưa có hợp đồng" description="Thêm hợp đồng lao động cho nhân viên." actionLabel="Thêm hợp đồng" onAction={openCreate} />
+          <EmptyState
+            icon={FileText}
+            title="Chưa có hợp đồng"
+            description="Thêm hợp đồng lao động cho nhân viên."
+            actionLabel={canEdit ? 'Thêm hợp đồng' : undefined}
+            onAction={canEdit ? openCreate : undefined}
+          />
         )}
         {!isLoading && !isError && contracts.length > 0 && (
           <Table>
@@ -99,7 +109,7 @@ export function ContractsPage() {
                 <TableHead>Hiệu lực</TableHead>
                 <TableHead>Lương cơ bản</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Hành động</TableHead>
+                {canEdit && <TableHead className="text-right">Hành động</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -116,21 +126,23 @@ export function ContractsPage() {
                   <TableCell>
                     <ContractStatusBadge status={contract.status} />
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(contract)}>
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(contract)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {canEdit && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(contract)}>
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(contract)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

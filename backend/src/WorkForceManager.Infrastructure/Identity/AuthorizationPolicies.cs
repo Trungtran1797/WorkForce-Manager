@@ -3,17 +3,18 @@ using WorkForceManager.Domain.Enums;
 
 namespace WorkForceManager.Infrastructure.Identity;
 
-/// <summary>Định nghĩa tập trung tên policy và rule role (security-rules.md).</summary>
+/// <summary>
+/// Định nghĩa tập trung tên policy và rule role (security-rules.md).
+/// Các policy theo module (CRUD Employees/Projects/Shifts/Overtime/Payroll/Performance...) đã
+/// được thay thế bằng ma trận phân quyền động (xem
+/// <see cref="WorkForceManager.Infrastructure.Identity.Authorization.PermissionPolicies"/>).
+/// Hai policy dưới đây chỉ còn dùng cho các action KHÔNG gắn với 1 module dữ liệu cụ thể
+/// (vd. quản lý tài khoản người dùng, ma trận phân quyền).
+/// </summary>
 public static class AuthorizationPolicies
 {
     public const string RequireSuperAdmin = nameof(RequireSuperAdmin);
     public const string RequireManager = nameof(RequireManager);
-    public const string CanManageEmployees = nameof(CanManageEmployees);
-    public const string CanManageProjects = nameof(CanManageProjects);
-    public const string CanManageShifts = nameof(CanManageShifts);
-    public const string CanApproveOvertime = nameof(CanApproveOvertime);
-    public const string CanManagePayroll = nameof(CanManagePayroll);
-    public const string CanManagePerformance = nameof(CanManagePerformance);
 
     public static void Register(AuthorizationOptions options)
     {
@@ -21,24 +22,6 @@ public static class AuthorizationPolicies
             p.RequireRole(nameof(UserRole.SuperAdmin)));
 
         options.AddPolicy(RequireManager, p =>
-            p.RequireRole(nameof(UserRole.SuperAdmin), nameof(UserRole.Manager)));
-
-        options.AddPolicy(CanManageEmployees, p =>
-            p.RequireRole(nameof(UserRole.SuperAdmin), nameof(UserRole.Manager)));
-
-        options.AddPolicy(CanManageProjects, p =>
-            p.RequireRole(nameof(UserRole.SuperAdmin), nameof(UserRole.Manager)));
-
-        options.AddPolicy(CanManageShifts, p =>
-            p.RequireRole(nameof(UserRole.SuperAdmin), nameof(UserRole.Manager)));
-
-        options.AddPolicy(CanApproveOvertime, p =>
-            p.RequireRole(nameof(UserRole.SuperAdmin), nameof(UserRole.Manager)));
-
-        options.AddPolicy(CanManagePayroll, p =>
-            p.RequireRole(nameof(UserRole.SuperAdmin), nameof(UserRole.Manager)));
-
-        options.AddPolicy(CanManagePerformance, p =>
             p.RequireRole(nameof(UserRole.SuperAdmin), nameof(UserRole.Manager)));
     }
 }

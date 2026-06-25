@@ -7,7 +7,8 @@ using WorkForceManager.Application.Features.Overtime.Commands.RejectOvertime;
 using WorkForceManager.Application.Features.Overtime.Common;
 using WorkForceManager.Application.Features.Overtime.Queries.GetMyOvertime;
 using WorkForceManager.Application.Features.Overtime.Queries.GetOvertimeRequests;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -16,6 +17,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class OvertimeController : ApiControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Overtime) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateOvertimeRequestCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -23,6 +25,7 @@ public class OvertimeController : ApiControllerBase
     }
 
     [HttpGet("my")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Overtime) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetMy(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMyOvertimeQuery(), ct);
@@ -30,7 +33,7 @@ public class OvertimeController : ApiControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.RequireManager)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Overtime) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] GetOvertimeRequestsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
@@ -38,7 +41,7 @@ public class OvertimeController : ApiControllerBase
     }
 
     [HttpPost("{id:int}/approve")]
-    [Authorize(Policy = AuthorizationPolicies.CanApproveOvertime)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Overtime) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Approve(int id, CancellationToken ct)
     {
         var result = await Mediator.Send(new ApproveOvertimeCommand(id), ct);
@@ -46,7 +49,7 @@ public class OvertimeController : ApiControllerBase
     }
 
     [HttpPost("{id:int}/reject")]
-    [Authorize(Policy = AuthorizationPolicies.CanApproveOvertime)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Overtime) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Reject(int id, [FromBody] RejectOvertimeRequestDto request, CancellationToken ct)
     {
         var result = await Mediator.Send(new RejectOvertimeCommand(id, request.RejectReason), ct);

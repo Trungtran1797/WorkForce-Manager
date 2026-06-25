@@ -25,6 +25,7 @@ import {
 import { formatMoney } from '@/lib/formatters'
 import { ApiError } from '@/lib/api-client'
 import { useDepartments } from '@/features/departments/api/department-queries'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { PayslipDetailDialog } from '@/features/payroll/components/payslip-detail-dialog'
 import {
   useApprovePayslip,
@@ -42,6 +43,7 @@ function currentMonth(): string {
 }
 
 export function PayrollPage() {
+  const canEdit = useCanEdit('Payroll')
   const [period, setPeriod] = useState(currentMonth())
   const [departmentId, setDepartmentId] = useState<string>(ALL_DEPARTMENTS)
   const [standardDays, setStandardDays] = useState(26)
@@ -124,10 +126,12 @@ export function PayrollPage() {
               className="w-28"
             />
           </div>
-          <Button onClick={handleGenerate} disabled={generateMutation.isPending}>
-            {generateMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Calculator className="size-4" />}
-            Tính lương
-          </Button>
+          {canEdit && (
+            <Button onClick={handleGenerate} disabled={generateMutation.isPending}>
+              {generateMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Calculator className="size-4" />}
+              Tính lương
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -168,7 +172,7 @@ export function PayrollPage() {
                       <Button size="icon" variant="ghost" onClick={() => setDetail(p)} title="Xem chi tiết">
                         <Eye className="size-4" />
                       </Button>
-                      {p.status === 'Draft' && (
+                      {canEdit && p.status === 'Draft' && (
                         <Button
                           size="icon"
                           variant="ghost"
@@ -180,15 +184,17 @@ export function PayrollPage() {
                           <Check className="size-4" />
                         </Button>
                       )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEmail(p.id)}
-                        title="Gửi email"
-                        disabled={emailMutation.isPending}
-                      >
-                        <Mail className="size-4" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleEmail(p.id)}
+                          title="Gửi email"
+                          disabled={emailMutation.isPending}
+                        >
+                          <Mail className="size-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

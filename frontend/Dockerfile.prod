@@ -9,7 +9,7 @@ ARG VITE_API_URL=/api/v1
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY . .
-RUN npm run build
+RUN rm -rf node_modules/.vite dist && npm run build -- --outDir dist
 
 # Production serve stage (nginx reverse-proxy + SPA)
 FROM nginx:stable-alpine

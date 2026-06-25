@@ -35,7 +35,10 @@ export function TaskCalendarView({ tasks }: { tasks: Task[] }) {
     const map = new Map<string, Task[]>()
 
     tasks.forEach((task) => {
-      const key = format(new Date(task.dueDate), 'yyyy-MM-dd')
+      if (!task.dueDate) return
+      const date = new Date(task.dueDate)
+      if (isNaN(date.getTime())) return
+      const key = format(date, 'yyyy-MM-dd')
       const existing = map.get(key) ?? []
       existing.push(task)
       map.set(key, existing)

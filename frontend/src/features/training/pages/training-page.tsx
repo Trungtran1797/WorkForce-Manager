@@ -16,6 +16,7 @@ import {
 import { formatDate } from '@/lib/formatters'
 import { ApiError } from '@/lib/api-client'
 import { useAuth } from '@/features/auth/context/auth-context'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { CourseFormDialog } from '@/features/training/components/course-form-dialog'
 import { CompleteTrainingDialog } from '@/features/training/components/complete-training-dialog'
 import {
@@ -28,7 +29,7 @@ import type { CompleteTrainingFormValues, CourseFormValues, TrainingCourse, Trai
 
 export function TrainingPage() {
   const { user } = useAuth()
-  const canManage = user?.role === 'SuperAdmin' || user?.role === 'Manager'
+  const canManage = useCanEdit('Training')
 
   const [courseDialogOpen, setCourseDialogOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<TrainingCourse | null>(null)

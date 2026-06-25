@@ -15,10 +15,12 @@ import {
 import { formatMoney } from '@/lib/formatters'
 import { ApiError } from '@/lib/api-client'
 import { SalaryConfigDialog } from '@/features/salary-configs/components/salary-config-dialog'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { useSalaryConfigs, useSaveSalaryConfig } from '@/features/salary-configs/api/salary-config-queries'
 import type { SalaryConfig, SalaryConfigFormValues } from '@/features/salary-configs/types'
 
 export function SalaryConfigPage() {
+  const canEdit = useCanEdit('SalaryConfigs')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<SalaryConfig | null>(null)
 
@@ -51,17 +53,25 @@ export function SalaryConfigPage() {
           <h1 className="text-2xl font-semibold">Cấu hình lương</h1>
           <p className="text-sm text-muted-foreground">Lương cơ bản, phụ cấp, mức đóng BH và giảm trừ gia cảnh.</p>
         </div>
-        <Button size="sm" onClick={openCreate}>
-          <Plus className="size-4" />
-          Thêm cấu hình
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={openCreate}>
+            <Plus className="size-4" />
+            Thêm cấu hình
+          </Button>
+        )}
       </div>
 
       <Card className="p-0 overflow-hidden">
         {isLoading && <TableSkeleton rows={5} columns={6} />}
         {isError && <ErrorState onRetry={() => void refetch()} />}
         {!isLoading && !isError && configs.length === 0 && (
-          <EmptyState icon={Coins} title="Chưa có cấu hình lương" description="Thêm cấu hình lương cho nhân viên để tính bảng lương." actionLabel="Thêm cấu hình" onAction={openCreate} />
+          <EmptyState
+            icon={Coins}
+            title="Chưa có cấu hình lương"
+            description="Thêm cấu hình lương cho nhân viên để tính bảng lương."
+            actionLabel={canEdit ? 'Thêm cấu hình' : undefined}
+            onAction={canEdit ? openCreate : undefined}
+          />
         )}
         {!isLoading && !isError && configs.length > 0 && (
           <Table>
@@ -72,7 +82,7 @@ export function SalaryConfigPage() {
                 <TableHead>Phụ cấp</TableHead>
                 <TableHead>Lương đóng BH</TableHead>
                 <TableHead>Người phụ thuộc</TableHead>
-                <TableHead className="text-right">Hành động</TableHead>
+                {canEdit && <TableHead className="text-right">Hành động</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -83,11 +93,13 @@ export function SalaryConfigPage() {
                   <TableCell className="tabular-nums">{formatMoney(config.allowance)}</TableCell>
                   <TableCell className="tabular-nums">{formatMoney(config.insuranceSalary)}</TableCell>
                   <TableCell className="tabular-nums">{config.dependentCount}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(config)}>
-                      <Pencil className="size-4" />
-                    </Button>
-                  </TableCell>
+                  {canEdit && (
+                    <TableCell className="text-right">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(config)}>
+                        <Pencil className="size-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

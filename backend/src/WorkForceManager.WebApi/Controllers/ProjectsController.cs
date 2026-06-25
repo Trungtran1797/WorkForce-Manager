@@ -15,7 +15,8 @@ using WorkForceManager.Application.Features.Projects.Discussions.Queries.GetProj
 using WorkForceManager.Application.Features.Projects.Discussions.Queries.GetProjectComments;
 using WorkForceManager.Application.Features.Projects.Queries.GetProjectById;
 using WorkForceManager.Application.Features.Projects.Queries.GetProjects;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -24,6 +25,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class ProjectsController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? status, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetProjectsQuery(search, status), ct);
@@ -31,6 +33,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetProjectByIdQuery(id), ct);
@@ -38,7 +41,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.CanManageProjects)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateProjectCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -46,7 +49,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageProjects)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectCommand command, CancellationToken ct)
     {
         if (id != command.Id)
@@ -58,7 +61,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageProjects)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteProjectCommand(id), ct);
@@ -66,7 +69,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpPost("{id:int}/members")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageProjects)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> AddMember(int id, [FromBody] AddProjectMemberRequest request, CancellationToken ct)
     {
         var result = await Mediator.Send(new AddProjectMemberCommand(id, request.EmployeeId, request.Role), ct);
@@ -74,7 +77,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}/members/{memberId:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageProjects)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> RemoveMember(int id, int memberId, CancellationToken ct)
     {
         var result = await Mediator.Send(new RemoveProjectMemberCommand(id, memberId), ct);
@@ -82,6 +85,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpGet("{id:int}/comments")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetComments(
         int id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
@@ -91,6 +95,7 @@ public class ProjectsController : ApiControllerBase
 
     [HttpPost("{id:int}/comments")]
     [Consumes("multipart/form-data")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> AddComment(
         int id, [FromForm] string? content, [FromForm] List<IFormFile>? files, CancellationToken ct)
     {
@@ -99,6 +104,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}/comments/{commentId:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> DeleteComment(int id, int commentId, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteProjectCommentCommand(id, commentId), ct);
@@ -106,6 +112,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> DeleteAttachment(int id, int attachmentId, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteProjectAttachmentCommand(id, attachmentId), ct);
@@ -113,6 +120,7 @@ public class ProjectsController : ApiControllerBase
     }
 
     [HttpGet("{id:int}/attachments/{attachmentId:int}/download")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> DownloadAttachment(int id, int attachmentId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetProjectAttachmentDownloadQuery(id, attachmentId), ct);

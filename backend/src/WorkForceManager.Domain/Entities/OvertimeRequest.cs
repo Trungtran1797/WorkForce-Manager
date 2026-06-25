@@ -22,4 +22,12 @@ public class OvertimeRequest : BaseAuditableEntity
     public int? ApproverId { get; set; }
     public DateTime? ApprovedDate { get; set; }
     public string? RejectReason { get; set; }
+
+    /// <summary>Dự án liên quan (tùy chọn).</summary>
+    public int? ProjectId { get; set; }
+    public Project? Project { get; set; }
+
+    /// <summary>Công việc liên quan (tùy chọn).</summary>
+    public int? TaskId { get; set; }
+    public TaskItem? Task { get; set; }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { MoreHorizontal, Plus, Search, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -35,13 +36,17 @@ import {
   useUpdateEmployee,
 } from '@/features/employees/api/employee-queries'
 import { useDepartments } from '@/features/departments/api/department-queries'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import type { Employee, EmployeeFormValues } from '@/features/employees/types'
 
 const PAGE_SIZE = 10
 
 export function EmployeeListPage() {
-  const [searchInput, setSearchInput] = useState('')
-  const [search, setSearch] = useState('')
+  const canEdit = useCanEdit('Employees')
+  const [searchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') ?? ''
+  const [searchInput, setSearchInput] = useState(initialSearch)
+  const [search, setSearch] = useState(initialSearch)
   const [departmentFilter, setDepartmentFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -109,10 +114,12 @@ export function EmployeeListPage() {
           <h1 className="text-2xl font-semibold">Nhân viên</h1>
           <p className="text-sm text-muted-foreground">Quản lý thông tin nhân sự</p>
         </div>
-        <Button size="sm" onClick={handleOpenAddDialog}>
-          <Plus className="size-4" />
-          Thêm nhân viên
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={handleOpenAddDialog}>
+            <Plus className="size-4" />
+            Thêm nhân viên
+          </Button>
+        )}
       </div>
 
       <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -175,8 +182,8 @@ export function EmployeeListPage() {
             icon={Users}
             title="Không tìm thấy nhân viên"
             description="Không có nhân viên nào khớp với điều kiện tìm kiếm/lọc hiện tại."
-            actionLabel="Thêm nhân viên"
-            onAction={handleOpenAddDialog}
+            actionLabel={canEdit ? 'Thêm nhân viên' : undefined}
+            onAction={canEdit ? handleOpenAddDialog : undefined}
           />
         )}
 
@@ -206,24 +213,26 @@ export function EmployeeListPage() {
                       <EmployeeStatusBadge status={employee.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Hành động">
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenEditDialog(employee)}>
-                            Sửa thông tin
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => handleDelete(employee)}
-                          >
-                            Xóa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {canEdit && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Hành động">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleOpenEditDialog(employee)}>
+                              Sửa thông tin
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => handleDelete(employee)}
+                            >
+                              Xóa
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

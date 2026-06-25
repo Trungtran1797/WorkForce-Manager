@@ -14,6 +14,7 @@ namespace WorkForceManager.Application.Tests;
 public class DeleteProjectAndTaskCommandHandlerTests
 {
     private readonly ApplicationDbContext _context;
+    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
 
     public DeleteProjectAndTaskCommandHandlerTests()
     {
@@ -21,8 +22,11 @@ public class DeleteProjectAndTaskCommandHandlerTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        var currentUserServiceMock = new Mock<ICurrentUserService>();
-        currentUserServiceMock.Setup(x => x.UserName).Returns("test_user");
+        _currentUserServiceMock = new Mock<ICurrentUserService>();
+        _currentUserServiceMock.Setup(x => x.UserName).Returns("test_user");
+        _currentUserServiceMock.Setup(x => x.Role).Returns(WorkForceManager.Domain.Enums.UserRole.SuperAdmin);
+
+        var currentUserServiceMock = _currentUserServiceMock;
 
         var dateTimeServiceMock = new Mock<IDateTimeService>();
         dateTimeServiceMock.Setup(x => x.Now).Returns(DateTime.Now);
@@ -127,7 +131,7 @@ public class DeleteProjectAndTaskCommandHandlerTests
 
         await _context.SaveChangesAsync();
 
-        var handler = new DeleteTaskCommandHandler(_context);
+        var handler = new DeleteTaskCommandHandler(_context, _currentUserServiceMock.Object);
 
         // Act
         await handler.Handle(new DeleteTaskCommand(10), CancellationToken.None);

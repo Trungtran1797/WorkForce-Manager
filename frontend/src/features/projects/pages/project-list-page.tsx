@@ -11,12 +11,14 @@ import { MemberAvatarStack } from '@/features/projects/components/member-avatar-
 import { ProjectProgressBar } from '@/features/projects/components/project-progress-bar'
 import { ProjectFormDialog } from '@/features/projects/components/project-form-dialog'
 import { useCreateProject, useProjects } from '@/features/projects/api/project-queries'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import type { ProjectFormValues } from '@/features/projects/types'
 
 export function ProjectListPage() {
   const { data: projects = [], isLoading, isError, refetch } = useProjects()
   const createProject = useCreateProject()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const canManageProjects = useCanEdit('Projects')
 
   const handleCreate = async (values: ProjectFormValues): Promise<void> => {
     await createProject.mutateAsync(values)
@@ -29,10 +31,12 @@ export function ProjectListPage() {
           <h1 className="text-2xl font-semibold">Dự án</h1>
           <p className="text-sm text-muted-foreground">Theo dõi dự án và tiến độ thực hiện</p>
         </div>
-        <Button size="sm" onClick={() => setDialogOpen(true)}>
-          <Plus className="size-4" />
-          Tạo dự án
-        </Button>
+        {canManageProjects && (
+          <Button size="sm" onClick={() => setDialogOpen(true)}>
+            <Plus className="size-4" />
+            Tạo dự án
+          </Button>
+        )}
       </div>
 
       {isLoading && <CardGridSkeleton count={4} />}
@@ -48,9 +52,13 @@ export function ProjectListPage() {
           <EmptyState
             icon={FolderKanban}
             title="Chưa có dự án nào"
-            description="Tạo dự án đầu tiên để bắt đầu theo dõi tiến độ."
-            actionLabel="Tạo dự án"
-            onAction={() => setDialogOpen(true)}
+            description={
+              canManageProjects
+                ? 'Tạo dự án đầu tiên để bắt đầu theo dõi tiến độ.'
+                : 'Hiện chưa có dự án nào được giao cho bạn.'
+            }
+            actionLabel={canManageProjects ? 'Tạo dự án' : undefined}
+            onAction={canManageProjects ? () => setDialogOpen(true) : undefined}
           />
         </Card>
       )}

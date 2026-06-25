@@ -7,7 +7,8 @@ using WorkForceManager.Application.Features.Employees.Commands.UpdateEmployee;
 using WorkForceManager.Application.Features.Employees.Common;
 using WorkForceManager.Application.Features.Employees.Queries.GetEmployeeById;
 using WorkForceManager.Application.Features.Employees.Queries.GetEmployees;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -16,6 +17,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class EmployeesController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Employees) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] GetEmployeesQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
@@ -23,6 +25,7 @@ public class EmployeesController : ApiControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Employees) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetEmployeeByIdQuery(id), ct);
@@ -30,7 +33,7 @@ public class EmployeesController : ApiControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.CanManageEmployees)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Employees) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateEmployeeCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -38,7 +41,7 @@ public class EmployeesController : ApiControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageEmployees)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Employees) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateEmployeeCommand command, CancellationToken ct)
     {
         if (id != command.Id)
@@ -50,7 +53,7 @@ public class EmployeesController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Policy = AuthorizationPolicies.CanManageEmployees)]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Employees) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteEmployeeCommand(id), ct);

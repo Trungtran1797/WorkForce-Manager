@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { EmployeeListPage } from './employee-list-page'
 import type { Employee } from '@/features/employees/types'
@@ -36,6 +37,10 @@ vi.mock('@/features/departments/api/department-queries', () => ({
   useDepartments: () => ({ data: [{ id: 1, name: 'Phòng Kế toán' }] }),
 }))
 
+vi.mock('@/features/auth/context/auth-context', () => ({
+  useAuth: () => ({ user: { role: 'SuperAdmin', permissions: { Employees: 'Edit' } } }),
+}))
+
 describe('EmployeeListPage', () => {
   it('hiển thị danh sách nhân viên', () => {
     mockUseEmployees.mockReturnValue({
@@ -46,7 +51,11 @@ describe('EmployeeListPage', () => {
       refetch: vi.fn(),
     })
 
-    render(<EmployeeListPage />)
+    render(
+      <MemoryRouter>
+        <EmployeeListPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('NV001')).toBeInTheDocument()
     expect(screen.getByText('Nguyễn Văn A')).toBeInTheDocument()
@@ -62,7 +71,11 @@ describe('EmployeeListPage', () => {
       refetch: vi.fn(),
     })
 
-    render(<EmployeeListPage />)
+    render(
+      <MemoryRouter>
+        <EmployeeListPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Không tìm thấy nhân viên')).toBeInTheDocument()
   })
@@ -77,7 +90,11 @@ describe('EmployeeListPage', () => {
       refetch,
     })
 
-    render(<EmployeeListPage />)
+    render(
+      <MemoryRouter>
+        <EmployeeListPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Đã xảy ra lỗi')).toBeInTheDocument()
   })

@@ -18,6 +18,7 @@ import { formatDate } from '@/lib/formatters'
 import { ApiError } from '@/lib/api-client'
 import { ShiftFormDialog } from '@/features/shifts/components/shift-form-dialog'
 import { AssignShiftDialog } from '@/features/shifts/components/assign-shift-dialog'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import {
   useAssignShift,
   useCreateShift,
@@ -39,6 +40,7 @@ function toIsoDate(date: Date): string {
 }
 
 export function ShiftPage() {
+  const canEdit = useCanEdit('Shifts')
   const [shiftDialogOpen, setShiftDialogOpen] = useState(false)
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [editingShift, setEditingShift] = useState<Shift | null>(null)
@@ -119,17 +121,25 @@ export function ShiftPage() {
         </TabsList>
 
         <TabsContent value="config" className="mt-3 space-y-3">
-          <div className="flex justify-end">
-            <Button size="sm" onClick={openCreate}>
-              <Plus className="size-4" />
-              Thêm ca
-            </Button>
-          </div>
+          {canEdit && (
+            <div className="flex justify-end">
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="size-4" />
+                Thêm ca
+              </Button>
+            </div>
+          )}
           <Card className="p-0 overflow-hidden">
             {isLoading && <TableSkeleton rows={4} columns={6} />}
             {isError && <ErrorState onRetry={() => void refetch()} />}
             {!isLoading && !isError && shifts.length === 0 && (
-              <EmptyState icon={Clock} title="Chưa có ca làm việc" description="Thêm ca làm việc để bắt đầu phân ca." actionLabel="Thêm ca" onAction={openCreate} />
+              <EmptyState
+                icon={Clock}
+                title="Chưa có ca làm việc"
+                description="Thêm ca làm việc để bắt đầu phân ca."
+                actionLabel={canEdit ? 'Thêm ca' : undefined}
+                onAction={canEdit ? openCreate : undefined}
+              />
             )}
             {!isLoading && !isError && shifts.length > 0 && (
               <Table>
@@ -141,7 +151,7 @@ export function ShiftPage() {
                     <TableHead>Nghỉ</TableHead>
                     <TableHead>Loại</TableHead>
                     <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Hành động</TableHead>
+                    {canEdit && <TableHead className="text-right">Hành động</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -157,21 +167,23 @@ export function ShiftPage() {
                           {shift.isActive ? 'Đang áp dụng' : 'Ngừng'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => openEdit(shift)}>
-                            <Pencil className="size-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(shift)}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {canEdit && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(shift)}>
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDelete(shift)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -185,10 +197,12 @@ export function ShiftPage() {
             <p className="text-sm text-muted-foreground">
               {formatDate(startDate)} – {formatDate(endDate)}
             </p>
-            <Button size="sm" onClick={() => setAssignDialogOpen(true)}>
-              <CalendarClock className="size-4" />
-              Phân ca
-            </Button>
+            {canEdit && (
+              <Button size="sm" onClick={() => setAssignDialogOpen(true)}>
+                <CalendarClock className="size-4" />
+                Phân ca
+              </Button>
+            )}
           </div>
           <Card className="p-0 overflow-hidden">
             {isScheduleLoading && <TableSkeleton rows={4} columns={4} />}

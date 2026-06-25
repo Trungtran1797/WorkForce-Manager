@@ -17,6 +17,7 @@ import {
 import { formatDate } from '@/lib/formatters'
 import { LeaveRequestDialog } from '@/features/leave/components/leave-request-dialog'
 import { useAuth } from '@/features/auth/context/auth-context'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { ApiError } from '@/lib/api-client'
 import {
   useApproveLeaveRequest,
@@ -36,6 +37,7 @@ const LEAVE_TYPE_LABEL: Record<LeaveRequest['leaveType'], string> = {
 export function LeavePage() {
   const { user } = useAuth()
   const isManagerOrAdmin = user?.role === 'Manager' || user?.role === 'SuperAdmin'
+  const canEdit = useCanEdit('Leave')
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'my' | 'pending'>('my')
@@ -148,32 +150,34 @@ export function LeavePage() {
               </TableCell>
               {showActions && (
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-success/30 text-success hover:bg-success/10"
-                      onClick={() => handleApprove(request.id)}
-                      disabled={isMutating}
-                    >
-                      {isMutating && approveMutation.variables === request.id ? (
-                        <Loader2 className="size-3 animate-spin" />
-                      ) : (
-                        <Check className="size-3.5" />
-                      )}
-                      Duyệt
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-destructive/30 text-destructive hover:bg-destructive/10"
-                      onClick={() => handleReject(request.id)}
-                      disabled={isMutating}
-                    >
-                      <X className="size-3.5" />
-                      Từ chối
-                    </Button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-success/30 text-success hover:bg-success/10"
+                        onClick={() => handleApprove(request.id)}
+                        disabled={isMutating}
+                      >
+                        {isMutating && approveMutation.variables === request.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Check className="size-3.5" />
+                        )}
+                        Duyệt
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                        onClick={() => handleReject(request.id)}
+                        disabled={isMutating}
+                      >
+                        <X className="size-3.5" />
+                        Từ chối
+                      </Button>
+                    </div>
+                  )}
                 </TableCell>
               )}
             </TableRow>
@@ -192,10 +196,12 @@ export function LeavePage() {
             Đăng ký và duyệt nghỉ phép theo quy trình Employee → Manager → HR
           </p>
         </div>
-        <Button size="sm" onClick={() => setDialogOpen(true)}>
-          <Plus className="size-4" />
-          Đăng ký nghỉ
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={() => setDialogOpen(true)}>
+            <Plus className="size-4" />
+            Đăng ký nghỉ
+          </Button>
+        )}
       </div>
 
       {isManagerOrAdmin ? (

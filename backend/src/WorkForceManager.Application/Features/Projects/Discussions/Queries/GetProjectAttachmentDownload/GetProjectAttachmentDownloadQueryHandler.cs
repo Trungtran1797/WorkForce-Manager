@@ -47,7 +47,7 @@ public class GetProjectAttachmentDownloadQueryHandler
             .FirstOrDefaultAsync(a => a.Id == request.AttachmentId && a.ProjectId == request.ProjectId, cancellationToken)
             ?? throw new NotFoundException("File đính kèm", request.AttachmentId);
 
-        var subFolder = $"{SubFolderPrefix}/{request.ProjectId}";
+        var subFolder = $"{SubFolderPrefix}/{project.Code}";
         var (content, _, _) = await _fileStorageService.GetFileAsync(attachment.StoredFileName, subFolder, cancellationToken);
 
         return new ProjectAttachmentFileResult(content, attachment.ContentType, attachment.FileName);

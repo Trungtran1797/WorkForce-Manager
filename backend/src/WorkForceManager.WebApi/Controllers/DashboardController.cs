@@ -5,6 +5,8 @@ using WorkForceManager.Application.Features.Dashboard.Common;
 using WorkForceManager.Application.Features.Dashboard.Queries.GetDashboardStats;
 using WorkForceManager.Application.Features.Dashboard.Queries.GetWeeklyProgress;
 using WorkForceManager.Application.Features.Dashboard.Queries.GetRecentActivities;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
@@ -13,6 +15,7 @@ namespace WorkForceManager.WebApi.Controllers;
 public class DashboardController : ApiControllerBase
 {
     [HttpGet("stats")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Dashboard) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetStats(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDashboardStatsQuery(), ct);
@@ -20,6 +23,7 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("weekly-progress")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Dashboard) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetWeeklyProgress(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetWeeklyProgressQuery(), ct);
@@ -27,6 +31,7 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("recent-activities")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Dashboard) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetRecentActivities(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetRecentActivitiesQuery(), ct);

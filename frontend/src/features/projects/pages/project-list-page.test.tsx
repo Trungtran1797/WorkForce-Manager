@@ -28,6 +28,10 @@ vi.mock('@/features/projects/api/project-queries', () => ({
   useCreateProject: () => ({ mutateAsync: vi.fn() }),
 }))
 
+vi.mock('@/features/auth/context/auth-context', () => ({
+  useAuth: () => ({ user: { role: 'SuperAdmin', permissions: { Projects: 'Edit' } } }),
+}))
+
 describe('ProjectListPage', () => {
   it('hiển thị danh sách dự án', () => {
     mockUseProjects.mockReturnValue({ data: sampleProjects, isLoading: false, isError: false, refetch: vi.fn() })

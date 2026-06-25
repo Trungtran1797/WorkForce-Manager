@@ -13,6 +13,7 @@ import {
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { REPORT_CATALOG } from '@/features/reports/data/report-catalog'
 import type { ReportItem } from '@/features/reports/types'
 import { downloadReport } from '@/features/reports/api/reports-api'
@@ -26,6 +27,7 @@ const ICON_MAP: Record<ReportItem['icon'], LucideIcon> = {
 }
 
 export function ReportsPage() {
+  const canEdit = useCanEdit('Reports')
   const [exporting, setExporting] = useState<{ id: string; format: 'excel' | 'pdf' } | null>(null)
 
   const handleExport = async (reportId: string, exportType: 'excel' | 'pdf'): Promise<void> => {
@@ -64,34 +66,36 @@ export function ReportsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-xs text-muted-foreground">{report.description}</p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isAnyLoading}
-                    onClick={() => handleExport(report.id, 'excel')}
-                  >
-                    {isExcelLoading ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <FileSpreadsheet className="size-3.5" />
-                    )}
-                    Excel
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isAnyLoading}
-                    onClick={() => handleExport(report.id, 'pdf')}
-                  >
-                    {isPdfLoading ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <FileText className="size-3.5" />
-                    )}
-                    PDF
-                  </Button>
-                </div>
+                {canEdit && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isAnyLoading}
+                      onClick={() => handleExport(report.id, 'excel')}
+                    >
+                      {isExcelLoading ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <FileSpreadsheet className="size-3.5" />
+                      )}
+                      Excel
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isAnyLoading}
+                      onClick={() => handleExport(report.id, 'pdf')}
+                    >
+                      {isPdfLoading ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="size-3.5" />
+                      )}
+                      PDF
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )

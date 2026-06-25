@@ -37,7 +37,7 @@ public class OvertimeCommandHandlerTests
         await _context.SaveChangesAsync();
 
         var handler = new CreateOvertimeRequestCommandHandler(_context, _currentUser.Object, _notification.Object);
-        var result = await handler.Handle(new CreateOvertimeRequestCommand("2026-06-13", "18:00", "20:30", "Gấp"), CancellationToken.None);
+        var result = await handler.Handle(new CreateOvertimeRequestCommand("2026-06-13", "18:00", "20:30", "Gấp", null, null), CancellationToken.None);
 
         result.Hours.Should().Be(2.5m);
         result.Status.Should().Be(OvertimeStatus.Pending.ToString());

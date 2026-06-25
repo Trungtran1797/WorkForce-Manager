@@ -12,4 +12,8 @@ public record OvertimeRequestDto(
     string Status,
     int? ApproverId,
     string? ApprovedDate,
-    string? RejectReason);
+    string? RejectReason,
+    int? ProjectId,
+    string? ProjectName,
+    int? TaskId,
+    string? TaskTitle);

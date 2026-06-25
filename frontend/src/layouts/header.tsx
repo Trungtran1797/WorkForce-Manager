@@ -1,4 +1,4 @@
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen, Search, ListChecks, Calendar, Info, ShieldAlert, CheckCheck, Loader2 } from 'lucide-react'
+import { Bell, Menu, PanelLeftClose, PanelLeftOpen, ListChecks, Calendar, Info, ShieldAlert, CheckCheck, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -13,13 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { useUiStore } from '@/stores/ui-store'
 import { useAuth } from '@/features/auth/context/auth-context'
 import type { UserRole } from '@/features/auth/types'
 import { cn } from '@/lib/utils'
 
+import { GlobalSearch } from '@/features/search/components/global-search'
 import { useNotificationsRealtime } from '@/features/notifications/hooks/use-notifications'
 import {
   useNotifications,
@@ -103,10 +103,7 @@ export function Header() {
         >
           {sidebarCollapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
         </Button>
-        <div className="relative w-full max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input type="search" placeholder="Tìm kiếm..." className="pl-9" />
-        </div>
+        <GlobalSearch />
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">

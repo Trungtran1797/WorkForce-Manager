@@ -21,7 +21,14 @@ public static class ApplicationDbContextSeed
             var context = sp.GetRequiredService<ApplicationDbContext>();
             var hasher = sp.GetRequiredService<IPasswordHasher>();
 
-            await context.Database.MigrateAsync();
+            if (context.Database.IsSqlite())
+            {
+                await context.Database.EnsureCreatedAsync();
+            }
+            else
+            {
+                await context.Database.MigrateAsync();
+            }
             await SeedAsync(context, hasher);
         }
         catch (Exception ex)
@@ -38,6 +45,128 @@ public static class ApplicationDbContextSeed
         await SeedProjectsAndTasksAsync(context);
         await SeedShiftsAndLocationsAsync(context);
         await SeedPayrollAsync(context);
+        await SeedPermissionMatrixAsync(context);
+        await SeedSystemSettingsAsync(context);
+    }
+
+    private static async Task SeedSystemSettingsAsync(ApplicationDbContext context)
+    {
+        if (await context.SystemSettings.AnyAsync()) return;
+
+        context.SystemSettings.Add(new Domain.Entities.SystemSetting
+        {
+            Key = "OneDriveProjectsBasePath",
+            Value = string.Empty,
+            Description = "Đường dẫn thư mục gốc chứa các dự án trên OneDrive (hoặc ổ đĩa chia sẻ). Để trống nếu không dùng tính năng đồng bộ thư mục.",
+            UpdatedDate = DateTime.UtcNow
+        });
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedPermissionMatrixAsync(ApplicationDbContext context)
+    {
+        if (!await context.RolePermissions.AnyAsync())
+        {
+            // Ma trận quyền theo Role x Module - dựa theo docs/phan-quyen-truy-cap.md Bảng 1.
+            var matrix = new (PermissionModule Module, PermissionLevel SuperAdmin, PermissionLevel Manager, PermissionLevel Employee)[]
+            {
+                (PermissionModule.Dashboard, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.View),
+                (PermissionModule.Employees, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.View),
+                (PermissionModule.Departments, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.None),
+                (PermissionModule.Projects, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.View),
+                (PermissionModule.Tasks, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
+                (PermissionModule.Attendance, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
+                (PermissionModule.Leave, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
+                (PermissionModule.Overtime, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
+                (PermissionModule.Shifts, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.View),
+                (PermissionModule.OfficeLocations, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.None),
+                (PermissionModule.Contracts, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.View),
+                (PermissionModule.Payroll, PermissionLevel.Edit, PermissionLevel.None, PermissionLevel.None),
+                (PermissionModule.SalaryConfigs, PermissionLevel.Edit, PermissionLevel.None, PermissionLevel.None),
+                (PermissionModule.Payslips, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.View),
+                (PermissionModule.Okrs, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
+                (PermissionModule.Performance, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
+                (PermissionModule.Training, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.View),
+                (PermissionModule.Reports, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.None),
+                (PermissionModule.Notifications, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
+                (PermissionModule.PermissionMatrix, PermissionLevel.Edit, PermissionLevel.None, PermissionLevel.None)
+            };
+
+            var rolePermissions = new List<RolePermission>();
+            foreach (var (module, superAdminLevel, managerLevel, employeeLevel) in matrix)
+            {
+                rolePermissions.Add(new RolePermission { Role = UserRole.SuperAdmin, Module = module, Level = superAdminLevel });
+                rolePermissions.Add(new RolePermission { Role = UserRole.Manager, Module = module, Level = managerLevel });
+                rolePermissions.Add(new RolePermission { Role = UserRole.Employee, Module = module, Level = employeeLevel });
+            }
+
+            await context.RolePermissions.AddRangeAsync(rolePermissions);
+            await context.SaveChangesAsync();
+        }
+
+        if (!await context.DepartmentPermissionOverrides.AnyAsync())
+        {
+            var departments = await context.Departments.ToListAsync();
+
+            var overrides = new List<DepartmentPermissionOverride>();
+
+            AddOverrides(overrides, departments, "Phòng HCNS-Tổng hợp",
+                (PermissionModule.Employees, PermissionLevel.Edit),
+                (PermissionModule.Departments, PermissionLevel.Edit),
+                (PermissionModule.Contracts, PermissionLevel.Edit));
+
+            AddOverrides(overrides, departments, "Phòng Kế toán",
+                (PermissionModule.Payroll, PermissionLevel.Edit),
+                (PermissionModule.SalaryConfigs, PermissionLevel.Edit),
+                (PermissionModule.Contracts, PermissionLevel.Edit),
+                (PermissionModule.Reports, PermissionLevel.Edit));
+
+            AddOverrides(overrides, departments, "Phòng Kinh doanh",
+                (PermissionModule.Projects, PermissionLevel.Edit),
+                (PermissionModule.Reports, PermissionLevel.Edit));
+
+            AddOverrides(overrides, departments, "Phòng Logistics",
+                (PermissionModule.OfficeLocations, PermissionLevel.Edit));
+
+            AddOverrides(overrides, departments, "Kho - Tổng hợp",
+                (PermissionModule.Shifts, PermissionLevel.Edit));
+
+            AddOverrides(overrides, departments, "QA-QC",
+                (PermissionModule.Shifts, PermissionLevel.Edit));
+
+            AddOverrides(overrides, departments, "Sản xuất",
+                (PermissionModule.Shifts, PermissionLevel.Edit));
+
+            if (overrides.Count > 0)
+            {
+                await context.DepartmentPermissionOverrides.AddRangeAsync(overrides);
+                await context.SaveChangesAsync();
+            }
+        }
+    }
+
+    private static void AddOverrides(
+        List<DepartmentPermissionOverride> overrides,
+        List<Department> departments,
+        string departmentName,
+        params (PermissionModule Module, PermissionLevel Level)[] permissions)
+    {
+        var department = departments.FirstOrDefault(d => d.Name == departmentName);
+        if (department is null)
+        {
+            return;
+        }
+
+        foreach (var (module, level) in permissions)
+        {
+            overrides.Add(new DepartmentPermissionOverride
+            {
+                DepartmentId = department.Id,
+                Module = module,
+                Level = level
+            });
+        }
     }
 
     private static async Task SeedPayrollAsync(ApplicationDbContext context)
@@ -369,11 +498,25 @@ public static class ApplicationDbContextSeed
 
     private static async Task SeedUsersAsync(ApplicationDbContext context, IPasswordHasher hasher)
     {
+        // Link admin → NV001 nếu chưa có EmployeeId (chạy mỗi lần startup để fix DB cũ).
+        var existingAdmin = await context.Users.FirstOrDefaultAsync(u => u.Username == "admin");
+        if (existingAdmin != null && existingAdmin.EmployeeId == null)
+        {
+            var adminEmployee = await context.Employees.FirstOrDefaultAsync(e => e.EmployeeCode == "NV001");
+            if (adminEmployee != null)
+            {
+                existingAdmin.EmployeeId = adminEmployee.Id;
+                await context.SaveChangesAsync();
+            }
+        }
+
         if (await context.Users.AnyAsync())
         {
             return;
         }
 
+        var adminEmp = await context.Employees
+            .FirstOrDefaultAsync(e => e.EmployeeCode == "NV001");
         var managerEmployee = await context.Employees
             .FirstOrDefaultAsync(e => e.EmployeeCode == "NV002");
         var staffEmployee = await context.Employees
@@ -387,7 +530,8 @@ public static class ApplicationDbContextSeed
                 Email = "admin@workforce.local",
                 PasswordHash = hasher.Hash("Admin@123"),
                 Role = UserRole.SuperAdmin,
-                IsActive = true
+                IsActive = true,
+                EmployeeId = adminEmp?.Id
             },
             new()
             {

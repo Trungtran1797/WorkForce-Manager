@@ -21,9 +21,7 @@ public class GetMyReviewsQueryHandler : IRequestHandler<GetMyReviewsQuery, List<
     {
         var employeeId = _currentUserService.EmployeeId;
         if (employeeId is null or 0)
-        {
-            throw new ForbiddenAccessException("Người dùng không liên kết với thông tin nhân viên.");
-        }
+            return [];
 
         var reviews = await _context.PerformanceReviews
             .AsNoTracking()

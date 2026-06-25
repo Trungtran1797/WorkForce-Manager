@@ -5,15 +5,17 @@ using WorkForceManager.Application.Features.Contracts.Commands.DeleteContract;
 using WorkForceManager.Application.Features.Contracts.Commands.SaveContract;
 using WorkForceManager.Application.Features.Contracts.Common;
 using WorkForceManager.Application.Features.Contracts.Queries.GetContracts;
-using WorkForceManager.Infrastructure.Identity;
+using WorkForceManager.Domain.Enums;
+using WorkForceManager.Infrastructure.Identity.Authorization;
 
 namespace WorkForceManager.WebApi.Controllers;
 
-[Authorize(Policy = AuthorizationPolicies.CanManagePayroll)]
+[Authorize]
 [Route("api/v1/contracts")]
 public class ContractsController : ApiControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Contracts) + ":" + nameof(PermissionLevel.View))]
     public async Task<IActionResult> GetAll([FromQuery] GetContractsQuery query, CancellationToken ct)
     {
         var result = await Mediator.Send(query, ct);
@@ -21,6 +23,7 @@ public class ContractsController : ApiControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Contracts) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Save([FromBody] SaveContractCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
@@ -28,6 +31,7 @@ public class ContractsController : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Contracts) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await Mediator.Send(new DeleteContractCommand(id), ct);

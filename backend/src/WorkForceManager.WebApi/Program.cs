@@ -90,12 +90,15 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    options.AddFixedWindowLimiter("auth", limiter =>
-    {
-        limiter.PermitLimit = 60; // Tăng lên 60 để tránh lỗi 429 khi reload trang hoặc chạy HMR trong phát triển
-        limiter.Window = TimeSpan.FromMinutes(1);
-        limiter.QueueLimit = 0;
-    });
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
 
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
@@ -151,9 +154,30 @@ else
     var context = scope.ServiceProvider.GetRequiredService<WorkForceManager.Infrastructure.Persistence.ApplicationDbContext>();
     if (context.Database.IsRelational())
     {
-        await context.Database.MigrateAsync();
+        if (context.Database.IsSqlite())
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await context.Database.MigrateAsync();
+        }
     }
 }
+
+app.UseDefaultFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // HTML không cache để SPA luôn tải đúng bundle mới nhất.
+        if (ctx.File.Name.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            ctx.Context.Response.Headers["Pragma"] = "no-cache";
+        }
+    }
+});
 
 app.UseCors("FrontendCors");
 app.UseRateLimiter();
@@ -162,6 +186,7 @@ app.UseAuthorization();
 
 app.MapHub<WorkForceManager.Infrastructure.Notifications.Hubs.NotificationHub>("/hubs/notifications");
 app.MapControllers();
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

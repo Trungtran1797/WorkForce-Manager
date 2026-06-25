@@ -7,4 +7,6 @@ public record CreateOvertimeRequestCommand(
     string Date,
     string StartTime,
     string EndTime,
-    string? Reason) : IRequest<OvertimeRequestDto>;
+    string? Reason,
+    int? ProjectId,
+    int? TaskId) : IRequest<OvertimeRequestDto>;

@@ -22,6 +22,8 @@ public class GetOvertimeRequestsQueryHandler : IRequestHandler<GetOvertimeReques
             .AsNoTracking()
             .Include(o => o.Employee)
                 .ThenInclude(e => e!.Department)
+            .Include(o => o.Project)
+            .Include(o => o.Task)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Search))

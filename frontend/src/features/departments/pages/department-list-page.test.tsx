@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { DepartmentListPage } from './department-list-page'
 import type { Department } from '@/features/departments/types'
@@ -56,6 +57,10 @@ vi.mock('@/features/employees/api/employee-queries', () => ({
   useEmployees: () => ({ data: { items: [], pageNumber: 1, pageSize: 100, totalCount: 0, totalPages: 1 } }),
 }))
 
+vi.mock('@/features/auth/context/auth-context', () => ({
+  useAuth: () => ({ user: { role: 'SuperAdmin', permissions: { Departments: 'Edit' } } }),
+}))
+
 describe('DepartmentListPage', () => {
   it('hiển thị phòng ban được nhóm theo khối cấp cao nhất', () => {
     mockUseDepartments.mockReturnValue({
@@ -65,7 +70,11 @@ describe('DepartmentListPage', () => {
       refetch: vi.fn(),
     })
 
-    render(<DepartmentListPage />)
+    render(
+      <MemoryRouter>
+        <DepartmentListPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByRole('heading', { name: 'Văn phòng' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Nhà máy' })).toBeInTheDocument()
@@ -81,7 +90,11 @@ describe('DepartmentListPage', () => {
       refetch: vi.fn(),
     })
 
-    render(<DepartmentListPage />)
+    render(
+      <MemoryRouter>
+        <DepartmentListPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByText('Chưa có phòng ban nào')).toBeInTheDocument()
   })

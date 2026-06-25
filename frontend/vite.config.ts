@@ -12,7 +12,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    outDir: '../backend/src/WorkForceManager.WebApi/wwwroot',
+    emptyOutDir: true,
+  },
   server: {
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5244',
