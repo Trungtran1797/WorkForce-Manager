@@ -113,15 +113,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   // Retry tự động khi gặp lỗi tạm thời (502/503/504) hoặc network error (backend đang restart).
   let response: Response | null = null
-  let lastNetworkError: unknown = null
 
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     try {
       response = await doFetch()
       if (!TRANSIENT_STATUSES.has(response.status)) break
-    } catch (err) {
-      // TypeError: Failed to fetch — backend chưa bind port
-      lastNetworkError = err
+    } catch {
       response = null
     }
     if (attempt < RETRY_DELAYS.length) {
