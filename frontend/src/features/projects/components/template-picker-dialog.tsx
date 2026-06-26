@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { z } from 'zod'
 import { ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Truck, Users } from 'lucide-react'
 
@@ -116,7 +116,7 @@ function ProjectInfoForm({ template, onBack, onSuccess }: ProjectInfoFormProps) 
   const displayName = template.name.replace(/^\[MẪU\]\s*/i, '')
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as Resolver<FormValues>,
     defaultValues: {
       name: displayName,
       investor: 'SAIGON SPICES',
