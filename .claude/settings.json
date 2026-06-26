@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/format_on_save.py",
+            "command": "python \"d:\\OneDrive\\08- QL NhanSu\\.claude\\hooks\\format_on_save.py\"",
             "timeout": 30
           }
         ]

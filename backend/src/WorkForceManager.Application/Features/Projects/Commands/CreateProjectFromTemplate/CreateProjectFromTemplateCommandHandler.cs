@@ -96,13 +96,34 @@ public class CreateProjectFromTemplateCommandHandler : IRequestHandler<CreatePro
             .ThenBy(t => t.Id)
             .ToListAsync(cancellationToken);
 
-        var idMap = new Dictionary<int, int>(); // old ID → new ID
+        // Sinh code mới dựa trên code project mới (tránh vi phạm unique index Tasks.Code)
+        var idMap = new Dictionary<int, int>();   // old ID → new ID
+        var codeMap = new Dictionary<int, string>(); // old ID → new code
+        int parentIdx = 1;
+        var subtaskIdxByParent = new Dictionary<int, int>();
+
+        foreach (var src in templateTasks)
+        {
+            if (src.ParentTaskId == null)
+            {
+                codeMap[src.Id] = $"{code}-{parentIdx:D2}";
+                parentIdx++;
+            }
+            else
+            {
+                var parentCode = codeMap.TryGetValue(src.ParentTaskId.Value, out var pc) ? pc : code;
+                if (!subtaskIdxByParent.ContainsKey(src.ParentTaskId.Value))
+                    subtaskIdxByParent[src.ParentTaskId.Value] = 1;
+                codeMap[src.Id] = $"{parentCode}-{subtaskIdxByParent[src.ParentTaskId.Value]:D2}";
+                subtaskIdxByParent[src.ParentTaskId.Value]++;
+            }
+        }
 
         foreach (var src in templateTasks)
         {
             var newTask = new TaskItem
             {
-                Code = src.Code,
+                Code = codeMap[src.Id],
                 Title = src.Title,
                 Description = src.Description,
                 AssigneeId = src.AssigneeId,

@@ -2,6 +2,8 @@
  * HTTP client cho WorkForce Manager API.
  * - Tự gắn JWT access token vào header.
  * - Tự refresh token khi gặp 401 (1 lần) rồi retry request gốc.
+ * - Tự retry khi gặp lỗi tạm thời (502/503/504 hoặc network error) tối đa 2 lần với
+ *   exponential backoff (1s → 2s). Tránh lỗi "502" khi backend đang restart.
  * - Bóc tách response envelope { success, data, message, errors } của backend.
  */
 
@@ -56,6 +58,14 @@ interface RequestOptions {
   skipAuth?: boolean
 }
 
+// Các HTTP status lỗi tạm thời do backend restart/overload — an toàn để retry.
+const TRANSIENT_STATUSES = new Set([502, 503, 504])
+const RETRY_DELAYS = [1000, 2000] // ms
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 let refreshPromise: Promise<boolean> | null = null
 
 async function tryRefresh(): Promise<boolean> {
@@ -101,7 +111,27 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     })
   }
 
-  let response = await doFetch()
+  // Retry tự động khi gặp lỗi tạm thời (502/503/504) hoặc network error (backend đang restart).
+  let response: Response | null = null
+  let lastNetworkError: unknown = null
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    try {
+      response = await doFetch()
+      if (!TRANSIENT_STATUSES.has(response.status)) break
+    } catch (err) {
+      // TypeError: Failed to fetch — backend chưa bind port
+      lastNetworkError = err
+      response = null
+    }
+    if (attempt < RETRY_DELAYS.length) {
+      await sleep(RETRY_DELAYS[attempt])
+    }
+  }
+
+  if (response === null) {
+    throw new ApiError('Không kết nối được đến server. Vui lòng thử lại.', 0)
+  }
 
   if (response.status === 401 && !skipAuth) {
     const refreshed = await tryRefresh()
@@ -122,8 +152,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (!response.ok || !envelope?.success) {
+    const isTransient = TRANSIENT_STATUSES.has(response.status)
     throw new ApiError(
-      envelope?.message ?? `Yêu cầu thất bại (${response.status}).`,
+      envelope?.message ?? (isTransient
+        ? 'Server tạm thời không phản hồi. Vui lòng thử lại.'
+        : `Yêu cầu thất bại (${response.status}).`),
       response.status,
       envelope?.errors,
     )

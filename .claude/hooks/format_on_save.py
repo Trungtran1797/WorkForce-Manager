@@ -1,19 +1,41 @@
+﻿import sys
 import json
-import os
 import subprocess
-import sys
+import os
 
-data = json.load(sys.stdin)
-file_path = (data.get("tool_response") or {}).get("filePath") or data.get("tool_input", {}).get("file_path", "")
-if not file_path:
-    sys.exit(0)
+PROJECT_ROOT = r"d:\OneDrive\08- QL NhanSu"
+FRONTEND_ROOT = os.path.join(PROJECT_ROOT, "frontend")
 
-ext = os.path.splitext(file_path)[1].lower()
+TS_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx", ".json", ".css"}
+CS_EXTENSIONS = {".cs"}
 
 try:
-    if ext in (".ts", ".tsx", ".js", ".jsx", ".json", ".css"):
-        subprocess.run(["npx", "--no-install", "prettier", "--write", file_path], check=False)
-    elif ext == ".cs":
-        subprocess.run(["dotnet", "format", os.path.dirname(file_path), "--include", file_path], check=False)
-except FileNotFoundError:
+    data = json.load(sys.stdin)
+    tool_input = data.get("tool_input", {})
+    path = tool_input.get("file_path", "")
+
+    if not path or not os.path.isfile(path):
+        sys.exit(0)
+
+    ext = os.path.splitext(path)[1].lower()
+
+    if ext in TS_EXTENSIONS:
+        subprocess.run(
+            ["npx", "--yes", "prettier", "--write", path],
+            cwd=FRONTEND_ROOT,
+            capture_output=True,
+            timeout=15,
+        )
+    elif ext in CS_EXTENSIONS:
+        rel = os.path.relpath(path, PROJECT_ROOT)
+        subprocess.run(
+            ["dotnet", "format", "--include", rel, "--no-restore"],
+            cwd=os.path.join(PROJECT_ROOT, "backend"),
+            capture_output=True,
+            timeout=30,
+        )
+
+except Exception:
     pass
+
+sys.exit(0)

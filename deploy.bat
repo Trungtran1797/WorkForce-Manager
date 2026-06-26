@@ -53,10 +53,10 @@ echo [OK] Da cap nhat code tren VPS.
 
 echo.
 echo [3/4] Build va khoi dong lai Docker containers...
-echo (Qua trinh nay co the mat 2-5 phut...)
+echo (Qua trinh nay co the mat 5-10 phut, khong dung cache cu...)
 echo.
 
-ssh -o ConnectTimeout=300 root@171.244.143.243 "cd ~/app && docker compose -f docker-compose.prod.yml up -d --build --force-recreate"
+ssh -o ConnectTimeout=600 root@171.244.143.243 "cd ~/app && docker compose -f docker-compose.prod.yml down && docker compose -f docker-compose.prod.yml build --no-cache && docker compose -f docker-compose.prod.yml up -d"
 if errorlevel 1 (
     echo [!] Docker build/start gap loi.
     echo     Xem log: ssh root@171.244.143.243 "docker logs workforce-api --tail 50"
