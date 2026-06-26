@@ -18,7 +18,7 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(p => p.Budget).HasColumnType("decimal(18,2)");
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
 
-        builder.HasIndex(p => p.Code).IsUnique();
+        builder.HasIndex(p => p.Code).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasIndex(p => p.Status);
     }
 }

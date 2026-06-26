@@ -24,7 +24,8 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException("Dự án", request.Id);
 
-        // Mã dự án là bất biến, không cho phép chỉnh sửa sau khi tạo.
+        if (!string.IsNullOrWhiteSpace(request.Code))
+            project.Code = request.Code.Trim();
         project.Name = request.Name.Trim();
         project.Investor = request.Investor?.Trim();
         project.StartDate = DateTime.Parse(request.StartDate);

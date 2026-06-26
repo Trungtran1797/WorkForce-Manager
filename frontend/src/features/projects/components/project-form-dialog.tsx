@@ -126,7 +126,6 @@ export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: Pro
                   <FormControl>
                     <Input
                       placeholder={project ? undefined : "Để trống để tự động tạo"}
-                      disabled={!!project}
                       {...field}
                     />
                   </FormControl>
