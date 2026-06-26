@@ -18,4 +18,15 @@ public record ProjectDto(
     decimal Budget,
     string Description,
     int Progress,
-    List<ProjectMemberDto> Members);
+    List<ProjectMemberDto> Members,
+    string? ShippingDate,
+    bool IsTemplate = false);
+
+public record ProjectTemplateDto(
+    int Id,
+    string Code,
+    string Name,
+    string Description,
+    int DurationDays,
+    int TaskCount,
+    List<string> DepartmentRoles);

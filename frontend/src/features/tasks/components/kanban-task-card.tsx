@@ -39,7 +39,10 @@ export function KanbanTaskCard({ task, canEdit = true }: { task: Task; canEdit?:
         {task.title}
       </div>
       <div className="text-xs text-muted-foreground">
-        {task.assigneeName} • Hạn: {formatDate(task.dueDate)}
+        {task.assignees?.length
+          ? task.assignees.map((a) => a.fullName).join(', ')
+          : task.assigneeName || 'Chưa phân công'}{' '}
+        • Hạn: {formatDate(task.dueDate)}
       </div>
       {task.subTaskCount > 0 && (
         <Badge variant="gray">{task.subTaskCount} công việc con</Badge>

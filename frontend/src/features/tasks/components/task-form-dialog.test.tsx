@@ -37,6 +37,7 @@ const sampleTask: Task = {
   parentTaskId: null,
   parentTaskTitle: null,
   subTaskCount: 0,
+  assignees: [{ employeeId: 1, fullName: 'Nguyễn Văn A' }],
 }
 
 describe('TaskFormDialog', () => {

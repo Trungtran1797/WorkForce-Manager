@@ -24,6 +24,7 @@ public class GetTaskByIdQueryHandler : IRequestHandler<GetTaskByIdQuery, TaskDto
             .Include(t => t.Project)
             .Include(t => t.ParentTask)
             .Include(t => t.SubTasks)
+            .Include(t => t.Assignees).ThenInclude(a => a.Employee)
             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException("Công việc", request.Id);
 

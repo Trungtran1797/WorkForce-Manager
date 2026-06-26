@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkForceManager.Application.Common.Exceptions;
 using WorkForceManager.Application.Common.Interfaces;
 using WorkForceManager.Application.Features.Tasks.Common;
+using WorkForceManager.Domain.Entities;
 using WorkForceManager.Domain.Enums;
 
 namespace WorkForceManager.Application.Features.Tasks.Commands.UpdateTask;
@@ -73,6 +74,27 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        // Sync assignees: tính tập mới từ AssigneeIds (ưu tiên) hoặc fallback về AssigneeId đơn lẻ.
+        var newIds = (request.AssigneeIds?.Any() == true
+            ? request.AssigneeIds
+            : (request.AssigneeId.HasValue ? new List<int> { request.AssigneeId.Value } : new List<int>()))
+            .Distinct()
+            .ToHashSet();
+
+        var existingAssignees = await _context.TaskAssignees
+            .Where(ta => ta.TaskId == task.Id)
+            .ToListAsync(cancellationToken);
+
+        var existingIds = existingAssignees.Select(a => a.EmployeeId).ToHashSet();
+
+        foreach (var toRemove in existingAssignees.Where(a => !newIds.Contains(a.EmployeeId)))
+            _context.TaskAssignees.Remove(toRemove);
+
+        foreach (var toAdd in newIds.Where(id => !existingIds.Contains(id)))
+            _context.TaskAssignees.Add(new TaskAssignee { TaskId = task.Id, EmployeeId = toAdd });
+
+        await _context.SaveChangesAsync(cancellationToken);
+
         var updated = await _context.Tasks
             .AsNoTracking()
             .Include(t => t.Assignee)
@@ -80,6 +102,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
             .Include(t => t.Project)
             .Include(t => t.ParentTask)
             .Include(t => t.SubTasks)
+            .Include(t => t.Assignees).ThenInclude(a => a.Employee)
             .FirstAsync(t => t.Id == task.Id, cancellationToken);
 
         return updated.ToDto();

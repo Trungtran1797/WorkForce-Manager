@@ -43,6 +43,9 @@ public static class ApplicationDbContextSeed
         await SeedDepartmentsAndEmployeesAsync(context);
         await SeedUsersAsync(context, hasher);
         await SeedProjectsAndTasksAsync(context);
+        await SeedExportOrderTemplateAsync(context);
+        await SeedDomesticOrderTemplateAsync(context);
+        await SeedProcurementTemplateAsync(context);
         await SeedShiftsAndLocationsAsync(context);
         await SeedPayrollAsync(context);
         await SeedPermissionMatrixAsync(context);
@@ -239,7 +242,7 @@ public static class ApplicationDbContextSeed
 
     private static async Task SeedProjectsAndTasksAsync(ApplicationDbContext context)
     {
-        if (await context.Projects.AnyAsync())
+        if (await context.Projects.IgnoreQueryFilters().AnyAsync(p => p.Code == "DA001"))
         {
             return;
         }
@@ -429,6 +432,424 @@ public static class ApplicationDbContextSeed
             }
         };
         await context.Tasks.AddRangeAsync(subTasks);
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Template quy trình hợp đồng đơn hàng xuất khẩu: 1 task gốc + 6 task theo phòng ban.
+    /// Nếu DA005 tồn tại với cấu trúc cũ phức tạp (>7 tasks), xóa cứng và tạo lại.
+    /// </summary>
+    private static async Task SeedExportOrderTemplateAsync(ApplicationDbContext context)
+    {
+        var existing = await context.Projects
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Code == "DA005");
+
+        if (existing != null)
+        {
+            var taskCount = await context.Tasks
+                .IgnoreQueryFilters()
+                .CountAsync(t => t.ProjectId == existing.Id);
+
+            if (taskCount <= 7)
+            {
+                if (!existing.IsTemplate)
+                {
+                    existing.IsTemplate = true;
+                    await context.SaveChangesAsync();
+                }
+                return;
+            }
+
+            // Xóa cứng theo thứ tự FK để tránh constraint violation
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM TaskComments WHERE TaskId IN (SELECT Id FROM Tasks WHERE ProjectId = {0})", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM TaskAttachments WHERE TaskId IN (SELECT Id FROM Tasks WHERE ProjectId = {0})", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM TaskAssignees WHERE TaskId IN (SELECT Id FROM Tasks WHERE ProjectId = {0})", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "UPDATE Tasks SET ParentTaskId = NULL WHERE ProjectId = {0}", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM Tasks WHERE ProjectId = {0}", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM ProjectComments WHERE ProjectId = {0}", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM ProjectAttachments WHERE ProjectId = {0}", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM ProjectMembers WHERE ProjectId = {0}", existing.Id);
+            await context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM Projects WHERE Id = {0}", existing.Id);
+        }
+
+        var employees = await context.Employees.OrderBy(e => e.EmployeeCode).ToListAsync();
+        if (employees.Count < 6) return;
+
+        var nv001 = employees.First(e => e.EmployeeCode == "NV001"); // Kinh doanh
+        var nv002 = employees.First(e => e.EmployeeCode == "NV002"); // Ban giám đốc
+        var nv003 = employees.First(e => e.EmployeeCode == "NV003"); // Sản xuất / QA-QC
+        var nv005 = employees.First(e => e.EmployeeCode == "NV005"); // Kế toán
+        var nv006 = employees.First(e => e.EmployeeCode == "NV006"); // Logistics
+        var nv007 = employees.First(e => e.EmployeeCode == "NV007"); // Kho
+
+        // Ngày tham chiếu: D0 = ngày nhận inquiry, toàn bộ chu trình 21 ngày làm việc.
+        var d0 = new DateTime(2026, 7, 1);
+
+        var project = new Project
+        {
+            Code = "DA005",
+            Name = "[MẪU] Hợp đồng Đơn hàng Xuất khẩu Gia vị Hồ tiêu",
+            Investor = "SAIGON SPICES",
+            StartDate = d0,
+            EndDate = d0.AddDays(21),
+            ShippingDate = d0.AddDays(17),
+            Status = ProjectStatus.Planning,
+            Budget = 0,
+            Progress = 0,
+            IsTemplate = true,
+            Description = "Template quy trình chuẩn xử lý 1 đơn hàng xuất khẩu gia vị hồ tiêu xuyên 5 phòng ban: Kinh doanh → Kho/Sản xuất/QA-QC → Logistics → Kế toán → Ban giám đốc. " +
+                          "Sao chép template này để tạo dự án thực tế cho mỗi đơn hàng mới."
+        };
+        await context.Projects.AddAsync(project);
+        await context.SaveChangesAsync();
+
+        // Thành viên dự án - đại diện các phòng ban liên quan.
+        project.Members.Add(new ProjectMember { EmployeeId = nv001.Id, RoleInProject = "Process Owner – Kinh doanh", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv002.Id, RoleInProject = "Phê duyệt – Ban Giám đốc", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv003.Id, RoleInProject = "Sản xuất & QA-QC", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv005.Id, RoleInProject = "Kế toán – Hóa đơn & Hoàn thuế", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv006.Id, RoleInProject = "Logistics – Thủ tục XK & Giao hàng", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv007.Id, RoleInProject = "Kho – Nguyên liệu & Thành phẩm", JoinedDate = d0 });
+        await context.SaveChangesAsync();
+
+        // ─── Task gốc (root) ───────────────────────────────────────────────────────
+        var root = new TaskItem
+        {
+            Code = "TXK-P00",
+            Title = "Quy trình Hợp đồng Đơn hàng Xuất khẩu (End-to-End)",
+            Description = "Task cha tổng hợp toàn bộ quy trình từ tiếp nhận inquiry đến hoàn tất thanh toán. " +
+                          "Mỗi phòng ban phụ trách 1 công việc theo thứ tự quy trình.",
+            AssigneeId = nv001.Id, AssignerId = nv002.Id,
+            Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+            StartDate = d0, DueDate = d0.AddDays(21), Progress = 0,
+            ProjectId = project.Id
+        };
+        await context.Tasks.AddAsync(root);
+        await context.SaveChangesAsync();
+
+        // ─── 6 task theo phòng ban (phẳng, gắn trực tiếp vào root) ───────────────
+        var subtasks = new List<TaskItem>
+        {
+            new()
+            {
+                Code = "TXK-01",
+                Title = "Phòng Kinh doanh – Đàm phán, ký hợp đồng & phát lệnh sản xuất",
+                Description = "Tiếp nhận inquiry từ khách hàng nước ngoài. Báo giá FOB/CIF. " +
+                              "Đàm phán và thống nhất điều khoản (giá, số lượng, Incoterms, thanh toán, tiêu chuẩn CL). " +
+                              "Trình BGĐ phê duyệt, ký Sales Contract. " +
+                              "Phát Lệnh sản xuất nội bộ cho Kho, Sản xuất, Logistics.",
+                AssigneeId = nv001.Id, AssignerId = nv002.Id,
+                Priority = TaskPriority.Urgent, Status = WorkTaskStatus.Todo,
+                StartDate = d0, DueDate = d0.AddDays(3), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TXK-02",
+                Title = "Ban Giám đốc – Phê duyệt hợp đồng xuất khẩu",
+                Description = "Review Sales Contract: giá bán, biên lợi nhuận, điều kiện L/C và rủi ro thanh toán. " +
+                              "Phê duyệt → chuyển bước ký chính thức. Từ chối → yêu cầu Kinh doanh đàm phán lại.",
+                AssigneeId = nv002.Id, AssignerId = nv002.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(2), DueDate = d0.AddDays(3), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TXK-03",
+                Title = "Kho – Kiểm tra tồn kho & chuẩn bị nguyên liệu",
+                Description = "Kiểm tra thực tế số lượng hồ tiêu thô tồn kho (đen/trắng, lô hàng, độ ẩm). " +
+                              "Lập Phiếu kiểm kho gửi Kinh doanh và Sản xuất. " +
+                              "Nhận nguyên liệu mua thêm (nếu có). Sau khi sản xuất xong: nhập kho thành phẩm, " +
+                              "sắp xếp hàng vào khu vực chờ xuất (staging area).",
+                AssigneeId = nv007.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(3), DueDate = d0.AddDays(5), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TXK-04",
+                Title = "Sản xuất / QA-QC – Sản xuất, đóng gói & kiểm định chất lượng",
+                Description = "Kiểm tra CL nguyên liệu đầu vào (độ ẩm, tạp chất, aflatoxin). " +
+                              "Chế biến hồ tiêu theo tiêu chuẩn xuất khẩu (EU/ASTA/ESA). " +
+                              "Đóng gói theo quy cách hợp đồng (bao PP/kraft, nhãn hiệu khách, số lô). " +
+                              "Kiểm tra CL thành phẩm và cấp Certificate of Analysis (CoA). Gửi CoA cho Logistics.",
+                AssigneeId = nv003.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(5), DueDate = d0.AddDays(12), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TXK-05",
+                Title = "Phòng Logistics – Hồ sơ xuất khẩu, thông quan & giao hàng lên tàu",
+                Description = "Lập Commercial Invoice & Packing List. " +
+                              "Đăng ký kiểm dịch thực vật (Phytosanitary Certificate). " +
+                              "Xin C/O (Form A/B/EUR.1 tùy thị trường). Booking container & đặt lịch tàu. " +
+                              "Khai báo hải quan điện tử VNACCS. Vận chuyển hàng đến cảng, đóng container. " +
+                              "Giao hàng lên tàu, nhận B/L gốc. Gửi bộ chứng từ gốc cho khách (DHL/Swift).",
+                AssigneeId = nv006.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.Urgent, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(10), DueDate = d0.AddDays(17), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TXK-06",
+                Title = "Phòng Kế toán – Xuất hóa đơn, theo dõi thanh toán & hoàn thuế VAT",
+                Description = "Xuất Hóa đơn GTGT điện tử (thuế suất 0% xuất khẩu) sau khi hàng thông quan. " +
+                              "Theo dõi thanh toán từ khách hàng (T/T hoặc L/C); nhắc công nợ nếu trễ hạn. " +
+                              "Chuẩn bị và nộp hồ sơ hoàn thuế VAT xuất khẩu tại cơ quan thuế. " +
+                              "Hạch toán doanh thu và khoản hoàn thuế vào sổ kế toán.",
+                AssigneeId = nv005.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(17), DueDate = d0.AddDays(21), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            }
+        };
+
+        await context.Tasks.AddRangeAsync(subtasks);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedDomesticOrderTemplateAsync(ApplicationDbContext context)
+    {
+        if (await context.Projects.IgnoreQueryFilters().AnyAsync(p => p.Code == "DA006")) return;
+
+        var employees = await context.Employees.IgnoreQueryFilters().OrderBy(e => e.EmployeeCode).ToListAsync();
+        if (employees.Count < 7) return;
+
+        var nv001 = employees.First(e => e.EmployeeCode == "NV001");
+        var nv005 = employees.First(e => e.EmployeeCode == "NV005");
+        var nv006 = employees.First(e => e.EmployeeCode == "NV006");
+        var nv007 = employees.First(e => e.EmployeeCode == "NV007");
+
+        var d0 = new DateTime(2026, 8, 1);
+
+        var project = new Project
+        {
+            Code = "DA006",
+            Name = "[MẪU] Quy trình Xử lý Đơn hàng Nội địa (Nhà hàng – Khách sạn)",
+            Investor = "SAIGON SPICES",
+            StartDate = d0,
+            EndDate = d0.AddDays(7),
+            Status = ProjectStatus.Planning,
+            Budget = 0,
+            Progress = 0,
+            IsTemplate = true,
+            Description = "Template quy trình chuẩn xử lý đơn hàng B2B nội địa (nhà hàng, khách sạn): " +
+                          "Kinh doanh tiếp nhận → Kho xuất hàng → Logistics giao hàng → Kế toán thu tiền. Chu trình 7 ngày."
+        };
+        await context.Projects.AddAsync(project);
+        await context.SaveChangesAsync();
+
+        project.Members.Add(new ProjectMember { EmployeeId = nv001.Id, RoleInProject = "Kinh doanh – Tiếp nhận & Báo giá", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv007.Id, RoleInProject = "Kho – Xuất kho & Bàn giao", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv006.Id, RoleInProject = "Logistics – Giao hàng", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv005.Id, RoleInProject = "Kế toán – Hóa đơn & Thu tiền", JoinedDate = d0 });
+        await context.SaveChangesAsync();
+
+        var root = new TaskItem
+        {
+            Code = "TND-P0",
+            Title = "Quy trình Đơn hàng Nội địa (End-to-End)",
+            Description = "Task gốc tổng hợp toàn bộ quy trình từ tiếp nhận đơn hàng đến thu tiền. " +
+                          "4 bộ phận phụ trách 4 bước tuần tự trong vòng 7 ngày.",
+            AssigneeId = nv001.Id, AssignerId = nv001.Id,
+            Priority = TaskPriority.Medium, Status = WorkTaskStatus.Todo,
+            StartDate = d0, DueDate = d0.AddDays(7), Progress = 0,
+            ProjectId = project.Id
+        };
+        await context.Tasks.AddAsync(root);
+        await context.SaveChangesAsync();
+
+        var subtasks = new List<TaskItem>
+        {
+            new()
+            {
+                Code = "TND-01",
+                Title = "Kinh doanh – Tiếp nhận đơn hàng & xác nhận báo giá",
+                Description = "Tiếp nhận đơn đặt hàng từ nhà hàng/khách sạn (điện thoại, email, app). " +
+                              "Kiểm tra khả năng đáp ứng tồn kho. Gửi báo giá và xác nhận đơn hàng chính thức. " +
+                              "Phát lệnh cho Kho chuẩn bị hàng.",
+                AssigneeId = nv001.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0, DueDate = d0.AddDays(1), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TND-02",
+                Title = "Kho – Chuẩn bị hàng & xuất kho",
+                Description = "Nhận lệnh xuất kho từ Kinh doanh. Kiểm tra tồn kho thực tế, xuất hàng theo đúng " +
+                              "chủng loại, số lượng và quy cách đóng gói yêu cầu. Lập Phiếu xuất kho và bàn giao cho Logistics.",
+                AssigneeId = nv007.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(1), DueDate = d0.AddDays(3), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TND-03",
+                Title = "Logistics – Đóng gói & giao hàng đến khách",
+                Description = "Nhận hàng từ Kho. Đóng gói theo tiêu chuẩn thương hiệu (nhãn, thùng carton). " +
+                              "Lên lịch và thực hiện giao hàng đến địa điểm của khách hàng. " +
+                              "Yêu cầu khách ký Biên bản giao nhận. Gửi biên bản về Kế toán.",
+                AssigneeId = nv006.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(3), DueDate = d0.AddDays(5), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TND-04",
+                Title = "Kế toán – Xuất hóa đơn & theo dõi thu tiền",
+                Description = "Xuất Hóa đơn GTGT điện tử sau khi có biên bản giao nhận. " +
+                              "Theo dõi công nợ, nhắc thanh toán đúng hạn. " +
+                              "Hạch toán doanh thu khi tiền về tài khoản. Lưu chứng từ đầy đủ.",
+                AssigneeId = nv005.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.Medium, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(5), DueDate = d0.AddDays(7), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            }
+        };
+
+        await context.Tasks.AddRangeAsync(subtasks);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedProcurementTemplateAsync(ApplicationDbContext context)
+    {
+        if (await context.Projects.IgnoreQueryFilters().AnyAsync(p => p.Code == "DA007")) return;
+
+        var employees = await context.Employees.IgnoreQueryFilters().OrderBy(e => e.EmployeeCode).ToListAsync();
+        if (employees.Count < 7) return;
+
+        var nv001 = employees.First(e => e.EmployeeCode == "NV001");
+        var nv002 = employees.First(e => e.EmployeeCode == "NV002");
+        var nv003 = employees.First(e => e.EmployeeCode == "NV003");
+        var nv005 = employees.First(e => e.EmployeeCode == "NV005");
+        var nv007 = employees.First(e => e.EmployeeCode == "NV007");
+
+        var d0 = new DateTime(2026, 9, 1);
+
+        var project = new Project
+        {
+            Code = "DA007",
+            Name = "[MẪU] Quy trình Thu mua Nguyên liệu Hồ tiêu",
+            Investor = "SAIGON SPICES",
+            StartDate = d0,
+            EndDate = d0.AddDays(14),
+            Status = ProjectStatus.Planning,
+            Budget = 0,
+            Progress = 0,
+            IsTemplate = true,
+            Description = "Template quy trình chuẩn thu mua nguyên liệu hồ tiêu từ nhà cung cấp: " +
+                          "Kinh doanh tìm NCC → BGĐ phê duyệt → Kho tiếp nhận → QA-QC kiểm định → Kế toán thanh toán. Chu trình 14 ngày."
+        };
+        await context.Projects.AddAsync(project);
+        await context.SaveChangesAsync();
+
+        project.Members.Add(new ProjectMember { EmployeeId = nv001.Id, RoleInProject = "Kinh doanh – Tìm kiếm & Đánh giá NCC", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv002.Id, RoleInProject = "Ban Giám đốc – Phê duyệt", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv003.Id, RoleInProject = "Sản xuất / QA-QC – Kiểm định", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv005.Id, RoleInProject = "Kế toán – Thanh toán & Chứng từ", JoinedDate = d0 });
+        project.Members.Add(new ProjectMember { EmployeeId = nv007.Id, RoleInProject = "Kho – Tiếp nhận & Kiểm đếm", JoinedDate = d0 });
+        await context.SaveChangesAsync();
+
+        var root = new TaskItem
+        {
+            Code = "TMN-P0",
+            Title = "Quy trình Thu mua Nguyên liệu (End-to-End)",
+            Description = "Task gốc tổng hợp toàn bộ quy trình thu mua từ tìm kiếm nhà cung cấp đến thanh toán. " +
+                          "5 bộ phận phụ trách 5 bước, tổng thời gian 14 ngày.",
+            AssigneeId = nv001.Id, AssignerId = nv002.Id,
+            Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+            StartDate = d0, DueDate = d0.AddDays(14), Progress = 0,
+            ProjectId = project.Id
+        };
+        await context.Tasks.AddAsync(root);
+        await context.SaveChangesAsync();
+
+        var subtasks = new List<TaskItem>
+        {
+            new()
+            {
+                Code = "TMN-01",
+                Title = "Kinh doanh – Tìm kiếm & đánh giá nhà cung cấp",
+                Description = "Rà soát danh sách nhà cung cấp hiện tại và tiềm năng. Yêu cầu báo giá (RFQ). " +
+                              "Đánh giá theo tiêu chí: giá cả, chất lượng mẫu, chứng chỉ (VietGAP/hữu cơ), " +
+                              "điều kiện thanh toán và năng lực cung ứng. Lập Tờ trình đề xuất NCC trình BGĐ.",
+                AssigneeId = nv001.Id, AssignerId = nv002.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0, DueDate = d0.AddDays(3), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TMN-02",
+                Title = "Ban Giám đốc – Phê duyệt nhà cung cấp & phát lệnh đặt hàng",
+                Description = "Review Tờ trình đề xuất NCC. Phê duyệt NCC được chọn và ngân sách mua hàng. " +
+                              "Ký Hợp đồng mua hàng hoặc Đơn đặt hàng (PO). " +
+                              "Thông báo quyết định cho Kinh doanh để phát lệnh thu mua chính thức.",
+                AssigneeId = nv002.Id, AssignerId = nv002.Id,
+                Priority = TaskPriority.Urgent, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(2), DueDate = d0.AddDays(3), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TMN-03",
+                Title = "Kho – Tiếp nhận & kiểm đếm hàng hóa",
+                Description = "Chuẩn bị khu vực tiếp nhận. Nhận hàng từ NCC, đối chiếu số lượng với PO. " +
+                              "Kiểm tra bao bì, nhãn mác, ngày sản xuất, lô hàng. " +
+                              "Lập Phiếu nhập kho và gửi mẫu hàng cho QA-QC kiểm định. " +
+                              "Cách ly hàng chờ kết quả kiểm định trước khi nhập kho chính thức.",
+                AssigneeId = nv007.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(3), DueDate = d0.AddDays(7), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TMN-04",
+                Title = "Sản xuất / QA-QC – Kiểm định chất lượng nguyên liệu",
+                Description = "Lấy mẫu ngẫu nhiên theo tiêu chuẩn (TCVN/ISO). " +
+                              "Kiểm tra: độ ẩm, hàm lượng tinh dầu, tỷ lệ tạp chất, aflatoxin, dư lượng thuốc BVTV. " +
+                              "Đạt tiêu chuẩn → Cấp phép nhập kho chính thức. " +
+                              "Không đạt → Yêu cầu NCC đổi hàng hoặc giảm giá.",
+                AssigneeId = nv003.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.High, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(5), DueDate = d0.AddDays(10), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            },
+            new()
+            {
+                Code = "TMN-05",
+                Title = "Kế toán – Thanh toán nhà cung cấp & lưu chứng từ",
+                Description = "Nhận bộ chứng từ từ NCC (hóa đơn, phiếu xuất kho NCC, biên bản giao nhận). " +
+                              "Đối chiếu với PO và biên bản kiểm định QA-QC. " +
+                              "Thực hiện thanh toán đúng hạn theo điều khoản hợp đồng. " +
+                              "Hạch toán giá trị hàng nhập kho vào sổ kế toán. Lưu toàn bộ chứng từ.",
+                AssigneeId = nv005.Id, AssignerId = nv001.Id,
+                Priority = TaskPriority.Medium, Status = WorkTaskStatus.Todo,
+                StartDate = d0.AddDays(10), DueDate = d0.AddDays(14), Progress = 0,
+                ProjectId = project.Id, ParentTaskId = root.Id
+            }
+        };
+
+        await context.Tasks.AddRangeAsync(subtasks);
         await context.SaveChangesAsync();
     }
 

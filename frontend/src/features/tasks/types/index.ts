@@ -1,5 +1,10 @@
 import type { TaskPriority, TaskStatus } from '@/types/common'
 
+export interface TaskAssignee {
+  employeeId: number
+  fullName: string
+}
+
 export interface Task {
   id: number
   code: string
@@ -19,6 +24,7 @@ export interface Task {
   parentTaskId: number | null
   parentTaskTitle: string | null
   subTaskCount: number
+  assignees: TaskAssignee[]
 }
 
 export interface TaskAttachment {
@@ -45,6 +51,7 @@ export interface TaskFormValues {
   title: string
   description: string
   assigneeId: string
+  assigneeIds: number[]
   priority: TaskPriority
   status: TaskStatus
   startDate: string

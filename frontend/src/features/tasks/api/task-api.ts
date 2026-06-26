@@ -13,12 +13,18 @@ interface TaskFilter {
 }
 
 function toPayload(values: TaskFormValues) {
+  const ids = values.assigneeIds?.length
+    ? values.assigneeIds
+    : values.assigneeId
+    ? [Number(values.assigneeId)]
+    : []
   return {
     code: values.code,
     title: values.title,
     description: values.description,
-    assigneeId: values.assigneeId ? Number(values.assigneeId) : null,
-    assignerId: null,
+    assigneeId: ids[0] ?? null,
+    assignerIds: null,
+    assigneeIds: ids,
     priority: values.priority,
     status: values.status,
     startDate: values.startDate || null,

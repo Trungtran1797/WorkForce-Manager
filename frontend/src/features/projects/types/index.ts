@@ -20,6 +20,18 @@ export interface Project {
   description: string
   progress: number
   members: ProjectMember[]
+  shippingDate?: string
+  isTemplate?: boolean
+}
+
+export interface ProjectTemplate {
+  id: number
+  code: string
+  name: string
+  description: string
+  durationDays: number
+  taskCount: number
+  departmentRoles: string[]
 }
 
 export interface ProjectFormValues {
@@ -32,6 +44,7 @@ export interface ProjectFormValues {
   budget: number
   description: string
   progress: number
+  shippingDate?: string
 }
 
 export interface ProjectAttachment {

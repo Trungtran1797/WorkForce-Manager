@@ -3,20 +3,24 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   addProjectMember,
   createProject,
+  createProjectFromTemplate,
   deleteProject,
   getProject,
+  getProjectTemplates,
   getProjects,
+  markProjectAsTemplate,
   removeProjectMember,
   updateProject,
 } from '@/features/projects/api/project-api'
+import type { CreateFromTemplateValues } from '@/features/projects/api/project-api'
 import type { ProjectFormValues } from '@/features/projects/types'
 
 const PROJECTS_KEY = ['projects'] as const
 
-export function useProjects(search?: string, status?: string) {
+export function useProjects(search?: string, status?: string, includeTemplates?: boolean) {
   return useQuery({
-    queryKey: [...PROJECTS_KEY, search ?? '', status ?? ''],
-    queryFn: () => getProjects(search, status),
+    queryKey: [...PROJECTS_KEY, search ?? '', status ?? '', includeTemplates ? 'templates' : ''],
+    queryFn: () => getProjects(search, status, includeTemplates),
   })
 }
 
@@ -65,6 +69,31 @@ export function useRemoveProjectMember() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, memberId }: { id: number; memberId: number }) => removeProjectMember(id, memberId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROJECTS_KEY }),
+  })
+}
+
+export function useProjectTemplates() {
+  return useQuery({
+    queryKey: [...PROJECTS_KEY, 'templates'],
+    queryFn: () => getProjectTemplates(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCreateProjectFromTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (values: CreateFromTemplateValues) => createProjectFromTemplate(values),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROJECTS_KEY }),
+  })
+}
+
+export function useMarkProjectAsTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, isTemplate }: { id: number; isTemplate: boolean }) =>
+      markProjectAsTemplate(id, isTemplate),
     onSuccess: () => qc.invalidateQueries({ queryKey: PROJECTS_KEY }),
   })
 }

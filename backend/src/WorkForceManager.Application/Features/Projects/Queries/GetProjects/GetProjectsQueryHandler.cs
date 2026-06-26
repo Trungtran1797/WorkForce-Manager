@@ -23,6 +23,9 @@ public class GetProjectsQueryHandler : IRequestHandler<GetProjectsQuery, List<Pr
             .ThenInclude(m => m.Employee)
             .AsQueryable();
 
+        if (!request.IncludeTemplates)
+            query = query.Where(p => !p.IsTemplate);
+
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
             var term = request.Search.Trim();

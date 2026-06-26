@@ -60,7 +60,8 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
             Status = Enum.Parse<ProjectStatus>(request.Status),
             Budget = request.Budget,
             Description = request.Description?.Trim(),
-            Progress = request.Progress
+            Progress = request.Progress,
+            ShippingDate = string.IsNullOrEmpty(request.ShippingDate) ? null : DateTime.Parse(request.ShippingDate)
         };
 
         _context.Projects.Add(project);

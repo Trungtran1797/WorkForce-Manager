@@ -39,6 +39,7 @@ public interface IApplicationDbContext
     DbSet<ProjectAttachment> ProjectAttachments { get; }
     DbSet<TaskComment> TaskComments { get; }
     DbSet<TaskAttachment> TaskAttachments { get; }
+    DbSet<TaskAssignee> TaskAssignees { get; }
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<DepartmentPermissionOverride> DepartmentPermissionOverrides { get; }
     DbSet<SystemSetting> SystemSettings { get; }

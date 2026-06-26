@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -32,6 +35,7 @@ import {
 import { useEmployees } from '@/features/employees/api/employee-queries'
 import { useProjects } from '@/features/projects/api/project-queries'
 import { useTasks } from '@/features/tasks/api/task-queries'
+import type { Employee } from '@/features/employees/types'
 import type { Task, TaskFormValues } from '@/features/tasks/types'
 
 const NONE = 'none'
@@ -40,7 +44,7 @@ const schema = z.object({
   code: z.string().optional(),
   title: z.string().min(1, 'Nhập tên công việc'),
   description: z.string(),
-  assigneeId: z.string(),
+  assigneeIds: z.array(z.number()),
   priority: z.enum(['Low', 'Medium', 'High', 'Urgent']),
   status: z.enum(['Todo', 'InProgress', 'Review', 'Done', 'Cancelled']),
   startDate: z.string(),
@@ -54,7 +58,7 @@ const DEFAULT_VALUES: z.input<typeof schema> = {
   code: '',
   title: '',
   description: '',
-  assigneeId: '',
+  assigneeIds: [],
   priority: 'Medium',
   status: 'Todo',
   startDate: '',
@@ -62,6 +66,108 @@ const DEFAULT_VALUES: z.input<typeof schema> = {
   progress: 0,
   projectId: '',
   parentTaskId: '',
+}
+
+/* ─── Inline multi-select component ─── */
+interface MultiAssigneeSelectProps {
+  employees: Employee[]
+  value: number[]
+  onChange: (ids: number[]) => void
+}
+
+function MultiAssigneeSelect({ employees, value, onChange }: MultiAssigneeSelectProps) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return q ? employees.filter((e) => e.fullName.toLowerCase().includes(q)) : employees
+  }, [employees, search])
+
+  const toggle = (id: number) => {
+    onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id])
+  }
+
+  const selected = employees.filter((e) => value.includes(e.id))
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className="flex min-h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <div className="flex flex-1 flex-wrap gap-1">
+          {selected.length === 0 ? (
+            <span className="text-muted-foreground">Chưa phân công</span>
+          ) : (
+            selected.map((e) => (
+              <Badge key={e.id} variant="secondary" className="gap-1 pr-1 text-xs">
+                {e.fullName}
+                <button
+                  type="button"
+                  onClick={(ev) => { ev.stopPropagation(); toggle(e.id) }}
+                  className="ml-0.5 rounded-sm hover:bg-muted"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            ))
+          )}
+        </div>
+        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+          <div className="flex items-center gap-1.5 border-b px-2 py-1.5">
+            <Search className="size-3.5 text-muted-foreground" />
+            <input
+              autoFocus
+              placeholder="Tìm theo tên..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">Không tìm thấy</div>
+            ) : (
+              filtered.map((emp) => {
+                const checked = value.includes(emp.id)
+                return (
+                  <label
+                    key={emp.id}
+                    className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
+                  >
+                    <Checkbox checked={checked} onCheckedChange={() => toggle(emp.id)} />
+                    <span className="flex-1">{emp.fullName}</span>
+                    <span className="text-xs text-muted-foreground">{emp.departmentName}</span>
+                    {checked && <Check className="size-3.5 text-primary" />}
+                  </label>
+                )
+              })
+            )}
+          </div>
+          {value.length > 0 && (
+            <div className="border-t px-3 py-1.5 text-xs text-muted-foreground">
+              Đã chọn {value.length} người
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 interface TaskFormDialogProps {
@@ -103,7 +209,11 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultProjectId, onS
               code: task.code,
               title: task.title,
               description: task.description,
-              assigneeId: task.assigneeId ? String(task.assigneeId) : '',
+              assigneeIds: task.assignees?.length
+                ? task.assignees.map((a) => a.employeeId)
+                : task.assigneeId
+                ? [task.assigneeId]
+                : [],
               priority: task.priority,
               status: task.status,
               startDate: task.startDate,
@@ -120,14 +230,14 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultProjectId, onS
   const handleSubmit = async (values: any): Promise<void> => {
     setSubmitError(null)
     try {
-      const parentTaskIdParsed = values.parentTaskId && values.parentTaskId !== NONE 
-        ? Number(values.parentTaskId) 
-        : null;
+      const parentTaskIdParsed = values.parentTaskId && values.parentTaskId !== NONE
+        ? Number(values.parentTaskId)
+        : null
 
       await onSubmit({
         ...values,
+        assigneeId: values.assigneeIds[0] ? String(values.assigneeIds[0]) : '',
         parentTaskId: parentTaskIdParsed,
-        assigneeId: values.assigneeId === NONE ? '' : values.assigneeId,
         projectId: values.projectId === NONE ? '' : values.projectId,
       } as unknown as TaskFormValues)
       onOpenChange(false)
@@ -229,18 +339,16 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultProjectId, onS
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="assigneeId" render={({ field }) => (
+              <FormField control={form.control} name="assigneeIds" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Người thực hiện</FormLabel>
-                  <Select value={field.value || NONE} onValueChange={field.onChange}>
-                    <FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Chọn người" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value={NONE}>Chưa phân công</SelectItem>
-                      {employees.map((e) => (
-                        <SelectItem key={e.id} value={String(e.id)}>{e.fullName}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <MultiAssigneeSelect
+                      employees={employees}
+                      value={field.value as number[]}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

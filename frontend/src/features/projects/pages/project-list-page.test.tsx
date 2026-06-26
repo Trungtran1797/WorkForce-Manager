@@ -42,8 +42,9 @@ describe('ProjectListPage', () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByText('DA001 - Hệ thống quản lý kho')).toBeInTheDocument()
-    expect(screen.getByText(/Chủ đầu tư: SAIGON SPICES/)).toBeInTheDocument()
+    expect(screen.getByText(/DA001/)).toBeInTheDocument()
+    expect(screen.getByText(/Hệ thống quản lý kho/)).toBeInTheDocument()
+    expect(screen.getByText('SAIGON SPICES')).toBeInTheDocument()
   })
 
   it('hiển thị empty state khi chưa có dự án', () => {

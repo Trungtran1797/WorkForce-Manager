@@ -33,4 +33,5 @@ public class TaskItem : BaseAuditableEntity
 
     public ICollection<TaskComment> Comments { get; set; } = new List<TaskComment>();
     public ICollection<TaskAttachment> Attachments { get; set; } = new List<TaskAttachment>();
+    public ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
 }

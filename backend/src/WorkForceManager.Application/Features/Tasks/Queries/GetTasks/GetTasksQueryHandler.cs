@@ -24,6 +24,7 @@ public class GetTasksQueryHandler : IRequestHandler<GetTasksQuery, List<TaskDto>
             .Include(t => t.Project)
             .Include(t => t.ParentTask)
             .Include(t => t.SubTasks)
+            .Include(t => t.Assignees).ThenInclude(a => a.Employee)
             .AsQueryable();
 
         if (request.ProjectId is { } projectId)

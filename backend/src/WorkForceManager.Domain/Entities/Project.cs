@@ -17,6 +17,12 @@ public class Project : BaseAuditableEntity
     /// <summary>% tiến độ 0-100.</summary>
     public int Progress { get; set; }
 
+    /// <summary>Ngày xuất hàng (ngày giao hàng cho khách).</summary>
+    public DateTime? ShippingDate { get; set; }
+
+    /// <summary>Dự án mẫu — dùng để clone tạo dự án mới.</summary>
+    public bool IsTemplate { get; set; }
+
     public ICollection<ProjectMember> Members { get; set; } = new List<ProjectMember>();
     public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     public ICollection<ProjectComment> Comments { get; set; } = new List<ProjectComment>();

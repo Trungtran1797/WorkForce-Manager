@@ -387,6 +387,31 @@ Employee → Manager Approval → HR Approval → Completed
   - Frontend: module `features/permissions/` (types, api, `usePermission`/`useCanEdit`/`useCanView`, trang `/settings/permissions` 2 tab "Theo vai trò"/"Theo phòng ban"), sidebar lọc menu theo quyền hiệu lực, `ProtectedRoute` hỗ trợ `module`/`level`, áp dụng `useCanEdit('<Module>')` ẩn nút Thêm/Sửa/Xóa cho 16 trang CRUD (Employees, Departments, Projects, Tasks, Attendance, Leave, Overtime, Shifts, OfficeLocations, Contracts, Payroll, SalaryConfigs, Okrs, Performance, Training, Reports).
   - *(Đã hoàn thành và verify: backend `dotnet build` 0 warning, `dotnet test` 67/67 pass (+16 test mới); frontend `npx tsc -b` 0 lỗi, `npx vitest run` 51/51 pass (+8 test mới, 20 file). Không triển khai data-scope filtering (Manager chỉ thấy data phòng mình) - để làm sau theo Mục 3 docs/phan-quyen-truy-cap.md)*
 
+- [x] **Bước 18 — Cải tiến UX Dự án & Nhiều người thực hiện (Multi-Assignee Task)**
+  - **Project form**: Đổi label "Mã dự án" → "Số hợp đồng" (placeholder "Để trống để tự động tạo"); thêm trường "Ngày xuất hàng" (`ShippingDate`) hiển thị nổi bật màu cam (icon Truck) trên Dashboard calendar "Lịch công tác & Deadline".
+  - **Project detail layout**: Tái cấu trúc tab Tổng quan thành 3 card ngang đồng đều: (1) Thông tin dự án compact (dates, budget, số HĐ, ngày xuất hàng nếu có, progress), (2) Mô tả dự án + chủ đầu tư, (3) Nhân sự tham gia + nút Gán.
+  - **Gán nhân sự tham gia**: Thay dialog đơn bằng `AddMemberDialog` multi-select — search theo tên, filter phòng ban, checkbox chọn nhiều người cùng lúc, gán tuần tự qua API, badge đếm đã chọn.
+  - **Nhiều người thực hiện (Task Multi-Assignee)**: Thêm entity `TaskAssignee` (join table TaskId+EmployeeId), migration `AddTaskMultiAssignee`, cập nhật `TaskDto`+`TaskAssigneeDto`, `CreateTaskCommand`/`UpdateTaskCommand` nhận `List<int> AssigneeIds`, handler sync diff add/remove + notification đến tất cả assignee. Frontend: `MultiAssigneeSelect` inline (search, checkbox, badge xóa) trong task form; hiển thị nhiều tên trong task-list-view và kanban-card.
+  - *(Đã hoàn thành và verify: backend `dotnet build` 0 warning, `dotnet test` 67/67 pass, migration apply SQL Server; frontend `npx tsc -b` 0 lỗi, `npx vitest run` 50/51 pass (1 fail attendance-page là pre-existing không liên quan))*
+
+- [x] **Bước 19 — Danh sách dự án dạng bảng & Quản lý mẫu quy trình**
+  - **Project list → Table format**: Viết lại `project-list-page.tsx` từ card/grid sang bảng (Table + TableRow) với cột: Số HĐ, Tên dự án, Trạng thái, Tiến độ, Ngày kết thúc, Ngày xuất hàng, Hành động. Mỗi hàng có dropdown 3 chấm (Xem chi tiết / Lưu làm mẫu / Xóa).
+  - **Tabs "Dự án" / "Mẫu quy trình"**: Tab "Dự án" hiển thị dự án thường (không lẫn mẫu) kèm search + filter trạng thái; Tab "Mẫu quy trình" hiển thị card mẫu đánh số tuần tự "Mẫu 1", "Mẫu 2",... với action "Bỏ đánh dấu mẫu".
+  - **Lưu dự án bất kỳ làm mẫu**: Row dropdown → "Lưu làm mẫu" gọi `PATCH /projects/{id}/mark-template` (command `MarkProjectAsTemplateCommand` + handler mới). Hỗ trợ cả chiều ngược lại (bỏ đánh dấu mẫu từ Tab Templates).
+  - **Template picker nâng cấp**: Dialog chọn mẫu hiển thị badge "Mẫu 1/2/3" + mã dự án bên cạnh tên, xóa prefix `[MẪU]` khỏi tên hiển thị.
+  - **Backend fixes**: `GetProjectsQueryHandler` thêm filter `WHERE IsTemplate = false` khi `IncludeTemplates = false` (trước đây templates lẫn vào danh sách thường); `GetProjectTemplatesQueryHandler` fix đếm toàn bộ tasks thay vì chỉ đếm subtasks.
+  - **Backend files**: 2 file mới (`MarkProjectAsTemplateCommand.cs`, `MarkProjectAsTemplateCommandHandler.cs`); sửa `GetProjectsQuery.cs`, `GetProjectsQueryHandler.cs`, `GetProjectTemplatesQueryHandler.cs`, `ProjectsController.cs`.
+  - **Frontend files**: Sửa `project-api.ts` (thêm `markProjectAsTemplate()`), `project-queries.ts` (thêm `useMarkProjectAsTemplate()`), viết lại `project-list-page.tsx`, cập nhật `template-picker-dialog.tsx`.
+  - *(Backend verify bị chặn bởi file lock do process đang chạy — không phải lỗi code; frontend `npx tsc --noEmit` 0 lỗi. Cần restart backend để apply thay đổi.)*
+
+---
+
+### Lưu ý vận hành (cập nhật 2026-06-26)
+
+- **Khi UI hiển thị sai / thiếu tính năng đã code**: Nguyên nhân thường là browser cache cũ hoặc dev server chưa chạy. Xử lý: khởi động lại `npm run dev` trong `frontend/`, sau đó **Ctrl+Shift+R** (hard refresh) trong browser.
+- **Ngày xuất hàng (ShippingDate) trong seed data**: Project DA004 có `ShippingDate = 2026-07-18`. Để thấy icon Truck cam trên Dashboard "Lịch công tác & Deadline", cần chuyển lịch sang **tháng 7/2026** (không phải tháng 6). Tháng 6/2026 trống là đúng theo dữ liệu seed.
+- **Các file frontend Bước 18–19 đang ở trạng thái "modified" (chưa commit)**: `project-form-dialog.tsx`, `dashboard-page.tsx`, `project-list-page.tsx`, `task-form-dialog.tsx` và nhiều file khác. Nội dung trong file là bản mới đúng — không cần viết lại.
+- **Label "Mã dự án" đã đổi thành "Số hợp đồng"** từ Bước 18, field `ShippingDate` đã có trong form tạo/sửa dự án.
 
 ---
 

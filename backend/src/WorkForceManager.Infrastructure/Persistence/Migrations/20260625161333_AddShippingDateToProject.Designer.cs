@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkForceManager.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using WorkForceManager.Infrastructure.Persistence;
 namespace WorkForceManager.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260625161333_AddShippingDateToProject")]
+    partial class AddShippingDateToProject
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1092,9 +1095,6 @@ namespace WorkForceManager.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsTemplate")
-                        .HasColumnType("bit");
-
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
@@ -1635,21 +1635,6 @@ namespace WorkForceManager.Infrastructure.Persistence.Migrations
                     b.HasKey("Key");
 
                     b.ToTable("SystemSettings", (string)null);
-                });
-
-            modelBuilder.Entity("WorkForceManager.Domain.Entities.TaskAssignee", b =>
-                {
-                    b.Property<int>("TaskId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TaskId", "EmployeeId");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.ToTable("TaskAssignees", (string)null);
                 });
 
             modelBuilder.Entity("WorkForceManager.Domain.Entities.TaskAttachment", b =>
@@ -2393,25 +2378,6 @@ namespace WorkForceManager.Infrastructure.Persistence.Migrations
                     b.Navigation("Shift");
                 });
 
-            modelBuilder.Entity("WorkForceManager.Domain.Entities.TaskAssignee", b =>
-                {
-                    b.HasOne("WorkForceManager.Domain.Entities.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("WorkForceManager.Domain.Entities.TaskItem", "Task")
-                        .WithMany("Assignees")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("Task");
-                });
-
             modelBuilder.Entity("WorkForceManager.Domain.Entities.TaskAttachment", b =>
                 {
                     b.HasOne("WorkForceManager.Domain.Entities.TaskComment", "Comment")
@@ -2567,8 +2533,6 @@ namespace WorkForceManager.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("WorkForceManager.Domain.Entities.TaskItem", b =>
                 {
-                    b.Navigation("Assignees");
-
                     b.Navigation("Attachments");
 
                     b.Navigation("Comments");

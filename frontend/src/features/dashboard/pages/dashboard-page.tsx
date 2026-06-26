@@ -13,7 +13,7 @@ import {
   subMonths,
 } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { Calendar, Check, ChevronLeft, ChevronRight, ListTodo, Plus, Clock as ClockIcon } from 'lucide-react'
+import { Calendar, Check, ChevronLeft, ChevronRight, ListTodo, Plus, Clock as ClockIcon, Truck } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -31,8 +31,10 @@ import { ErrorState } from '@/components/common/data-state'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { useTasks } from '@/features/tasks/api/task-queries'
 import { useMyLeaveRequests } from '@/features/leave/api/leave-queries'
+import { useProjects } from '@/features/projects/api/project-queries'
 import type { LeaveRequest } from '@/features/leave/types'
 import type { Task } from '@/features/tasks/types'
+import type { Project } from '@/features/projects/types'
 
 const ACTIVITY_ICON_MAP: Record<RecentActivity['type'], { icon: typeof Check; className: string }> = {
   success: { icon: Check, className: 'bg-success/10 text-success' },
@@ -56,6 +58,7 @@ interface AgendaItem {
   to: string
   isOverdue: boolean
   isDueSoon: boolean
+  isShipping?: boolean
 }
 
 function startOfDay(date: Date): Date {
@@ -89,6 +92,21 @@ function buildTaskAgendaItems(tasks: Task[], today: Date, referenceMonth: Date):
         isDueSoon: diffDays >= 0 && diffDays <= 3,
       }
     })
+}
+
+function buildShippingAgendaItems(projects: Project[], referenceMonth: Date): AgendaItem[] {
+  return projects
+    .filter((p) => !!p.shippingDate && isInCurrentMonth(p.shippingDate, referenceMonth))
+    .map((p) => ({
+      id: `shipping-${p.id}`,
+      date: p.shippingDate!,
+      title: `Xuất hàng: ${p.name}`,
+      subtitle: `Dự án ${p.code}`,
+      to: `/projects`,
+      isOverdue: false,
+      isDueSoon: false,
+      isShipping: true,
+    }))
 }
 
 function buildLeaveAgendaItems(leaves: LeaveRequest[], referenceMonth: Date): AgendaItem[] {
@@ -180,16 +198,21 @@ export function DashboardPage() {
   const { data: myLeaveRequestsData, isLoading: myLeaveLoading } = useMyLeaveRequests()
   const myLeaveRequests = useMemo(() => myLeaveRequestsData ?? [], [myLeaveRequestsData])
 
+  const { data: projectsData } = useProjects()
+  const allProjects = useMemo(() => projectsData ?? [], [projectsData])
+
   const [agendaMonth, setAgendaMonth] = useState(() => new Date())
 
   const today = useMemo(() => startOfDay(new Date()), [])
 
   const monthAgendaItems = useMemo(
     () =>
-      [...buildTaskAgendaItems(myTasks, today, agendaMonth), ...buildLeaveAgendaItems(myLeaveRequests, agendaMonth)].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      ),
-    [myTasks, myLeaveRequests, agendaMonth, today]
+      [
+        ...buildTaskAgendaItems(myTasks, today, agendaMonth),
+        ...buildLeaveAgendaItems(myLeaveRequests, agendaMonth),
+        ...buildShippingAgendaItems(allProjects, agendaMonth),
+      ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [myTasks, myLeaveRequests, allProjects, agendaMonth, today]
   )
 
   const agendaByDate = useMemo(() => {
@@ -364,6 +387,7 @@ export function DashboardPage() {
                     const inMonth = isSameMonth(day, agendaMonth)
                     const hasItems = dayItems.length > 0
                     const hasUrgent = dayItems.some((item) => item.isOverdue || item.isDueSoon)
+                    const hasShipping = dayItems.some((item) => item.isShipping)
 
                     return (
                       <div key={key} className="flex items-center justify-center py-0.5">
@@ -372,11 +396,9 @@ export function DashboardPage() {
                             'flex size-7 items-center justify-center rounded-full text-xs',
                             !inMonth && 'text-muted-foreground/40',
                             inMonth && !hasItems && isToday(day) && 'border border-primary font-semibold text-primary',
-                            inMonth &&
-                              hasItems &&
-                              (hasUrgent
-                                ? 'bg-destructive font-semibold text-destructive-foreground'
-                                : 'bg-primary font-semibold text-primary-foreground')
+                            inMonth && hasItems && hasUrgent && 'bg-destructive font-semibold text-destructive-foreground',
+                            inMonth && hasItems && !hasUrgent && hasShipping && 'bg-orange-500 font-semibold text-white',
+                            inMonth && hasItems && !hasUrgent && !hasShipping && 'bg-primary font-semibold text-primary-foreground'
                           )}
                           title={hasItems ? dayItems.map((item) => item.title).join(', ') : undefined}
                         >
@@ -406,12 +428,22 @@ export function DashboardPage() {
                                   'shrink-0 rounded-md border px-2 py-1 text-xs font-semibold tabular-nums',
                                   isUrgent
                                     ? 'border-destructive/30 bg-destructive/10 text-destructive'
-                                    : 'border-primary/30 bg-primary/10 text-primary'
+                                    : item.isShipping
+                                      ? 'border-orange-400/40 bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                                      : 'border-primary/30 bg-primary/10 text-primary'
                                 )}
                               >
                                 {format(date, 'dd/MM')}
                               </span>
-                              <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                              {item.isShipping && (
+                                <Truck className="size-3.5 shrink-0 text-orange-500" />
+                              )}
+                              <span className={cn(
+                                'min-w-0 flex-1 truncate',
+                                item.isShipping && 'font-medium text-orange-600 dark:text-orange-400'
+                              )}>
+                                {item.title}
+                              </span>
                             </Link>
                           </li>
                         )

@@ -13,7 +13,10 @@ using WorkForceManager.Application.Features.Projects.Discussions.Commands.Delete
 using WorkForceManager.Application.Features.Projects.Discussions.Commands.DeleteProjectComment;
 using WorkForceManager.Application.Features.Projects.Discussions.Queries.GetProjectAttachmentDownload;
 using WorkForceManager.Application.Features.Projects.Discussions.Queries.GetProjectComments;
+using WorkForceManager.Application.Features.Projects.Commands.CreateProjectFromTemplate;
+using WorkForceManager.Application.Features.Projects.Commands.MarkProjectAsTemplate;
 using WorkForceManager.Application.Features.Projects.Queries.GetProjectById;
+using WorkForceManager.Application.Features.Projects.Queries.GetProjectTemplates;
 using WorkForceManager.Application.Features.Projects.Queries.GetProjects;
 using WorkForceManager.Domain.Enums;
 using WorkForceManager.Infrastructure.Identity.Authorization;
@@ -26,9 +29,13 @@ public class ProjectsController : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.View))]
-    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? status, CancellationToken ct)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        [FromQuery] bool includeTemplates = false,
+        CancellationToken ct = default)
     {
-        var result = await Mediator.Send(new GetProjectsQuery(search, status), ct);
+        var result = await Mediator.Send(new GetProjectsQuery(search, status, includeTemplates), ct);
         return Ok(ApiResponse<List<ProjectDto>>.Ok(result));
     }
 
@@ -40,12 +47,37 @@ public class ProjectsController : ApiControllerBase
         return Ok(ApiResponse<ProjectDto>.Ok(result));
     }
 
+    [HttpGet("templates")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.View))]
+    public async Task<IActionResult> GetTemplates(CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetProjectTemplatesQuery(), ct);
+        return Ok(ApiResponse<List<ProjectTemplateDto>>.Ok(result));
+    }
+
     [HttpPost]
     [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
     public async Task<IActionResult> Create([FromBody] CreateProjectCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
         return Ok(ApiResponse<ProjectDto>.Ok(result, "Tạo dự án thành công."));
+    }
+
+    [HttpPost("from-template")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
+    public async Task<IActionResult> CreateFromTemplate([FromBody] CreateProjectFromTemplateCommand command, CancellationToken ct)
+    {
+        var result = await Mediator.Send(command, ct);
+        return Ok(ApiResponse<ProjectDto>.Ok(result, "Tạo dự án từ mẫu thành công."));
+    }
+
+    [HttpPatch("{id:int}/mark-template")]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
+    public async Task<IActionResult> MarkAsTemplate(int id, [FromBody] MarkAsTemplateRequest request, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new MarkProjectAsTemplateCommand(id, request.IsTemplate), ct);
+        return Ok(ApiResponse<ProjectDto>.Ok(result,
+            request.IsTemplate ? "Đã lưu dự án làm mẫu." : "Đã bỏ đánh dấu mẫu."));
     }
 
     [HttpPut("{id:int}")]
@@ -129,3 +161,4 @@ public class ProjectsController : ApiControllerBase
 }
 
 public record AddProjectMemberRequest(int EmployeeId, string Role);
+public record MarkAsTemplateRequest(bool IsTemplate);

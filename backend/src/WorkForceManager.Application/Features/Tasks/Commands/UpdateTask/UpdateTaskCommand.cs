@@ -16,4 +16,5 @@ public record UpdateTaskCommand(
     string? DueDate,
     int Progress,
     int? ProjectId,
-    int? ParentTaskId) : IRequest<TaskDto>;
+    int? ParentTaskId,
+    List<int>? AssigneeIds) : IRequest<TaskDto>;

@@ -49,6 +49,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<ProjectAttachment> ProjectAttachments => Set<ProjectAttachment>();
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
     public DbSet<TaskAttachment> TaskAttachments => Set<TaskAttachment>();
+    public DbSet<TaskAssignee> TaskAssignees => Set<TaskAssignee>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<DepartmentPermissionOverride> DepartmentPermissionOverrides => Set<DepartmentPermissionOverride>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();

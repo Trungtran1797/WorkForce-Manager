@@ -55,7 +55,8 @@ public class CreateTaskCommandHandlerTests
             DueDate: "2026-06-20",
             Progress: 0,
             ProjectId: null,
-            ParentTaskId: null
+            ParentTaskId: null,
+            AssigneeIds: null
         );
 
         // Thêm nhân viên ảo vào DB để mapper và logic check không bị lỗi
@@ -108,7 +109,8 @@ public class CreateTaskCommandHandlerTests
             DueDate: null,
             Progress: 0,
             ProjectId: null,
-            ParentTaskId: null
+            ParentTaskId: null,
+            AssigneeIds: null
         );
 
         var handler = new CreateTaskCommandHandler(_context, _notificationServiceMock.Object);

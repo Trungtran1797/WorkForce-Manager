@@ -61,6 +61,8 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
             .Include(t => t.Assignee)
             .Include(t => t.Assigner)
             .Include(t => t.Project)
+            .Include(t => t.SubTasks)
+            .Include(t => t.Assignees).ThenInclude(a => a.Employee)
             .FirstAsync(t => t.Id == task.Id, cancellationToken);
 
         // Gửi thông báo đến người giao việc khi công việc hoàn thành

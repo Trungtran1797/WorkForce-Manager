@@ -1,5 +1,7 @@
 namespace WorkForceManager.Application.Features.Tasks.Common;
 
+public record TaskAssigneeDto(int EmployeeId, string FullName);
+
 public record TaskDto(
     int Id,
     string Code,
@@ -18,4 +20,5 @@ public record TaskDto(
     string ProjectCode,
     int? ParentTaskId,
     string? ParentTaskTitle,
-    int SubTaskCount);
+    int SubTaskCount,
+    List<TaskAssigneeDto> Assignees);

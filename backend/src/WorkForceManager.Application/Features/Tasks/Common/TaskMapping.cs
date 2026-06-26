@@ -24,5 +24,6 @@ public static class TaskMapping
         t.Project?.Code ?? string.Empty,
         t.ParentTaskId,
         t.ParentTask?.Title,
-        t.SubTasks.Count(st => !st.IsDeleted));
+        t.SubTasks.Count(st => !st.IsDeleted),
+        t.Assignees.Select(a => new TaskAssigneeDto(a.EmployeeId, a.Employee?.FullName ?? string.Empty)).ToList());
 }

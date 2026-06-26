@@ -33,6 +33,7 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
         project.Budget = request.Budget;
         project.Description = request.Description?.Trim();
         project.Progress = request.Progress;
+        project.ShippingDate = string.IsNullOrEmpty(request.ShippingDate) ? null : DateTime.Parse(request.ShippingDate);
 
         await _context.SaveChangesAsync(cancellationToken);
 

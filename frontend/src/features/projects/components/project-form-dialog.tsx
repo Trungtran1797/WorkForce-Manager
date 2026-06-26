@@ -42,6 +42,7 @@ const schema = z
     budget: z.coerce.number().min(0, 'Ngân sách không hợp lệ'),
     description: z.string(),
     progress: z.coerce.number().min(0).max(100),
+    shippingDate: z.string().optional(),
   })
   .refine((v) => !v.startDate || !v.endDate || v.endDate >= v.startDate, {
     message: 'Ngày kết thúc phải sau ngày bắt đầu',
@@ -58,6 +59,7 @@ const DEFAULT_VALUES: ProjectFormValues = {
   budget: 0,
   description: '',
   progress: 0,
+  shippingDate: '',
 }
 
 interface ProjectFormDialogProps {
@@ -90,6 +92,7 @@ export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: Pro
               budget: project.budget,
               description: project.description,
               progress: project.progress,
+              shippingDate: project.shippingDate ?? '',
             }
           : DEFAULT_VALUES,
       )
@@ -119,7 +122,7 @@ export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: Pro
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField control={form.control} name="code" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mã dự án</FormLabel>
+                  <FormLabel>Số hợp đồng</FormLabel>
                   <FormControl>
                     <Input
                       placeholder={project ? undefined : "Để trống để tự động tạo"}
@@ -185,6 +188,16 @@ export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: Pro
                 <FormItem>
                   <FormLabel>% tiến độ</FormLabel>
                   <FormControl><Input type="number" min={0} max={100} {...field} value={field.value as number} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="shippingDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    <span className="inline-flex size-2 rounded-full bg-orange-500" />
+                    Ngày xuất hàng
+                  </FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

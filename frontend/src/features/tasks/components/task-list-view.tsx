@@ -104,7 +104,11 @@ function TaskRow({ task, onOpenDetail }: { task: Task; onOpenDetail: (task: Task
             )}
           </div>
         </TableCell>
-        <TableCell>{task.assigneeName}</TableCell>
+        <TableCell>
+          {task.assignees?.length
+            ? task.assignees.map((a) => a.fullName).join(', ')
+            : task.assigneeName || '—'}
+        </TableCell>
         <TableCell className="text-muted-foreground">{task.assignerName}</TableCell>
         <TableCell>
           <TaskPriorityBadge priority={task.priority} />
@@ -142,7 +146,11 @@ function TaskRow({ task, onOpenDetail }: { task: Task; onOpenDetail: (task: Task
                 {subtask.title}
               </button>
             </TableCell>
-            <TableCell>{subtask.assigneeName}</TableCell>
+            <TableCell>
+              {subtask.assignees?.length
+                ? subtask.assignees.map((a) => a.fullName).join(', ')
+                : subtask.assigneeName || '—'}
+            </TableCell>
             <TableCell className="text-muted-foreground">{subtask.assignerName}</TableCell>
             <TableCell>
               <TaskPriorityBadge priority={subtask.priority} />

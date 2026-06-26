@@ -1,25 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, Loader2, Plus, UserMinus } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Truck, UserMinus } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { EmptyState, ErrorState, TableSkeleton } from "@/components/common/data-state";
 import { ProjectStatusBadge } from "@/components/common/status-badge";
 import { Separator } from "@/components/ui/separator";
@@ -28,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrencyVnd, formatDate } from "@/lib/formatters";
 import { ProjectProgressBar } from "@/features/projects/components/project-progress-bar";
 import { ProjectFormDialog } from "@/features/projects/components/project-form-dialog";
+import { AddMemberDialog } from "@/features/projects/components/add-member-dialog";
 import { CommentForm } from "@/features/projects/components/comment-form";
 import { ProjectGeneralFeed } from "@/features/projects/components/project-general-feed";
 import { TaskListView } from "@/features/tasks/components/task-list-view";
@@ -74,8 +60,7 @@ export function ProjectDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [memberOpen, setMemberOpen] = useState(false);
   const [taskOpen, setTaskOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [memberRole, setMemberRole] = useState("");
+  const [memberSubmitting, setMemberSubmitting] = useState(false);
 
   const {
     data: projectTasks = [],
@@ -135,22 +120,17 @@ export function ProjectDetailPage() {
     await createTask.mutateAsync(values);
   };
 
-  const handleAddMember = (): void => {
-    if (!selectedEmployee) return;
-    addMember.mutate(
-      {
-        id: project.id,
-        employeeId: Number(selectedEmployee),
-        role: memberRole || "Thành viên",
-      },
-      {
-        onSuccess: () => {
-          setMemberOpen(false);
-          setSelectedEmployee("");
-          setMemberRole("");
-        },
-      },
-    );
+  const handleAddMembers = async (
+    selections: { employeeId: number; role: string }[]
+  ): Promise<void> => {
+    setMemberSubmitting(true);
+    try {
+      for (const sel of selections) {
+        await addMember.mutateAsync({ id: project.id, ...sel });
+      }
+    } finally {
+      setMemberSubmitting(false);
+    }
   };
 
   return (
@@ -196,69 +176,71 @@ export function ProjectDetailPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          {/* Row 1: 3 cards ngang */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Thông tin dự án</CardTitle>
+            {/* Card 1: Thông tin dự án – compact */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Thông tin dự án</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {project.description}
-                </p>
-                <Separator />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div>
-                    <div className="text-xs text-muted-foreground">
-                      Ngày bắt đầu
-                    </div>
-                    <div className="text-sm font-medium">
-                      {formatDate(project.startDate)}
-                    </div>
+                    <div className="text-xs text-muted-foreground">Ngày bắt đầu</div>
+                    <div className="font-medium">{formatDate(project.startDate)}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">
-                      Ngày kết thúc
-                    </div>
-                    <div className="text-sm font-medium">
-                      {formatDate(project.endDate)}
-                    </div>
+                    <div className="text-xs text-muted-foreground">Ngày kết thúc</div>
+                    <div className="font-medium">{formatDate(project.endDate)}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">
-                      Ngân sách
-                    </div>
-                    <div className="text-sm font-medium">
-                      {formatCurrencyVnd(project.budget)}
-                    </div>
+                    <div className="text-xs text-muted-foreground">Ngân sách</div>
+                    <div className="font-medium">{formatCurrencyVnd(project.budget)}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">
-                      Mã dự án
-                    </div>
-                    <div className="text-sm font-medium">{project.code}</div>
+                    <div className="text-xs text-muted-foreground">Số hợp đồng</div>
+                    <div className="font-medium">{project.code}</div>
                   </div>
+                  {project.shippingDate && (
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Truck className="size-3 text-orange-500" />
+                        Ngày xuất hàng
+                      </div>
+                      <div className="font-medium text-orange-600">{formatDate(project.shippingDate)}</div>
+                    </div>
+                  )}
                 </div>
                 <Separator />
                 <div>
-                  <div className="mb-2 text-sm font-medium">
-                    Tiến độ tổng thể
-                  </div>
-                  <ProjectProgressBar
-                    progress={project.progress}
-                    status={project.status}
-                  />
+                  <div className="mb-1.5 text-xs font-medium text-muted-foreground">Tiến độ tổng thể</div>
+                  <ProjectProgressBar progress={project.progress} status={project.status} />
                 </div>
               </CardContent>
             </Card>
 
+            {/* Card 2: Mô tả dự án */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Nhân sự tham gia</CardTitle>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setMemberOpen(true)}
-                >
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Mô tả dự án</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {project.description || "—"}
+                </p>
+                <Separator />
+                <div className="text-sm">
+                  <span className="text-xs text-muted-foreground">Chủ đầu tư: </span>
+                  <span className="font-medium">{project.investor || "—"}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Nhân sự tham gia */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-base">Nhân sự tham gia</CardTitle>
+                <Button size="sm" variant="outline" onClick={() => setMemberOpen(true)}>
                   <Plus className="size-4" />
                   Gán nhân sự
                 </Button>
@@ -270,43 +252,28 @@ export function ProjectDetailPage() {
                     description="Gán nhân sự vào dự án để bắt đầu phân công công việc."
                   />
                 ) : (
-                  <ul className="space-y-3">
+                  <ul className="space-y-2">
                     {project.members.map((member) => (
-                      <li
-                        key={member.id}
-                        className="flex items-center justify-between gap-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback
-                              className={cn(
-                                AVATAR_COLOR_MAP[member.avatarColor],
-                              )}
-                            >
+                      <li key={member.id} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="size-8">
+                            <AvatarFallback className={cn("text-xs", AVATAR_COLOR_MAP[member.avatarColor])}>
                               {member.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="text-sm font-medium">
-                              {member.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {member.role}
-                            </div>
+                            <div className="text-sm font-medium leading-tight">{member.name}</div>
+                            <div className="text-xs text-muted-foreground">{member.role}</div>
                           </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="size-7 shrink-0"
                           aria-label="Xóa khỏi dự án"
-                          onClick={() =>
-                            removeMember.mutate({
-                              id: project.id,
-                              memberId: member.id,
-                            })
-                          }
+                          onClick={() => removeMember.mutate({ id: project.id, memberId: member.id })}
                         >
-                          <UserMinus className="size-4 text-destructive" />
+                          <UserMinus className="size-3.5 text-destructive" />
                         </Button>
                       </li>
                     ))}
@@ -316,9 +283,10 @@ export function ProjectDetailPage() {
             </Card>
           </div>
 
+          {/* Row 2: Công việc dự án – full width */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Công việc của dự án</h2>
+              <h2 className="text-base font-semibold">Công việc dự án</h2>
               <Button size="sm" onClick={() => setTaskOpen(true)}>
                 <Plus className="size-4" />
                 Thêm công việc
@@ -374,50 +342,14 @@ export function ProjectDetailPage() {
         onSubmit={handleCreateTask}
       />
 
-      <Dialog open={memberOpen} onOpenChange={setMemberOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Gán nhân sự vào dự án</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Select
-              value={selectedEmployee}
-              onValueChange={setSelectedEmployee}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Chọn nhân viên" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees
-                  .filter(
-                    (e) => !project.members.some((m) => m.employeeId === e.id),
-                  )
-                  .map((e) => (
-                    <SelectItem key={e.id} value={String(e.id)}>
-                      {e.fullName}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Vai trò trong dự án (vd: Developer)"
-              value={memberRole}
-              onChange={(event) => setMemberRole(event.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMemberOpen(false)}>
-              Hủy
-            </Button>
-            <Button
-              onClick={handleAddMember}
-              disabled={!selectedEmployee || addMember.isPending}
-            >
-              Gán nhân sự
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddMemberDialog
+        open={memberOpen}
+        onOpenChange={setMemberOpen}
+        employees={employees}
+        existingMembers={project.members}
+        isSubmitting={memberSubmitting}
+        onAdd={handleAddMembers}
+      />
     </div>
   );
 }

@@ -12,4 +12,5 @@ public record CreateProjectCommand(
     string Status,
     decimal Budget,
     string? Description,
-    int Progress) : IRequest<ProjectDto>;
+    int Progress,
+    string? ShippingDate) : IRequest<ProjectDto>;

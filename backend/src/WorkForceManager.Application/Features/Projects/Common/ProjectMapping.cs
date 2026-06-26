@@ -32,6 +32,27 @@ public static class ProjectMapping
             p.Budget,
             p.Description ?? string.Empty,
             p.Progress,
-            members);
+            members,
+            p.ShippingDate?.ToString(DateFormat),
+            p.IsTemplate);
+    }
+
+    public static ProjectTemplateDto ToTemplateDto(this Project p, int taskCount)
+    {
+        var duration = (int)(p.EndDate - p.StartDate).TotalDays;
+        var roles = p.Members
+            .OrderBy(m => m.Id)
+            .Select(m => m.RoleInProject)
+            .Where(r => !string.IsNullOrEmpty(r))
+            .ToList();
+
+        return new ProjectTemplateDto(
+            p.Id,
+            p.Code,
+            p.Name,
+            p.Description ?? string.Empty,
+            duration,
+            taskCount,
+            roles);
     }
 }

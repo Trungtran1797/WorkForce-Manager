@@ -73,7 +73,7 @@ public class TaskSubtaskValidationTests
         var command = new CreateTaskCommand(
             "NEW-1", "New Subtask", null, null, null,
             nameof(TaskPriority.Medium), nameof(WorkTaskStatus.Todo), null, null, 0,
-            projectA.Id, parentTask.Id);
+            projectA.Id, parentTask.Id, null);
 
         var result = await validator.ValidateAsync(command);
 
@@ -89,7 +89,7 @@ public class TaskSubtaskValidationTests
         var command = new CreateTaskCommand(
             "NEW-2", "New Subtask", null, null, null,
             nameof(TaskPriority.Medium), nameof(WorkTaskStatus.Todo), null, null, 0,
-            projectA.Id, 99999);
+            projectA.Id, 99999, null);
 
         var result = await validator.ValidateAsync(command);
 
@@ -106,7 +106,7 @@ public class TaskSubtaskValidationTests
         var command = new CreateTaskCommand(
             "NEW-3", "Nested subtask", null, null, null,
             nameof(TaskPriority.Medium), nameof(WorkTaskStatus.Todo), null, null, 0,
-            projectA.Id, subTask.Id);
+            projectA.Id, subTask.Id, null);
 
         var result = await validator.ValidateAsync(command);
 
@@ -123,7 +123,7 @@ public class TaskSubtaskValidationTests
         var command = new CreateTaskCommand(
             "NEW-4", "Subtask in other project", null, null, null,
             nameof(TaskPriority.Medium), nameof(WorkTaskStatus.Todo), null, null, 0,
-            projectB.Id, parentTask.Id);
+            projectB.Id, parentTask.Id, null);
 
         var result = await validator.ValidateAsync(command);
 
@@ -140,7 +140,7 @@ public class TaskSubtaskValidationTests
         var command = new UpdateTaskCommand(
             parentTask.Id, parentTask.Code, parentTask.Title, null, null, null,
             nameof(TaskPriority.Medium), nameof(WorkTaskStatus.Todo), null, null, 0,
-            projectA.Id, parentTask.Id);
+            projectA.Id, parentTask.Id, null);
 
         var result = await validator.ValidateAsync(command);
 

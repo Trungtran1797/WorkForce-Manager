@@ -130,17 +130,38 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // Tạo TaskAssignee rows từ AssigneeIds (ưu tiên) hoặc fallback về AssigneeId đơn lẻ.
+        var assigneeIds = (request.AssigneeIds?.Any() == true
+            ? request.AssigneeIds
+            : (request.AssigneeId.HasValue ? new List<int> { request.AssigneeId.Value } : new List<int>()))
+            .Distinct()
+            .ToList();
+
+        foreach (var empId in assigneeIds)
+        {
+            _context.TaskAssignees.Add(new TaskAssignee { TaskId = task.Id, EmployeeId = empId });
+        }
+
+        if (assigneeIds.Any())
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
         if (task.ParentTaskId.HasValue)
         {
             await TaskProgressRecalculator.RecalculateParentAsync(_context, task.ParentTaskId.Value, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        // Gửi thông báo đến người được giao việc
-        if (task.AssigneeId.HasValue)
+        // Gửi thông báo đến tất cả người được giao việc.
+        var notifyIds = assigneeIds.Any()
+            ? assigneeIds
+            : (task.AssigneeId.HasValue ? new List<int> { task.AssigneeId.Value } : new List<int>());
+
+        foreach (var empId in notifyIds)
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.EmployeeId == task.AssigneeId.Value, cancellationToken);
+                .FirstOrDefaultAsync(u => u.EmployeeId == empId, cancellationToken);
             if (user != null)
             {
                 await _notificationService.SendNotificationToUserAsync(
@@ -160,6 +181,7 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
             .Include(t => t.Project)
             .Include(t => t.ParentTask)
             .Include(t => t.SubTasks)
+            .Include(t => t.Assignees).ThenInclude(a => a.Employee)
             .FirstAsync(t => t.Id == task.Id, cancellationToken);
 
         return created.ToDto();
