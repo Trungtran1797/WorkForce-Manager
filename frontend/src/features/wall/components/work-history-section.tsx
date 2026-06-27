@@ -42,7 +42,7 @@ function isOverdue(task: Task): boolean {
 export function WorkHistorySection() {
   const { user } = useAuth()
   const employeeId = user?.employeeId
-  const { data: allTasks = [], isLoading } = useTasks({ assigneeId: employeeId })
+  const { data: allTasks = [], isLoading } = useTasks({ assigneeId: employeeId ?? undefined })
 
   const stats = useMemo(() => {
     const done = allTasks.filter((t) => t.status === 'Done').length

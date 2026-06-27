@@ -81,7 +81,7 @@ export function CareerPathSection() {
   }, [courses, employeeId])
 
   const completedOkrs = useMemo(
-    () => (okrs as OkrObjective[]).filter((o) => o.employeeId === employeeId && o.status === 'Completed'),
+    () => (okrs as OkrObjective[]).filter((o) => o.employeeId === employeeId && o.status === 'Achieved'),
     [okrs, employeeId],
   )
 

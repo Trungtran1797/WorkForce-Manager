@@ -33,7 +33,6 @@ import { deleteProjectAttachment, downloadProjectAttachment } from "@/features/p
 import type {
   ProjectFormValues,
   ProjectMember,
-  ProjectAttachment,
 } from "@/features/projects/types";
 import type { TaskFormValues } from "@/features/tasks/types";
 

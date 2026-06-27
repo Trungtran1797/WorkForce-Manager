@@ -13,7 +13,6 @@ import {
   uploadMyCoverPhoto,
 } from '@/features/employees/api/employee-api'
 import type { EmployeeFormValues, EmployeeListParams } from '@/features/employees/types'
-import { ApiError, tokenStore } from '@/lib/api-client'
 
 const EMPLOYEES_KEY = ['employees'] as const
 const MY_PROFILE_KEY = ['employees', 'profile'] as const

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Building2, Users, ChevronDown, ChevronRight, Search, User } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
