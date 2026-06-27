@@ -20,10 +20,24 @@ export interface WallPost {
   authorName: string
   authorPosition?: string
   authorDepartment?: string
+  authorAvatarUrl?: string
   title?: string
   content: string
   createdDate: string
   likes: number[]
   attachments: WallAttachment[]
   comments: WallComment[]
+  isApproved: boolean
+  isRejected: boolean
+  isCompanyPost: boolean
+  groupName?: string
+  scheduledPublishDate?: string
+}
+
+export interface WallGroup {
+  name: string
+  description?: string
+  createdBy?: string
+  createdDate: string
+  postCount: number
 }

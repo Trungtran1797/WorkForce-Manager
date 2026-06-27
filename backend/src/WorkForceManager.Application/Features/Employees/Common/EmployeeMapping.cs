@@ -23,5 +23,7 @@ public static class EmployeeMapping
         e.Status.ToString(),
         e.PlaceOfOrigin,
         e.MaritalStatus,
-        e.OneOfficeAccount);
+        e.OneOfficeAccount,
+        e.AvatarUrl,
+        e.CoverPhotoUrl);
 }

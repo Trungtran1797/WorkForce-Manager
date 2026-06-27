@@ -8,21 +8,87 @@ import {
   updateWallPost,
   deleteWallPost,
   approveWallPost,
+  rejectWallPost,
+  publishNowWallPost,
+  getWallGroups,
+  createWallGroup,
+  deleteWallGroup,
 } from '@/features/wall/api/wall-api'
 
 const WALL_KEYS = {
   posts: ['wall-posts'] as const,
+  companyPosts: ['wall-posts-company'] as const,
+  pending: ['wall-posts-pending'] as const,
+  scheduled: ['wall-posts-scheduled'] as const,
+  group: (name: string) => ['wall-posts-group', name] as const,
+  groups: ['wall-groups'] as const,
 }
+
+// ── Post queries ─────────────────────────────────────────────────────────
 
 export function useWallPosts() {
   return useQuery({
     queryKey: WALL_KEYS.posts,
-    queryFn: getWallPosts,
+    queryFn: () => getWallPosts(),
   })
 }
 
+export function usePendingWallPosts() {
+  return useQuery({
+    queryKey: WALL_KEYS.pending,
+    queryFn: () => getWallPosts({ pending: true }),
+  })
+}
+
+export function useScheduledWallPosts() {
+  return useQuery({
+    queryKey: WALL_KEYS.scheduled,
+    queryFn: () => getWallPosts({ scheduled: true }),
+  })
+}
+
+export function useCompanyWallPosts() {
+  return useQuery({
+    queryKey: WALL_KEYS.companyPosts,
+    queryFn: () => getWallPosts({ companyOnly: true }),
+  })
+}
+
+export function useGroupWallPosts(groupName: string) {
+  return useQuery({
+    queryKey: WALL_KEYS.group(groupName),
+    queryFn: () => getWallPosts({ groupName }),
+    enabled: !!groupName,
+  })
+}
+
+// ── Group queries ─────────────────────────────────────────────────────────
+
+export function useWallGroups() {
+  return useQuery({
+    queryKey: WALL_KEYS.groups,
+    queryFn: getWallGroups,
+  })
+}
+
+// ── Invalidate helper ────────────────────────────────────────────────────
+
+function useInvalidateAll() {
+  const qc = useQueryClient()
+  return () => {
+    void qc.invalidateQueries({ queryKey: WALL_KEYS.posts })
+    void qc.invalidateQueries({ queryKey: WALL_KEYS.companyPosts })
+    void qc.invalidateQueries({ queryKey: WALL_KEYS.pending })
+    void qc.invalidateQueries({ queryKey: WALL_KEYS.scheduled })
+    void qc.invalidateQueries({ queryKey: WALL_KEYS.groups })
+    void qc.invalidateQueries({ queryKey: ['wall-posts-group'] })
+  }
+}
+
+// ── Post mutations ────────────────────────────────────────────────────────
+
 export function useCreateWallPost() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidateAll()
   return useMutation({
     mutationFn: ({
       title,
@@ -30,42 +96,35 @@ export function useCreateWallPost() {
       files,
       groupName,
       scheduledPublishDate,
+      isCompanyPost,
     }: {
       title: string | null
       content: string
       files?: File[]
       groupName?: string | null
       scheduledPublishDate?: string | null
-    }) => createWallPost(title, content, files, groupName, scheduledPublishDate),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WALL_KEYS.posts })
-    },
+      isCompanyPost?: boolean
+    }) => createWallPost(title, content, files, groupName, scheduledPublishDate, isCompanyPost),
+    onSuccess: invalidate,
   })
 }
 
 export function useToggleWallPostLike() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: toggleWallPostLike,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WALL_KEYS.posts })
-    },
-  })
+  const invalidate = useInvalidateAll()
+  return useMutation({ mutationFn: toggleWallPostLike, onSuccess: invalidate })
 }
 
 export function useAddWallPostComment() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidateAll()
   return useMutation({
     mutationFn: ({ postId, content }: { postId: number; content: string }) =>
       addWallPostComment(postId, content),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WALL_KEYS.posts })
-    },
+    onSuccess: invalidate,
   })
 }
 
 export function useUpdateWallPost() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidateAll()
   return useMutation({
     mutationFn: ({
       postId,
@@ -73,35 +132,54 @@ export function useUpdateWallPost() {
       content,
       files,
       keptAttachments,
+      scheduledPublishDate,
     }: {
       postId: number
       title: string | null
       content: string
       files?: File[]
       keptAttachments?: string[]
-    }) => updateWallPost(postId, title, content, files, keptAttachments),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WALL_KEYS.posts })
-    },
+      scheduledPublishDate?: string | null
+    }) => updateWallPost(postId, title, content, files, keptAttachments, scheduledPublishDate),
+    onSuccess: invalidate,
   })
 }
 
 export function useDeleteWallPost() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: deleteWallPost,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WALL_KEYS.posts })
-    },
-  })
+  const invalidate = useInvalidateAll()
+  return useMutation({ mutationFn: deleteWallPost, onSuccess: invalidate })
 }
 
 export function useApproveWallPost() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidateAll()
+  return useMutation({ mutationFn: approveWallPost, onSuccess: invalidate })
+}
+
+export function useRejectWallPost() {
+  const invalidate = useInvalidateAll()
+  return useMutation({ mutationFn: rejectWallPost, onSuccess: invalidate })
+}
+
+export function usePublishNowWallPost() {
+  const invalidate = useInvalidateAll()
+  return useMutation({ mutationFn: publishNowWallPost, onSuccess: invalidate })
+}
+
+// ── Group mutations ───────────────────────────────────────────────────────
+
+export function useCreateWallGroup() {
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: approveWallPost,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WALL_KEYS.posts })
-    },
+    mutationFn: ({ name, description }: { name: string; description?: string }) =>
+      createWallGroup(name, description),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: WALL_KEYS.groups }),
+  })
+}
+
+export function useDeleteWallGroup() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: deleteWallGroup,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: WALL_KEYS.groups }),
   })
 }

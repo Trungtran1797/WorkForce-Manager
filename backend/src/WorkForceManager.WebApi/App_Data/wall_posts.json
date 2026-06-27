@@ -1,15 +1,1 @@
-[
-  {
-    "Id": 3,
-    "AuthorId": 1,
-    "AuthorName": "Nguy\u1EC5n V\u0103n An",
-    "AuthorPosition": "Tr\u01B0\u1EDFng ph\u00F2ng Kinh doanh",
-    "AuthorDepartment": "Ph\u00F2ng Kinh doanh",
-    "Title": null,
-    "Content": "Hi",
-    "CreatedDate": "2026-06-27T15:01:11.1481779+07:00",
-    "Likes": [],
-    "Attachments": [],
-    "Comments": []
-  }
-]
+[]

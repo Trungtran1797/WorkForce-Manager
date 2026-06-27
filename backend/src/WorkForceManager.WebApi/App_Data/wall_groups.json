@@ -1,0 +1,26 @@
+[
+  {
+    "Name": "Th\u00F4ng b\u00E1o n\u1ED9i b\u1ED9",
+    "Description": "Th\u00F4ng b\u00E1o chung c\u1EE7a Ban Gi\u00E1m \u0111\u1ED1c v\u00E0 c\u00E1c ph\u00F2ng ban",
+    "CreatedBy": "Admin",
+    "CreatedDate": "2026-05-28T15:53:43.5599018+07:00"
+  },
+  {
+    "Name": "K\u1EF9 thu\u1EADt \u0026 S\u1EA3n xu\u1EA5t",
+    "Description": "Th\u1EA3o lu\u1EADn v\u1EC1 quy tr\u00ECnh s\u1EA3n xu\u1EA5t v\u00E0 k\u1EF9 thu\u1EADt ch\u1EBF bi\u1EBFn gia v\u1ECB",
+    "CreatedBy": "Admin",
+    "CreatedDate": "2026-06-02T15:53:43.5599546+07:00"
+  },
+  {
+    "Name": "Kinh doanh \u0026 Xu\u1EA5t kh\u1EA9u",
+    "Description": "Chia s\u1EBB th\u00F4ng tin th\u1ECB tr\u01B0\u1EDDng, \u0111\u01A1n h\u00E0ng v\u00E0 kh\u00E1ch h\u00E0ng",
+    "CreatedBy": "Admin",
+    "CreatedDate": "2026-06-07T15:53:43.5599552+07:00"
+  },
+  {
+    "Name": "HR \u0026 \u0110\u00E0o t\u1EA1o",
+    "Description": "Ch\u00EDnh s\u00E1ch nh\u00E2n s\u1EF1, tuy\u1EC3n d\u1EE5ng v\u00E0 ch\u01B0\u01A1ng tr\u00ECnh \u0111\u00E0o t\u1EA1o",
+    "CreatedBy": "Admin",
+    "CreatedDate": "2026-06-12T15:53:43.5599553+07:00"
+  }
+]

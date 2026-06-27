@@ -17,4 +17,6 @@ public record EmployeeDto(
     string Status,
     string? PlaceOfOrigin,
     string? MaritalStatus,
-    string? OneOfficeAccount);
+    string? OneOfficeAccount,
+    string? AvatarUrl,
+    string? CoverPhotoUrl);

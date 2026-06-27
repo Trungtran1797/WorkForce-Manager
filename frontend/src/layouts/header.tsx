@@ -1,4 +1,4 @@
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen, ListChecks, Calendar, Info, ShieldAlert, CheckCheck, Loader2 } from 'lucide-react'
+import { Bell, Home, Menu, PanelLeftClose, PanelLeftOpen, ListChecks, Calendar, Info, ShieldAlert, CheckCheck, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -107,6 +107,15 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/wall')}
+          aria-label="Tường công ty"
+          title="Tường công ty"
+        >
+          <Home className="size-5" />
+        </Button>
         <ThemeToggle />
 
         <DropdownMenu>

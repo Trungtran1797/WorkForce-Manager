@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { Award, Briefcase, Calendar, CheckCircle2, User, Phone, MapPin, Mail, Home, Heart, Loader2 } from 'lucide-react'
+import { Award, Briefcase, Calendar, Camera, User, Phone, MapPin, Mail, Home, Heart, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useMyProfile, useUpdateMyProfile } from '@/features/employees/api/employee-queries'
+import {
+  useMyProfile,
+  useUpdateMyProfile,
+  useUploadMyAvatar,
+  useUploadMyCoverPhoto,
+} from '@/features/employees/api/employee-queries'
+import { resolveMediaUrl } from '@/features/employees/api/employee-api'
 import { useToast } from '@/hooks/use-toast'
 import { EmployeeStatusBadge } from '@/components/common/status-badge'
 import { TableSkeleton } from '@/components/common/data-state'
@@ -40,10 +46,18 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+
 export function ProfilePage() {
   const { toast } = useToast()
   const { data: profile, isLoading, isError, refetch } = useMyProfile()
   const updateProfileMutation = useUpdateMyProfile()
+  const uploadAvatarMutation = useUploadMyAvatar()
+  const uploadCoverMutation = useUploadMyCoverPhoto()
+
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -56,7 +70,6 @@ export function ProfilePage() {
     },
   })
 
-  // Đổ dữ liệu từ API vào Form khi tải thành công
   useEffect(() => {
     if (profile) {
       form.reset({
@@ -74,18 +87,47 @@ export function ProfilePage() {
   const onSubmit = async (values: ProfileFormValues) => {
     try {
       await updateProfileMutation.mutateAsync(values)
-      toast({
-        title: 'Cập nhật thành công',
-        description: 'Thông tin hồ sơ cá nhân của bạn đã được cập nhật.',
-      })
+      toast({ title: 'Cập nhật thành công', description: 'Thông tin hồ sơ cá nhân đã được lưu.' })
       refetch()
     } catch (err: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Cập nhật thất bại',
-        description: err.message || 'Đã xảy ra lỗi trong quá trình lưu thông tin.',
-      })
+      toast({ variant: 'destructive', title: 'Cập nhật thất bại', description: err.message || 'Đã xảy ra lỗi.' })
     }
+  }
+
+  function validateImageFile(file: File): string | null {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return 'Chỉ chấp nhận file ảnh JPG, PNG, GIF hoặc WEBP.'
+    if (file.size > MAX_IMAGE_SIZE) return 'Kích thước ảnh tối đa là 5 MB.'
+    return null
+  }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const error = validateImageFile(file)
+    if (error) { toast({ variant: 'destructive', title: 'File không hợp lệ', description: error }); return }
+    try {
+      await uploadAvatarMutation.mutateAsync(file)
+      toast({ title: 'Cập nhật ảnh đại diện thành công', description: 'Bài viết đã được đăng lên Bảng tin.' })
+      refetch()
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Upload thất bại', description: err.message || 'Đã xảy ra lỗi.' })
+    }
+    e.target.value = ''
+  }
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const error = validateImageFile(file)
+    if (error) { toast({ variant: 'destructive', title: 'File không hợp lệ', description: error }); return }
+    try {
+      await uploadCoverMutation.mutateAsync(file)
+      toast({ title: 'Cập nhật ảnh bìa thành công', description: 'Bài viết đã được đăng lên Bảng tin.' })
+      refetch()
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Upload thất bại', description: err.message || 'Đã xảy ra lỗi.' })
+    }
+    e.target.value = ''
   }
 
   if (isLoading) {
@@ -100,12 +142,18 @@ export function ProfilePage() {
   if (isError || !profile) {
     return (
       <div className="flex flex-col items-center justify-center p-12 border rounded-xl bg-destructive/5 border-destructive/20 space-y-3">
-        <AlertCircle className="size-10 text-destructive" />
+        <User className="size-10 text-destructive" />
         <h3 className="font-semibold text-lg">Không thể tải thông tin hồ sơ</h3>
         <p className="text-sm text-muted-foreground">Tài khoản này chưa được liên kết với hồ sơ nhân sự nào trên hệ thống.</p>
       </div>
     )
   }
+
+  const initials = profile.fullName?.split(' ').pop()?.slice(0, 2).toUpperCase() || 'NV'
+  const avatarSrc = resolveMediaUrl(profile.avatarUrl)
+  const coverSrc = resolveMediaUrl(profile.coverPhotoUrl)
+  const isUploadingAvatar = uploadAvatarMutation.isPending
+  const isUploadingCover = uploadCoverMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -114,22 +162,81 @@ export function ProfilePage() {
         <p className="text-sm text-muted-foreground">Xem chi tiết hồ sơ nhân sự và cập nhật thông tin liên hệ của bạn.</p>
       </div>
 
+      {/* Hidden file inputs */}
+      <input
+        ref={avatarInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        className="hidden"
+        onChange={handleAvatarChange}
+      />
+      <input
+        ref={coverInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        className="hidden"
+        onChange={handleCoverChange}
+      />
+
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Cột 1: Thông tin hành chính (Read-only) */}
+        {/* Cột 1: Thông tin hành chính + Avatar/Cover */}
         <div className="md:col-span-1 space-y-6">
           <Card className="overflow-hidden">
-            <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-end justify-center pb-4 relative">
-              <div className="absolute -bottom-10 size-20 rounded-full border-4 border-background bg-secondary flex items-center justify-center text-secondary-foreground text-2xl font-bold shadow-md">
-                {profile.fullName?.split(' ').pop()?.slice(0, 2).toUpperCase() || 'NV'}
+            {/* Cover photo */}
+            <button
+              type="button"
+              onClick={() => !isUploadingCover && coverInputRef.current?.click()}
+              className="relative w-full h-28 group focus:outline-none"
+              title="Nhấn để đổi ảnh bìa"
+              disabled={isUploadingCover}
+            >
+              {coverSrc ? (
+                <img src={coverSrc} alt="Ảnh bìa" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                {isUploadingCover
+                  ? <Loader2 className="size-6 text-white animate-spin" />
+                  : <Camera className="size-6 text-white" />}
+                <span className="text-[11px] text-white font-medium">
+                  {isUploadingCover ? 'Đang tải...' : 'Đổi ảnh bìa'}
+                </span>
               </div>
+            </button>
+
+            {/* Avatar */}
+            <div className="flex justify-center -mt-10 relative z-10 pb-1">
+              <button
+                type="button"
+                onClick={() => !isUploadingAvatar && avatarInputRef.current?.click()}
+                className="relative group size-20 rounded-full border-4 border-background shadow-md focus:outline-none"
+                title="Nhấn để đổi ảnh đại diện"
+                disabled={isUploadingAvatar}
+              >
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt={profile.fullName} className="size-full object-cover rounded-full" />
+                ) : (
+                  <div className="size-full rounded-full bg-secondary flex items-center justify-center text-secondary-foreground text-2xl font-bold">
+                    {initials}
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex items-center justify-center">
+                  {isUploadingAvatar
+                    ? <Loader2 className="size-5 text-white animate-spin" />
+                    : <Camera className="size-5 text-white" />}
+                </div>
+              </button>
             </div>
-            <CardHeader className="pt-12 text-center pb-4">
+
+            <CardHeader className="pt-2 text-center pb-4">
               <CardTitle className="text-lg font-bold">{profile.fullName}</CardTitle>
               <CardDescription className="text-sm">{profile.position}</CardDescription>
               <div className="mt-2 flex justify-center">
                 <EmployeeStatusBadge status={profile.status as any} />
               </div>
             </CardHeader>
+
             <CardContent className="border-t pt-4 space-y-4 text-sm">
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Award className="size-4 text-blue-500 shrink-0" />
@@ -153,6 +260,28 @@ export function ProfilePage() {
                 </div>
               </div>
             </CardContent>
+
+            {/* Upload hints */}
+            <div className="px-4 pb-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => !isUploadingAvatar && avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="flex-1 text-[11px] py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+              >
+                <Camera className="size-3" />
+                {isUploadingAvatar ? 'Đang tải...' : 'Đổi ảnh đại diện'}
+              </button>
+              <button
+                type="button"
+                onClick={() => !isUploadingCover && coverInputRef.current?.click()}
+                disabled={isUploadingCover}
+                className="flex-1 text-[11px] py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+              >
+                <Camera className="size-3" />
+                {isUploadingCover ? 'Đang tải...' : 'Đổi ảnh bìa'}
+              </button>
+            </div>
           </Card>
         </div>
 
@@ -167,7 +296,6 @@ export function ProfilePage() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {/* Họ tên & Ngày sinh (Read-only để tránh sửa đổi hành chính trái phép) */}
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Giới tính</label>
                       <Input value={profile.gender === 'Male' ? 'Nam' : profile.gender === 'Female' ? 'Nữ' : 'Khác'} disabled className="bg-secondary/40" />
@@ -290,26 +418,5 @@ export function ProfilePage() {
         </div>
       </div>
     </div>
-  )
-}
-
-function AlertCircle(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
   )
 }

@@ -24,4 +24,6 @@ public class Employee : BaseAuditableEntity
     public string? PlaceOfOrigin { get; set; }
     public string? MaritalStatus { get; set; }
     public string? OneOfficeAccount { get; set; }
+    public string? AvatarUrl { get; set; }
+    public string? CoverPhotoUrl { get; set; }
 }

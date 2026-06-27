@@ -21,6 +21,8 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.PlaceOfOrigin).HasMaxLength(200);
         builder.Property(e => e.MaritalStatus).HasMaxLength(50);
         builder.Property(e => e.OneOfficeAccount).HasMaxLength(150);
+        builder.Property(e => e.AvatarUrl).HasMaxLength(500);
+        builder.Property(e => e.CoverPhotoUrl).HasMaxLength(500);
 
         builder.Property(e => e.Gender).HasConversion<string>().HasMaxLength(20);
         builder.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);

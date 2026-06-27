@@ -40,7 +40,6 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Tổng quan', icon: LayoutDashboard, module: 'Dashboard' },
-  { to: '/wall', label: 'Tường công ty', icon: Leaf, module: 'Dashboard' },
   { to: '/employees', label: 'Nhân viên', icon: Users, module: 'Employees' },
   { to: '/departments', label: 'Phòng ban', icon: Building2, module: 'Departments' },
   { to: '/projects', label: 'Dự án', icon: FolderKanban, module: 'Projects' },

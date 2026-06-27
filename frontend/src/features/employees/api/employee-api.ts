@@ -138,3 +138,44 @@ export function getMyProfile(): Promise<Employee> {
 export function updateMyProfile(values: Partial<EmployeeFormValues>): Promise<Employee> {
   return apiClient.put<Employee>(`${BASE}/profile`, values)
 }
+
+async function uploadProfileImage(endpoint: string, file: File): Promise<Employee> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const token = tokenStore.getAccess()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5244/api/v1'
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'POST', headers, body: formData })
+
+  let envelope: any = null
+  try { envelope = await response.json() } catch { envelope = null }
+
+  if (!response.ok || !envelope?.success || !envelope.data) {
+    throw new ApiError(
+      envelope?.message ?? `Upload ảnh thất bại (${response.status}).`,
+      response.status,
+      envelope?.errors,
+    )
+  }
+  return envelope.data
+}
+
+export function uploadMyAvatar(file: File): Promise<Employee> {
+  return uploadProfileImage('/employees/profile/avatar', file)
+}
+
+export function uploadMyCoverPhoto(file: File): Promise<Employee> {
+  return uploadProfileImage('/employees/profile/cover', file)
+}
+
+/** Chuyển đổi URL ảnh tương đối (lưu trong DB) thành URL tuyệt đối phù hợp môi trường */
+export function resolveMediaUrl(relativeUrl: string | undefined | null): string | undefined {
+  if (!relativeUrl) return undefined
+  if (relativeUrl.startsWith('http')) return relativeUrl
+  const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5244/api/v1'
+  const serverBase = apiBase.replace(/\/api\/v\d+\/?$/, '')
+  return `${serverBase}${relativeUrl}`
+}

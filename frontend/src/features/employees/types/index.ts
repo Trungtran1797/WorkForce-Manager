@@ -18,6 +18,8 @@ export interface Employee {
   placeOfOrigin?: string
   maritalStatus?: string
   oneOfficeAccount?: string
+  avatarUrl?: string
+  coverPhotoUrl?: string
 }
 
 /** Giá trị form: departmentId là string cho Select, được convert sang number khi gọi API. */

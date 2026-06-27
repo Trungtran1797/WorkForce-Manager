@@ -404,9 +404,32 @@ Employee → Manager Approval → HR Approval → Completed
   - **Frontend files**: Sửa `project-api.ts` (thêm `markProjectAsTemplate()`), `project-queries.ts` (thêm `useMarkProjectAsTemplate()`), viết lại `project-list-page.tsx`, cập nhật `template-picker-dialog.tsx`.
   - *(Backend verify bị chặn bởi file lock do process đang chạy — không phải lỗi code; frontend `npx tsc --noEmit` 0 lỗi. Cần restart backend để apply thay đổi.)*
 
+- [x] **Bước 20 — Tường Công Ty (Company Wall) — Hoàn thiện tất cả tính năng**
+  - **Backend `WallController.cs`**: Thêm query params `?pending=true`, `?scheduled=true`, `?groupName=X` để filter bài viết; endpoint `POST /{id}/reject`, `POST /{id}/publish-now`; CRUD nhóm (`GET/POST /wall/groups`, `DELETE /wall/groups/{name}`); thêm field `IsRejected` vào `WallPost`; seed 4 nhóm mặc định vào `App_Data/wall_groups.json`. Storage vẫn dùng JSON file (không EF Core).
+  - **Frontend types & API**: Cập nhật `WallPost` thêm `isApproved`, `isRejected`, `groupName`, `scheduledPublishDate`; thêm interface `WallGroup`; mở rộng `wall-api.ts` + `wall-queries.ts` với đầy đủ hooks (usePendingWallPosts, useScheduledWallPosts, useGroupWallPosts, useWallGroups, useRejectWallPost, usePublishNowWallPost, useCreateWallGroup, useDeleteWallGroup).
+  - **3 component mới**:
+    - `org-chart-section.tsx`: Cây phân cấp phòng ban expandable (buildTree từ `parentDepartmentId`), click xem nhân viên từng phòng, search box, stats 3 chỉ số.
+    - `career-path-section.tsx`: Profile card + timeline milestones (gia nhập → hợp đồng → đào tạo hoàn thành → OKR đạt), lọc dữ liệu theo `employeeId` phía client.
+    - `work-history-section.tsx`: Stats tổng quan công việc (tổng/hoàn thành/đang thực hiện/quá hạn), progress bar hoàn thành, phân loại theo trạng thái, timeline 15 task gần nhất.
+  - **`wall-page.tsx` viết lại hoàn toàn**: 8 menu item (Bảng tin, Bài viết chờ duyệt, Nhóm thảo luận, Bài viết hẹn giờ, Lộ trình thăng tiến, Sơ đồ tổ chức, Quá trình làm việc); `PostCard` component tích hợp nút Duyệt/Từ chối/Đăng ngay; `PostCreator` hỗ trợ chọn nhóm + date picker hẹn giờ; badge đếm bài chờ duyệt.
+  - **Shadcn `Progress` component**: Tạo `frontend/src/components/ui/progress.tsx` + cài `@radix-ui/react-progress` (không có `components.json` → thêm thủ công).
+  - **Lưu ý type**: `AuthUser.fullName` (không phải `employeeFullName`); `Employee.departmentName` (chuỗi trực tiếp, không phải `department.name`); `TrainingCourse.name` (không phải `title`); `OkrObjective.period` (không phải `startDate`).
+  - *(Đã verify: backend `dotnet build` 0 error, frontend `npx tsc --noEmit` 0 lỗi. Vite error `@/components/ui/progress` đã fix bằng cách tạo component thủ công.)*
+  - **Phân biệt Tường Công Ty vs Bảng Tin** (bổ sung sau Bước 20):
+    - Thêm field `IsCompanyPost` (bool) vào `WallPost` model trong `WallController.cs`.
+    - `POST /wall` có guard: chỉ SuperAdmin/Manager được set `isCompanyPost=true`, Employee bị `403 Forbid`.
+    - `GET /wall?companyOnly=true` trả chỉ bài công ty (dùng cho tab "Tường công ty").
+    - Frontend: `useCompanyWallPosts()` hook mới; menu "Tường công ty" load `companyOnly`, PostCreator chỉ hiện với `isManagerOrAdmin`; menu "Bảng tin" load toàn bộ feed + bài công ty hiện badge "Thông báo CT" (màu success, icon Building2).
+    - *(verify: `npx tsc --noEmit` 0 lỗi; backend build cần restart do file lock — code đúng)*
+
+- [x] **Bước 21 — UX Header: Icon ngôi nhà truy cập nhanh Tường Công Ty**
+  - Thêm button icon `Home` (lucide-react) vào header (`layouts/header.tsx`), đặt trước `ThemeToggle`, click điều hướng đến `/wall`. Hover tooltip "Tường công ty".
+  - Ẩn dòng menu "Tường công ty" khỏi sidebar (`layouts/sidebar.tsx`) — route `/wall` vẫn hoạt động bình thường, chỉ truy cập qua icon trên header thay vì sidebar.
+  - *(Thay đổi thuần frontend. Files sửa: `header.tsx`, `sidebar.tsx`.)*
+
 ---
 
-### Lưu ý vận hành (cập nhật 2026-06-26)
+### Lưu ý vận hành (cập nhật 2026-06-27)
 
 - **VPS demo đang chạy**: `http://171.244.143.243` — project tại `/root/app/` trên VPS Ubuntu 24.04. Tài khoản demo: admin/Admin@123, manager/Manager@123, employee/Employee@123.
 - **Cập nhật VPS khi có code mới**: Chạy `deploy.bat` ở thư mục gốc. Script tự động commit/push → git pull VPS → `docker compose build --no-cache` → `up -d`. Timeout SSH 600s vì build `--no-cache` mất 5–10 phút.
@@ -416,10 +439,13 @@ Employee → Manager Approval → HR Approval → Completed
 - **Khi UI hiển thị sai / thiếu tính năng đã code**: Nguyên nhân thường là browser cache cũ. Xử lý: **Ctrl+Shift+R** (hard refresh) hoặc khởi động lại `npm run dev` trong `frontend/`.
 - **Ngày xuất hàng (ShippingDate) trong seed data**: Project DA004 có `ShippingDate = 2026-07-18`. Để thấy icon Truck cam trên Dashboard "Lịch công tác & Deadline", cần chuyển lịch sang **tháng 7/2026**. Tháng 6/2026 trống là đúng.
 - **Label "Mã dự án" đã đổi thành "Số hợp đồng"** từ Bước 18, field `ShippingDate` đã có trong form tạo/sửa dự án.
+- **Wall page không có `components.json`**: Shadcn component được thêm thủ công vào `src/components/ui/`. Khi cần component mới (vd. `progress`, `slider`...) → copy pattern từ file có sẵn + cài `@radix-ui/react-<name>` qua npm.
+- **Wall storage dùng JSON file** (`App_Data/wall_posts.json`, `App_Data/wall_groups.json`) — không phải SQL Server. Seed nhóm chạy tự động khi `wall_groups.json` chưa tồn tại.
+- **Tường công ty vs Bảng tin**: Hai tab riêng biệt từ session 2026-06-27. "Tường công ty" (`?companyOnly=true`) chỉ Admin/Manager được đăng; "Bảng tin" hiện tất cả, bài công ty có badge "Thông báo CT". Field `IsCompanyPost` lưu trong `wall_posts.json`.
 
 ---
 
-### Thông tin VPS Production (cập nhật 2026-06-26)
+### Thông tin VPS Production (cập nhật 2026-06-27)
 
 - **VPS IP:** `171.244.143.243` (Ubuntu 24.04.3 LTS, QEMU/KVM)
 - **App (live):** [http://171.244.143.243](http://171.244.143.243)

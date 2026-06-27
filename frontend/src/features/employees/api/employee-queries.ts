@@ -9,6 +9,8 @@ import {
   importEmployees,
   updateEmployee,
   updateMyProfile,
+  uploadMyAvatar,
+  uploadMyCoverPhoto,
 } from '@/features/employees/api/employee-api'
 import type { EmployeeFormValues, EmployeeListParams } from '@/features/employees/types'
 import { ApiError, tokenStore } from '@/lib/api-client'
@@ -74,6 +76,28 @@ export function useUpdateMyProfile() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (values: Partial<EmployeeFormValues>) => updateMyProfile(values),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_PROFILE_KEY })
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_KEY })
+    },
+  })
+}
+
+export function useUploadMyAvatar() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => uploadMyAvatar(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_PROFILE_KEY })
+      queryClient.invalidateQueries({ queryKey: EMPLOYEES_KEY })
+    },
+  })
+}
+
+export function useUploadMyCoverPhoto() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => uploadMyCoverPhoto(file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MY_PROFILE_KEY })
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_KEY })
