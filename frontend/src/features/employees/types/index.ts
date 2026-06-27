@@ -15,6 +15,9 @@ export interface Employee {
   position: string
   hireDate: string
   status: EmployeeStatus
+  placeOfOrigin?: string
+  maritalStatus?: string
+  oneOfficeAccount?: string
 }
 
 /** Giá trị form: departmentId là string cho Select, được convert sang number khi gọi API. */
@@ -31,6 +34,9 @@ export interface EmployeeFormValues {
   position: string
   hireDate: string
   status: EmployeeStatus
+  placeOfOrigin?: string
+  maritalStatus?: string
+  oneOfficeAccount?: string
 }
 
 export interface EmployeeListParams {

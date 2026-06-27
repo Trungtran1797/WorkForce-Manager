@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api-client'
+import { apiClient, tokenStore } from '@/lib/api-client'
 import type { Project, ProjectFormValues, ProjectTemplate } from '@/features/projects/types'
 
 const BASE = '/projects'
@@ -45,6 +45,7 @@ export interface CreateFromTemplateValues {
   description?: string
   code?: string
   shippingDate?: string
+  endDate?: string
 }
 
 export function createProjectFromTemplate(values: CreateFromTemplateValues): Promise<Project> {
@@ -57,4 +58,26 @@ export function addProjectMember(id: number, employeeId: number, role: string): 
 
 export function removeProjectMember(id: number, memberId: number): Promise<Project> {
   return apiClient.delete<Project>(`${BASE}/${id}/members/${memberId}`)
+}
+
+export async function uploadProjectAttachments(projectId: number, files: File[]): Promise<void> {
+  const formData = new FormData()
+  files.forEach((file) => formData.append('files', file))
+
+  const token = tokenStore.getAccess()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const API_BASE_URL: string =
+    (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1'
+
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}/attachments`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Tải lên tài liệu đính kèm thất bại (${response.status}).`)
+  }
 }

@@ -18,3 +18,7 @@ export async function logoutRequest(): Promise<void> {
     // Bỏ qua lỗi logout phía server, vẫn xóa token local.
   }
 }
+
+export async function changePassword(payload: any): Promise<void> {
+  return apiClient.put('/auth/change-password', payload)
+}

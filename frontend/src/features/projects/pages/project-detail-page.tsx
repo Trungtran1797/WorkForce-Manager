@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Loader2, Plus, Truck, UserMinus } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Truck, UserMinus, FileText, Download, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -27,9 +27,13 @@ import {
   useDeleteProject,
 } from "@/features/projects/api/project-queries";
 import { useEmployees } from "@/features/employees/api/employee-queries";
+import { useCanEdit } from "@/features/permissions/lib/use-permission";
+import { uploadProjectAttachments } from "@/features/projects/api/project-api";
+import { deleteProjectAttachment, downloadProjectAttachment } from "@/features/projects/api/project-discussion-api";
 import type {
   ProjectFormValues,
   ProjectMember,
+  ProjectAttachment,
 } from "@/features/projects/types";
 import type { TaskFormValues } from "@/features/tasks/types";
 
@@ -46,6 +50,7 @@ export function ProjectDetailPage() {
   const navigate = useNavigate();
   const id = Number(projectId);
 
+  const canEdit = useCanEdit("Projects");
   const { data: project, isLoading, isError, refetch } = useProject(id);
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
@@ -101,8 +106,31 @@ export function ProjectDetailPage() {
     );
   }
 
-  const handleUpdate = async (values: ProjectFormValues): Promise<void> => {
+  const handleUpdate = async (values: ProjectFormValues, files?: File[]): Promise<void> => {
     await updateProject.mutateAsync({ id: project.id, values });
+    if (files && files.length > 0) {
+      await uploadProjectAttachments(project.id, files);
+    }
+    void refetch();
+  };
+
+  const handleDeleteAttachment = async (attachmentId: number): Promise<void> => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) {
+      try {
+        await deleteProjectAttachment(project.id, attachmentId);
+        void refetch();
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "Xóa tài liệu thất bại.");
+      }
+    }
+  };
+
+  const handleDownloadAttachment = async (attachmentId: number, fileName: string): Promise<void> => {
+    try {
+      await downloadProjectAttachment(project.id, attachmentId, fileName);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Tải tài liệu thất bại.");
+    }
   };
 
   const handleDeleteProject = async (): Promise<void> => {
@@ -232,6 +260,54 @@ export function ProjectDetailPage() {
                 <div className="text-sm">
                   <span className="text-xs text-muted-foreground">Chủ đầu tư: </span>
                   <span className="font-medium">{project.investor || "—"}</span>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground">Tài liệu hợp đồng & đính kèm:</div>
+                  {!project.attachments || project.attachments.length === 0 ? (
+                    <div className="text-xs text-muted-foreground italic">Chưa có tài liệu đính kèm.</div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {project.attachments.map((file) => (
+                        <div key={file.id} className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs bg-muted/20">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <FileText className="size-4 text-primary shrink-0" />
+                            <button
+                              type="button"
+                              onClick={() => void handleDownloadAttachment(file.id, file.fileName)}
+                              className="text-left font-medium hover:underline text-primary truncate"
+                              title={`Tải xuống: ${file.fileName}`}
+                            >
+                              {file.fileName}
+                            </button>
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              ({(file.fileSizeBytes / 1024).toFixed(1)} KB)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => void handleDownloadAttachment(file.id, file.fileName)}
+                              className="text-muted-foreground hover:text-foreground"
+                              title="Tải xuống"
+                            >
+                              <Download className="size-3.5" />
+                            </button>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => void handleDeleteAttachment(file.id)}
+                                className="text-destructive hover:text-destructive/80"
+                                title="Xóa tài liệu"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

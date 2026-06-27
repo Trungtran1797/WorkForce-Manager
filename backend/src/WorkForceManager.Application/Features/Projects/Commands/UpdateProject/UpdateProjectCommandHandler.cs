@@ -21,6 +21,8 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
         var project = await _context.Projects
             .Include(p => p.Members)
             .ThenInclude(m => m.Employee)
+            .Include(p => p.Attachments)
+            .ThenInclude(a => a.UploadedBy)
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException("Dự án", request.Id);
 

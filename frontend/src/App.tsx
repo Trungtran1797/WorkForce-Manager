@@ -30,6 +30,11 @@ import { TrainingPage } from '@/features/training/pages/training-page'
 import { NotificationsPage } from '@/features/notifications/pages/notifications-page'
 import { PermissionMatrixPage } from '@/features/permissions/pages/permission-matrix-page'
 import { SystemSettingsPage } from '@/features/settings/pages/system-settings-page'
+import { UserListPage } from '@/features/users/pages/user-list-page'
+import { ProfilePage } from '@/features/employees/pages/profile-page'
+import { AccountPage } from '@/features/auth/pages/account-page'
+import { WallPage } from '@/features/wall/pages/wall-page'
+
 
 function App() {
   return (
@@ -43,6 +48,7 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppShell />}>
                   <Route path="/" element={<DashboardPage />} />
+                  <Route path="/wall" element={<WallPage />} />
                   <Route path="/employees" element={<EmployeeListPage />} />
                   <Route path="/departments" element={<DepartmentListPage />} />
                   <Route path="/projects" element={<ProjectListPage />} />
@@ -62,6 +68,8 @@ function App() {
                   <Route path="/training" element={<TrainingPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/account" element={<AccountPage />} />
                 </Route>
               </Route>
 
@@ -69,6 +77,12 @@ function App() {
                 <Route element={<AppShell />}>
                   <Route path="/settings/permissions" element={<PermissionMatrixPage />} />
                   <Route path="/settings/system" element={<SystemSettingsPage />} />
+                </Route>
+              </Route>
+
+              <Route element={<ProtectedRoute module="Users" level="View" />}>
+                <Route element={<AppShell />}>
+                  <Route path="/settings/users" element={<UserListPage />} />
                 </Route>
               </Route>
 

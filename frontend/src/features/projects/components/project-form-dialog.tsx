@@ -66,11 +66,12 @@ interface ProjectFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   project?: Project | null
-  onSubmit: (values: ProjectFormValues) => Promise<void>
+  onSubmit: (values: ProjectFormValues, files?: File[]) => Promise<void>
 }
 
 export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: ProjectFormDialogProps) {
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   const form = useForm<z.input<typeof schema>, unknown, ProjectFormValues>({
     resolver: zodResolver(schema),
@@ -80,6 +81,7 @@ export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: Pro
   useEffect(() => {
     if (open) {
       setSubmitError(null)
+      setSelectedFiles([])
       form.reset(
         project
           ? {
@@ -102,7 +104,7 @@ export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: Pro
   const handleSubmit = async (values: ProjectFormValues): Promise<void> => {
     setSubmitError(null)
     try {
-      await onSubmit(values)
+      await onSubmit(values, selectedFiles)
       onOpenChange(false)
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Lưu thất bại.')
@@ -209,6 +211,24 @@ export function ProjectFormDialog({ open, onOpenChange, project, onSubmit }: Pro
                 <FormMessage />
               </FormItem>
             )} />
+
+            <div className="space-y-2">
+              <FormLabel>Tài liệu đính kèm (Hợp đồng, tài liệu kỹ thuật...)</FormLabel>
+              <Input
+                type="file"
+                multiple
+                className="cursor-pointer"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || [])
+                  setSelectedFiles(files)
+                }}
+              />
+              {selectedFiles.length > 0 && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Đã chọn {selectedFiles.length} tệp
+                </div>
+              )}
+            </div>
 
             {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 

@@ -22,6 +22,7 @@ export interface Project {
   members: ProjectMember[]
   shippingDate?: string
   isTemplate?: boolean
+  attachments?: ProjectAttachment[]
 }
 
 export interface ProjectTemplate {

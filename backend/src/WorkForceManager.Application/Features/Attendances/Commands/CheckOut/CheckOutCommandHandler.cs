@@ -38,31 +38,36 @@ public class CheckOutCommandHandler : IRequestHandler<CheckOutCommand, Attendanc
             .Include(a => a.Employee)
             .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date == todayDate, cancellationToken);
 
-        if (attendance == null)
+        if (attendance == null || attendance.CheckInTime == null)
         {
             throw new NotFoundException("Bạn chưa check in hôm nay. Vui lòng check in trước khi check out.");
         }
 
-        if (attendance.CheckOutTime != null)
-        {
-            throw new ConflictException("Bạn đã check out hôm nay rồi.");
-        }
-
         attendance.CheckOutTime = now;
-        attendance.WorkingHours = (decimal)(now - attendance.CheckInTime!.Value).TotalHours;
+        attendance.WorkingHours = (decimal)(now - attendance.CheckInTime.Value).TotalHours;
 
         if (request.Note != null)
         {
-            attendance.Note = string.IsNullOrWhiteSpace(attendance.Note)
-                ? request.Note
-                : $"{attendance.Note} | {request.Note}";
+            if (string.IsNullOrWhiteSpace(attendance.Note))
+            {
+                attendance.Note = request.Note;
+            }
+            else if (!attendance.Note.Contains(request.Note))
+            {
+                attendance.Note = $"{attendance.Note} | {request.Note}";
+            }
         }
 
-        // Nếu về sớm (trước 17:00) và check-in đúng giờ, chuyển trạng thái thành EarlyLeave
+        // Cập nhật lại status dựa trên giờ check-in và check-out mới nhất
+        var cutoff = todayDate.AddHours(8).AddMinutes(30);
         var standardCheckOut = todayDate.AddHours(17);
-        if (now < standardCheckOut && attendance.Status == AttendanceStatus.Full)
+        if (attendance.CheckInTime <= cutoff)
         {
-            attendance.Status = AttendanceStatus.EarlyLeave;
+            attendance.Status = now < standardCheckOut ? AttendanceStatus.EarlyLeave : AttendanceStatus.Full;
+        }
+        else
+        {
+            attendance.Status = AttendanceStatus.Late;
         }
 
         await _context.SaveChangesAsync(cancellationToken);

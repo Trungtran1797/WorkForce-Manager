@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MoreHorizontal, Plus, Search, Users } from 'lucide-react'
+import { MoreHorizontal, Plus, Search, Users, Download, Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -29,6 +29,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { EmployeeFormDialog } from '@/features/employees/components/employee-form-dialog'
+import { ImportEmployeesDialog } from '@/features/employees/components/import-employees-dialog'
+import { exportEmployees } from '@/features/employees/api/employee-api'
 import {
   useCreateEmployee,
   useDeleteEmployee,
@@ -52,6 +54,20 @@ export function EmployeeListPage() {
   const [page, setPage] = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+  const [clonedEmployee, setClonedEmployee] = useState<Employee | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+      await exportEmployees(false)
+    } catch (err: any) {
+      alert(err.message || 'Xuất file Excel thất bại.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   // Debounce ô tìm kiếm.
   useEffect(() => {
@@ -85,18 +101,32 @@ export function EmployeeListPage() {
 
   const handleOpenAddDialog = (): void => {
     setEditingEmployee(null)
+    setClonedEmployee(null)
     setDialogOpen(true)
   }
 
   const handleOpenEditDialog = (employee: Employee): void => {
     setEditingEmployee(employee)
-    setDialogOpen(true)
+    setClonedEmployee(null)
+    setTimeout(() => {
+      setDialogOpen(true)
+    }, 150)
+  }
+
+  const handleOpenCloneDialog = (employee: Employee): void => {
+    setEditingEmployee(null)
+    setClonedEmployee(employee)
+    setTimeout(() => {
+      setDialogOpen(true)
+    }, 150)
   }
 
   const handleDelete = (employee: Employee): void => {
-    if (window.confirm(`Xóa nhân viên "${employee.fullName}"?`)) {
-      deleteMutation.mutate(employee.id)
-    }
+    setTimeout(() => {
+      if (window.confirm(`Xóa nhân viên "${employee.fullName}"?`)) {
+        deleteMutation.mutate(employee.id)
+      }
+    }, 150)
   }
 
   const handleFormSubmit = async (values: EmployeeFormValues): Promise<void> => {
@@ -114,12 +144,24 @@ export function EmployeeListPage() {
           <h1 className="text-2xl font-semibold">Nhân viên</h1>
           <p className="text-sm text-muted-foreground">Quản lý thông tin nhân sự</p>
         </div>
-        {canEdit && (
-          <Button size="sm" onClick={handleOpenAddDialog}>
-            <Plus className="size-4" />
-            Thêm nhân viên
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+            <Download className="size-4" />
+            {exporting ? 'Đang xuất...' : 'Xuất Excel'}
           </Button>
-        )}
+          {canEdit && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                <Upload className="size-4" />
+                Nhập Excel
+              </Button>
+              <Button size="sm" onClick={handleOpenAddDialog}>
+                <Plus className="size-4" />
+                Thêm nhân viên
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -224,6 +266,9 @@ export function EmployeeListPage() {
                             <DropdownMenuItem onClick={() => handleOpenEditDialog(employee)}>
                               Sửa thông tin
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleOpenCloneDialog(employee)}>
+                              Nhân bản
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               variant="destructive"
                               onClick={() => handleDelete(employee)}
@@ -271,9 +316,22 @@ export function EmployeeListPage() {
 
       <EmployeeFormDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (!open) {
+            setEditingEmployee(null)
+            setClonedEmployee(null)
+          }
+        }}
         employee={editingEmployee}
+        clonedFromEmployee={clonedEmployee}
         onSubmit={handleFormSubmit}
+      />
+
+      <ImportEmployeesDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onSuccess={() => void refetch()}
       />
     </div>
   )

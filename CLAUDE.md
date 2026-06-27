@@ -370,7 +370,7 @@ Employee → Manager Approval → HR Approval → Completed
   - Thêm `frontend/nginx.prod.conf` + `frontend/Dockerfile.prod`: nginx vừa serve SPA vừa reverse-proxy `/api`, `/hubs`, `/swagger` sang backend cùng origin (VITE_API_URL=`/api/v1` tương đối → không cần CORS, không cần domain).
   - Volume `uploads-data` cho `wwwroot/uploads` (file đính kèm Project Discussion) + `mssql-data` persist qua các lần `down/up`.
   - Hướng dẫn chi tiết: [`docs/huong-dan-deploy-vps.md`](docs/huong-dan-deploy-vps.md) (thuê VPS Ubuntu 22.04 4GB, cài Docker, cấu hình `.env`, mở firewall, gửi link `http://<IP>/` + `/swagger` cho khách).
-  - *(Đã verify: `dotnet build` 0 warning 0 error sau khi thêm `using Microsoft.EntityFrameworkCore;` cho `MigrateAsync`; chưa build/test Docker image thật do hạn chế môi trường local - cần build/test trên VPS khi deploy thật)*
+  - *(Đã verify đầy đủ: `dotnet build` 0 warning 0 error. **VPS đã deploy và chạy thật tại `http://171.244.143.243`** — project tại `/root/app/` trên VPS Ubuntu 24.04, 3 container (workforce-db, workforce-api, workforce-web) up ổn định. `deploy.bat` tích hợp `--no-cache` + SSH timeout 600s để force rebuild hoàn toàn mỗi lần deploy.)*
 
 - [x] **Bước 16 — Hoàn thiện & dọn dẹp sau Bước 15**
   - Đổi tên `frontend/src/features/reports/data/mock-reports.ts` → `report-catalog.ts` (`MOCK_REPORTS` → `REPORT_CATALOG`) vì đây là danh mục báo cáo tĩnh đang được dùng thật, không phải mock data thừa.
@@ -408,10 +408,51 @@ Employee → Manager Approval → HR Approval → Completed
 
 ### Lưu ý vận hành (cập nhật 2026-06-26)
 
-- **Khi UI hiển thị sai / thiếu tính năng đã code**: Nguyên nhân thường là browser cache cũ hoặc dev server chưa chạy. Xử lý: khởi động lại `npm run dev` trong `frontend/`, sau đó **Ctrl+Shift+R** (hard refresh) trong browser.
-- **Ngày xuất hàng (ShippingDate) trong seed data**: Project DA004 có `ShippingDate = 2026-07-18`. Để thấy icon Truck cam trên Dashboard "Lịch công tác & Deadline", cần chuyển lịch sang **tháng 7/2026** (không phải tháng 6). Tháng 6/2026 trống là đúng theo dữ liệu seed.
-- **Các file frontend Bước 18–19 đang ở trạng thái "modified" (chưa commit)**: `project-form-dialog.tsx`, `dashboard-page.tsx`, `project-list-page.tsx`, `task-form-dialog.tsx` và nhiều file khác. Nội dung trong file là bản mới đúng — không cần viết lại.
+- **VPS demo đang chạy**: `http://171.244.143.243` — project tại `/root/app/` trên VPS Ubuntu 24.04. Tài khoản demo: admin/Admin@123, manager/Manager@123, employee/Employee@123.
+- **Cập nhật VPS khi có code mới**: Chạy `deploy.bat` ở thư mục gốc. Script tự động commit/push → git pull VPS → `docker compose build --no-cache` → `up -d`. Timeout SSH 600s vì build `--no-cache` mất 5–10 phút.
+- **Reset database VPS về seed mặc định**: SSH vào VPS rồi `cd ~/app && docker compose -f docker-compose.prod.yml down -v && docker compose -f docker-compose.prod.yml up -d --build`. Cảnh báo: mất toàn bộ dữ liệu đã nhập.
+- **Docker dùng cache cũ → site không cập nhật**: Phải dùng `--no-cache`. Nếu `docker compose up -d --build` vẫn thấy `CACHED` ở mọi bước → chạy lại với `docker compose build --no-cache` trước.
+- **"Server tạm thời không phản hồi" trên trang login**: Backend chưa chạy. Chạy: `dotnet run --project "backend/src/WorkForceManager.WebApi"`. Chờ thấy `Application started` rồi đăng nhập lại.
+- **Khi UI hiển thị sai / thiếu tính năng đã code**: Nguyên nhân thường là browser cache cũ. Xử lý: **Ctrl+Shift+R** (hard refresh) hoặc khởi động lại `npm run dev` trong `frontend/`.
+- **Ngày xuất hàng (ShippingDate) trong seed data**: Project DA004 có `ShippingDate = 2026-07-18`. Để thấy icon Truck cam trên Dashboard "Lịch công tác & Deadline", cần chuyển lịch sang **tháng 7/2026**. Tháng 6/2026 trống là đúng.
 - **Label "Mã dự án" đã đổi thành "Số hợp đồng"** từ Bước 18, field `ShippingDate` đã có trong form tạo/sửa dự án.
+
+---
+
+### Thông tin VPS Production (cập nhật 2026-06-26)
+
+- **VPS IP:** `171.244.143.243` (Ubuntu 24.04.3 LTS, QEMU/KVM)
+- **App (live):** [http://171.244.143.243](http://171.244.143.243)
+- **Swagger:** [http://171.244.143.243/swagger](http://171.244.143.243/swagger)
+- **Code trên VPS:** `~/app` (clone từ GitHub `Trungtran1797/WorkForce-Manager`)
+- **File cấu hình:** `~/app/.env` (SA_PASSWORD, JWT_SECRET, PUBLIC_URL, ENABLE_SWAGGER, SEED_ENABLED)
+
+**Deploy code mới:** Chạy `deploy.bat` trên máy Windows (tự commit → push → SSH → git pull → docker compose build → up).
+
+**Thao tác thủ công trên VPS:**
+
+```bash
+ssh root@171.244.143.243
+cd ~/app
+
+# Xem trạng thái containers
+docker compose -f docker-compose.prod.yml ps
+
+# Xem log backend
+docker compose -f docker-compose.prod.yml logs -f backend
+
+# Rebuild và restart
+docker compose -f docker-compose.prod.yml up -d --build
+
+# Dừng toàn bộ
+docker compose -f docker-compose.prod.yml down
+```
+
+**Lưu ý VPS:**
+
+- `ufw` không được cài sẵn trên image minimized — đã cài thủ công và mở port 22 + 80.
+- Dữ liệu SQL Server và file upload lưu trong Docker volume (`mssql-data`, `uploads-data`) — không mất khi rebuild.
+- Lần đầu deploy cần fix TypeScript: biến `lastNetworkError` trong `frontend/src/lib/api-client.ts` phải xóa (đã fix tại commit `6ff0964`).
 
 ---
 

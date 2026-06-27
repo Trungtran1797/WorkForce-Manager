@@ -1,3 +1,5 @@
+using WorkForceManager.Application.Features.Projects.Discussions.Common;
+
 namespace WorkForceManager.Application.Features.Projects.Common;
 
 public record ProjectMemberDto(
@@ -20,7 +22,8 @@ public record ProjectDto(
     int Progress,
     List<ProjectMemberDto> Members,
     string? ShippingDate,
-    bool IsTemplate = false);
+    bool IsTemplate = false,
+    List<ProjectAttachmentDto>? Attachments = null);
 
 public record ProjectTemplateDto(
     int Id,

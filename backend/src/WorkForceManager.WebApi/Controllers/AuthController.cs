@@ -6,6 +6,7 @@ using WorkForceManager.Application.Features.Auth.Commands.Login;
 using WorkForceManager.Application.Features.Auth.Commands.Logout;
 using WorkForceManager.Application.Features.Auth.Commands.Register;
 using WorkForceManager.Application.Features.Auth.Commands.RefreshToken;
+using WorkForceManager.Application.Features.Auth.Commands.ChangePassword;
 using WorkForceManager.Application.Features.Auth.Common;
 using WorkForceManager.Application.Features.Auth.Queries.GetCurrentUser;
 using WorkForceManager.Infrastructure.Identity;
@@ -56,6 +57,14 @@ public class AuthController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetCurrentUserQuery(), ct);
         return Ok(ApiResponse<AuthUserDto>.Ok(result));
+    }
+
+    [HttpPut("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken ct)
+    {
+        await Mediator.Send(command, ct);
+        return Ok(ApiResponse.Ok("Đổi mật khẩu thành công."));
     }
 }
 

@@ -53,6 +53,9 @@ public class UpdateEmployeeCommandHandler : IRequestHandler<UpdateEmployeeComman
         employee.Position = request.Position.Trim();
         employee.HireDate = DateTime.Parse(request.HireDate);
         employee.Status = Enum.Parse<EmployeeStatus>(request.Status);
+        employee.PlaceOfOrigin = request.PlaceOfOrigin?.Trim();
+        employee.MaritalStatus = request.MaritalStatus?.Trim();
+        employee.OneOfficeAccount = request.OneOfficeAccount?.Trim();
 
         await _context.SaveChangesAsync(cancellationToken);
 

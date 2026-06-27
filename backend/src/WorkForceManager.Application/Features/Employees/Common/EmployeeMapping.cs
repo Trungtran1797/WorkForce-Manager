@@ -20,5 +20,8 @@ public static class EmployeeMapping
         e.Department?.Name ?? string.Empty,
         e.Position,
         e.HireDate.ToString(DateFormat),
-        e.Status.ToString());
+        e.Status.ToString(),
+        e.PlaceOfOrigin,
+        e.MaritalStatus,
+        e.OneOfficeAccount);
 }

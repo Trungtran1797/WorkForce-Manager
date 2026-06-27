@@ -21,7 +21,7 @@ public class GlobalSearchQueryHandler : IRequestHandler<GlobalSearchQuery, Globa
 
     public async Task<GlobalSearchResultDto> Handle(GlobalSearchQuery request, CancellationToken cancellationToken)
     {
-        var term = request.Keyword.Trim();
+        var term = request.Keyword.Trim().ToLower();
         if (term.Length < 2)
         {
             return new GlobalSearchResultDto();
@@ -60,7 +60,12 @@ public class GlobalSearchQueryHandler : IRequestHandler<GlobalSearchQuery, Globa
         string term, List<int>? scopeDeptIds, CancellationToken cancellationToken)
     {
         var query = _context.Employees.AsNoTracking()
-            .Where(e => e.FullName.Contains(term) || e.EmployeeCode.Contains(term) || e.Email.Contains(term));
+            .Where(e => e.FullName.ToLower().Contains(term) || 
+                        e.EmployeeCode.ToLower().Contains(term) || 
+                        e.Email.ToLower().Contains(term) ||
+                        e.PhoneNumber.ToLower().Contains(term) ||
+                        e.Position.ToLower().Contains(term) ||
+                        e.Department.Name.ToLower().Contains(term));
 
         if (scopeDeptIds is not null)
         {
@@ -83,7 +88,9 @@ public class GlobalSearchQueryHandler : IRequestHandler<GlobalSearchQuery, Globa
         string term, List<int>? scopeDeptIds, CancellationToken cancellationToken)
     {
         var query = _context.Departments.AsNoTracking()
-            .Where(d => d.Name.Contains(term) || (d.Description != null && d.Description.Contains(term)));
+            .Where(d => d.Name.ToLower().Contains(term) || 
+                        (d.Description != null && d.Description.ToLower().Contains(term)) ||
+                        (d.Manager != null && d.Manager.FullName.ToLower().Contains(term)));
 
         if (scopeDeptIds is not null)
         {
@@ -105,9 +112,20 @@ public class GlobalSearchQueryHandler : IRequestHandler<GlobalSearchQuery, Globa
         string term, List<int>? scopeDeptIds, CancellationToken cancellationToken)
     {
         var query = _context.Projects.AsNoTracking()
-            .Where(p => p.Code.Contains(term) || p.Name.Contains(term) || (p.Investor != null && p.Investor.Contains(term)));
+            .Where(p => p.Code.ToLower().Contains(term) || 
+                        p.Name.ToLower().Contains(term) || 
+                        (p.Investor != null && p.Investor.ToLower().Contains(term)) ||
+                        (p.Description != null && p.Description.ToLower().Contains(term)) ||
+                        p.Attachments.Any(a => a.FileName.ToLower().Contains(term)));
 
-        if (scopeDeptIds is not null)
+        var employeeId = _currentUser.EmployeeId;
+        if (scopeDeptIds is not null && employeeId is not null)
+        {
+            query = query.Where(p => 
+                p.Members.Any(m => m.EmployeeId == employeeId.Value) || 
+                p.Members.Any(m => scopeDeptIds.Contains(m.Employee!.DepartmentId)));
+        }
+        else if (scopeDeptIds is not null)
         {
             query = query.Where(p => p.Members.Any(m => scopeDeptIds.Contains(m.Employee!.DepartmentId)));
         }
@@ -128,9 +146,24 @@ public class GlobalSearchQueryHandler : IRequestHandler<GlobalSearchQuery, Globa
         string term, List<int>? scopeDeptIds, CancellationToken cancellationToken)
     {
         var query = _context.Tasks.AsNoTracking()
-            .Where(t => t.Code.Contains(term) || t.Title.Contains(term));
+            .Where(t => t.Code.ToLower().Contains(term) || 
+                        t.Title.ToLower().Contains(term) ||
+                        (t.Description != null && t.Description.ToLower().Contains(term)) ||
+                        t.Attachments.Any(a => a.FileName.ToLower().Contains(term)));
 
-        if (scopeDeptIds is not null)
+        var employeeId = _currentUser.EmployeeId;
+        if (scopeDeptIds is not null && employeeId is not null)
+        {
+            query = query.Where(t =>
+                t.AssigneeId == employeeId.Value ||
+                t.AssignerId == employeeId.Value ||
+                t.Assignees.Any(ta => ta.EmployeeId == employeeId.Value) ||
+                (t.Project != null && t.Project.Members.Any(m => m.EmployeeId == employeeId.Value)) ||
+                (t.Assignee != null && scopeDeptIds.Contains(t.Assignee.DepartmentId)) ||
+                (t.Assigner != null && scopeDeptIds.Contains(t.Assigner.DepartmentId)) ||
+                (t.Project != null && t.Project.Members.Any(m => scopeDeptIds.Contains(m.Employee!.DepartmentId))));
+        }
+        else if (scopeDeptIds is not null)
         {
             query = query.Where(t =>
                 (t.Assignee != null && scopeDeptIds.Contains(t.Assignee.DepartmentId)) ||

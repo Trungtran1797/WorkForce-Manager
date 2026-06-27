@@ -19,6 +19,9 @@ public class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmployeeCo
         RuleFor(x => x.HireDate).Must(BeValidDate).WithMessage("Ngày vào làm không hợp lệ.");
         RuleFor(x => x.Gender).Must(g => Enum.TryParse<Gender>(g, out _)).WithMessage("Giới tính không hợp lệ.");
         RuleFor(x => x.Status).Must(s => Enum.TryParse<EmployeeStatus>(s, out _)).WithMessage("Trạng thái không hợp lệ.");
+        RuleFor(x => x.PlaceOfOrigin).MaximumLength(200);
+        RuleFor(x => x.MaritalStatus).MaximumLength(50);
+        RuleFor(x => x.OneOfficeAccount).MaximumLength(150);
     }
 
     private static bool BeValidDate(string value) => DateTime.TryParse(value, out _);

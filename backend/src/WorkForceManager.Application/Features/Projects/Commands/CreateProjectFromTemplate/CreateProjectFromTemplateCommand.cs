@@ -13,4 +13,5 @@ public record CreateProjectFromTemplateCommand : IRequest<ProjectDto>
     public string? Description { get; init; }
     public string? Code { get; init; }
     public string? ShippingDate { get; init; }
+    public string? EndDate { get; init; }
 }

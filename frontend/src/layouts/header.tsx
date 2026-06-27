@@ -207,8 +207,8 @@ export function Header() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{user?.email ?? 'Tài khoản'}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Hồ sơ cá nhân</DropdownMenuItem>
-            <DropdownMenuItem>Cài đặt</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/profile')}>Hồ sơ cá nhân</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/account')}>Tài khoản</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={() => void handleLogout()}>
               Đăng xuất

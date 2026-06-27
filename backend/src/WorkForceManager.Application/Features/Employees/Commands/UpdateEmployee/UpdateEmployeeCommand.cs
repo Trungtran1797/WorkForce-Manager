@@ -16,4 +16,7 @@ public record UpdateEmployeeCommand(
     int DepartmentId,
     string Position,
     string HireDate,
-    string Status) : IRequest<EmployeeDto>;
+    string Status,
+    string? PlaceOfOrigin,
+    string? MaritalStatus,
+    string? OneOfficeAccount) : IRequest<EmployeeDto>;

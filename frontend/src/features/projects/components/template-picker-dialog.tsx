@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, type Resolver } from 'react-hook-form'
 import { z } from 'zod'
@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useProjectTemplates, useCreateProjectFromTemplate } from '@/features/projects/api/project-queries'
+import { uploadProjectAttachments } from '@/features/projects/api/project-api'
 import type { ProjectTemplate } from '@/features/projects/types'
 
 // ─── Step 1: chọn template ───────────────────────────────────────────────────
@@ -97,6 +98,7 @@ const schema = z.object({
   name: z.string().min(1, 'Nhập tên dự án'),
   investor: z.string().optional(),
   startDate: z.string().min(1, 'Chọn ngày bắt đầu'),
+  endDate: z.string().min(1, 'Chọn ngày kết thúc'),
   shippingDate: z.string().optional(),
   budget: z.coerce.number().min(0),
   code: z.string().max(30).optional(),
@@ -113,6 +115,7 @@ interface ProjectInfoFormProps {
 function ProjectInfoForm({ template, onBack, onSuccess }: ProjectInfoFormProps) {
   const createFromTemplate = useCreateProjectFromTemplate()
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const displayName = template.name.replace(/^\[MẪU\]\s*/i, '')
 
   const form = useForm<FormValues>({
@@ -121,6 +124,7 @@ function ProjectInfoForm({ template, onBack, onSuccess }: ProjectInfoFormProps) 
       name: displayName,
       investor: 'SAIGON SPICES',
       startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date(new Date().getTime() + template.durationDays * 86400000).toISOString().slice(0, 10),
       shippingDate: '',
       budget: 0,
       code: '',
@@ -130,15 +134,19 @@ function ProjectInfoForm({ template, onBack, onSuccess }: ProjectInfoFormProps) 
   const handleSubmit = async (values: FormValues) => {
     setSubmitError(null)
     try {
-      await createFromTemplate.mutateAsync({
+      const created = await createFromTemplate.mutateAsync({
         templateId: template.id,
         name: values.name,
         investor: values.investor,
         startDate: values.startDate,
+        endDate: values.endDate,
         shippingDate: values.shippingDate || undefined,
         budget: values.budget,
         code: values.code || undefined,
       })
+      if (selectedFiles.length > 0 && created?.id) {
+        await uploadProjectAttachments(created.id, selectedFiles)
+      }
       onSuccess()
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Tạo dự án thất bại.')
@@ -146,10 +154,13 @@ function ProjectInfoForm({ template, onBack, onSuccess }: ProjectInfoFormProps) 
   }
 
   const startDate = form.watch('startDate')
-  const estimatedEnd = startDate
-    ? new Date(new Date(startDate).getTime() + template.durationDays * 86400000)
-        .toLocaleDateString('vi-VN')
-    : '—'
+
+  useEffect(() => {
+    if (startDate) {
+      const end = new Date(new Date(startDate).getTime() + template.durationDays * 86400000)
+      form.setValue('endDate', end.toISOString().slice(0, 10))
+    }
+  }, [startDate, template.durationDays, form])
 
   return (
     <Form {...form}>
@@ -211,10 +222,15 @@ function ProjectInfoForm({ template, onBack, onSuccess }: ProjectInfoFormProps) 
             </FormItem>
           )} />
 
-          <FormItem>
-            <FormLabel>Ngày kết thúc (ước tính)</FormLabel>
-            <Input value={estimatedEnd} disabled className="text-muted-foreground" />
-          </FormItem>
+          <FormField control={form.control} name="endDate" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Ngày kết thúc *</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
 
           <FormField control={form.control} name="shippingDate" render={({ field }) => (
             <FormItem>
@@ -228,6 +244,24 @@ function ProjectInfoForm({ template, onBack, onSuccess }: ProjectInfoFormProps) 
               <FormMessage />
             </FormItem>
           )} />
+
+          <div className="col-span-1 sm:col-span-2 space-y-2">
+            <FormLabel>Tài liệu đính kèm (Hợp đồng, tài liệu kỹ thuật...)</FormLabel>
+            <Input
+              type="file"
+              multiple
+              className="cursor-pointer"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || [])
+                setSelectedFiles(files)
+              }}
+            />
+            {selectedFiles.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Đã chọn {selectedFiles.length} tệp
+              </div>
+            )}
+          </div>
         </div>
 
         {submitError && <p className="text-sm text-destructive">{submitError}</p>}

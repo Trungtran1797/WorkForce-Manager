@@ -28,8 +28,16 @@ public class CreateProjectFromTemplateCommandHandler : IRequestHandler<CreatePro
             ?? throw new NotFoundException("Template dự án", request.TemplateId);
 
         var newStart = DateTime.Parse(request.StartDate);
-        var duration = template.EndDate - template.StartDate;
-        var newEnd = newStart + duration;
+        DateTime newEnd;
+        if (!string.IsNullOrEmpty(request.EndDate))
+        {
+            newEnd = DateTime.Parse(request.EndDate);
+        }
+        else
+        {
+            var duration = template.EndDate - template.StartDate;
+            newEnd = newStart + duration;
+        }
         var dateOffset = newStart - template.StartDate;
 
         // Sinh mã dự án tự động nếu không cung cấp

@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Target,
   Timer,
+  UserCog,
   Users,
   Wallet,
   X,
@@ -39,6 +40,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Tổng quan', icon: LayoutDashboard, module: 'Dashboard' },
+  { to: '/wall', label: 'Tường công ty', icon: Leaf, module: 'Dashboard' },
   { to: '/employees', label: 'Nhân viên', icon: Users, module: 'Employees' },
   { to: '/departments', label: 'Phòng ban', icon: Building2, module: 'Departments' },
   { to: '/projects', label: 'Dự án', icon: FolderKanban, module: 'Projects' },
@@ -58,6 +60,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/reports', label: 'Báo cáo', icon: FileBarChart, module: 'Reports' },
   { to: '/notifications', label: 'Thông báo', icon: Bell, module: 'Notifications' },
   { to: '/settings/permissions', label: 'Phân quyền', icon: ShieldCheck, module: 'PermissionMatrix' },
+  { to: '/settings/users', label: 'Quản lý tài khoản', icon: UserCog, module: 'Users' },
   { to: '/settings/system', label: 'Cài đặt hệ thống', icon: Settings2, module: 'PermissionMatrix' },
 ]
 
@@ -71,9 +74,13 @@ function useNavItems(): NavItem[] {
   })
 }
 
-function BrandLogo({ collapsed }: { collapsed?: boolean }) {
+function BrandLogo({ collapsed, onClick }: { collapsed?: boolean; onClick?: () => void }) {
   return (
-    <div className="flex items-center gap-2">
+    <NavLink
+      to="/wall"
+      onClick={onClick}
+      className="flex items-center gap-2 hover:opacity-85 transition-opacity"
+    >
       <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success font-bold text-white">
         <Leaf className="size-4.5" />
       </div>
@@ -83,7 +90,7 @@ function BrandLogo({ collapsed }: { collapsed?: boolean }) {
           <div className="text-[11px] text-muted-foreground">WorkForce Manager</div>
         </div>
       )}
-    </div>
+    </NavLink>
   )
 }
 
@@ -92,7 +99,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
   return (
     <>
       <div className="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-5">
-        <BrandLogo collapsed={collapsed} />
+        <BrandLogo collapsed={collapsed} onClick={onNavigate} />
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin">
         {navItems.map((item) => (
@@ -159,7 +166,7 @@ export function MobileSidebar() {
       />
       <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-sidebar text-sidebar-foreground shadow-xl">
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5">
-          <BrandLogo />
+          <BrandLogo onClick={() => setMobileSidebarOpen(false)} />
           <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(false)}>
             <X className="size-5" />
           </Button>

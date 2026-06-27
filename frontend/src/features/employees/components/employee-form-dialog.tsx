@@ -51,6 +51,9 @@ const employeeFormSchema = z.object({
   position: z.string().min(1, 'Vui lòng nhập chức vụ'),
   hireDate: z.string().min(1, 'Vui lòng chọn ngày vào làm'),
   status: z.enum(['Active', 'Inactive', 'OnLeave']),
+  placeOfOrigin: z.string().optional(),
+  maritalStatus: z.string().optional(),
+  oneOfficeAccount: z.string().optional(),
 })
 
 const DEFAULT_VALUES: EmployeeFormValues = {
@@ -66,12 +69,16 @@ const DEFAULT_VALUES: EmployeeFormValues = {
   position: '',
   hireDate: '',
   status: 'Active',
+  placeOfOrigin: '',
+  maritalStatus: '',
+  oneOfficeAccount: '',
 }
 
 interface EmployeeFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   employee?: Employee | null
+  clonedFromEmployee?: Employee | null
   onSubmit: (values: EmployeeFormValues) => Promise<void>
 }
 
@@ -79,6 +86,7 @@ export function EmployeeFormDialog({
   open,
   onOpenChange,
   employee,
+  clonedFromEmployee,
   onSubmit,
 }: EmployeeFormDialogProps) {
   const { data: departments = [] } = useDepartments()
@@ -90,26 +98,37 @@ export function EmployeeFormDialog({
 
   useEffect(() => {
     if (open) {
-      form.reset(
-        employee
-          ? {
-              employeeCode: employee.employeeCode,
-              fullName: employee.fullName,
-              dateOfBirth: employee.dateOfBirth,
-              gender: employee.gender,
-              idCardNumber: employee.idCardNumber,
-              phoneNumber: employee.phoneNumber,
-              email: employee.email,
-              address: employee.address,
-              departmentId: String(employee.departmentId),
-              position: employee.position,
-              hireDate: employee.hireDate,
-              status: employee.status,
-            }
-          : DEFAULT_VALUES
-      )
+      if (employee) {
+        form.reset({
+          employeeCode: employee.employeeCode,
+          fullName: employee.fullName,
+          dateOfBirth: employee.dateOfBirth,
+          gender: employee.gender,
+          idCardNumber: employee.idCardNumber,
+          phoneNumber: employee.phoneNumber,
+          email: employee.email,
+          address: employee.address,
+          departmentId: String(employee.departmentId),
+          position: employee.position,
+          hireDate: employee.hireDate,
+          status: employee.status,
+          placeOfOrigin: employee.placeOfOrigin ?? '',
+          maritalStatus: employee.maritalStatus ?? '',
+          oneOfficeAccount: employee.oneOfficeAccount ?? '',
+        })
+      } else if (clonedFromEmployee) {
+        form.reset({
+          ...DEFAULT_VALUES,
+          departmentId: String(clonedFromEmployee.departmentId),
+          position: clonedFromEmployee.position,
+          status: clonedFromEmployee.status,
+          hireDate: clonedFromEmployee.hireDate,
+        })
+      } else {
+        form.reset(DEFAULT_VALUES)
+      }
     }
-  }, [open, employee, form])
+  }, [open, employee, clonedFromEmployee, form])
 
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -127,7 +146,7 @@ export function EmployeeFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{employee ? 'Cập nhật nhân viên' : 'Thêm nhân viên mới'}</DialogTitle>
+          <DialogTitle>{employee ? 'Cập nhật nhân viên' : clonedFromEmployee ? 'Thêm nhân viên mới (Nhân bản)' : 'Thêm nhân viên mới'}</DialogTitle>
           <DialogDescription>
             Nhập đầy đủ thông tin nhân sự theo quy định. Các trường có dấu (*) là bắt buộc.
           </DialogDescription>
@@ -328,6 +347,57 @@ export function EmployeeFormDialog({
                         <SelectItem value="OnLeave">Đang nghỉ phép</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="placeOfOrigin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nguyên quán</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ví dụ: Quảng Nam" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="maritalStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tình trạng hôn nhân</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Chọn tình trạng" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Độc thân">Độc thân</SelectItem>
+                        <SelectItem value="Đã kết hôn">Đã kết hôn</SelectItem>
+                        <SelectItem value="Khác">Khác</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="oneOfficeAccount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tài khoản 1Office</FormLabel>
+                    <FormControl>
+                      <Input placeholder="nguyenvana_1office" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

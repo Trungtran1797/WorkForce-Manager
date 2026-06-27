@@ -93,7 +93,8 @@ public static class ApplicationDbContextSeed
                 (PermissionModule.Training, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.View),
                 (PermissionModule.Reports, PermissionLevel.Edit, PermissionLevel.View, PermissionLevel.None),
                 (PermissionModule.Notifications, PermissionLevel.Edit, PermissionLevel.Edit, PermissionLevel.Edit),
-                (PermissionModule.PermissionMatrix, PermissionLevel.Edit, PermissionLevel.None, PermissionLevel.None)
+                (PermissionModule.PermissionMatrix, PermissionLevel.Edit, PermissionLevel.None, PermissionLevel.None),
+                (PermissionModule.Users, PermissionLevel.Edit, PermissionLevel.None, PermissionLevel.None)
             };
 
             var rolePermissions = new List<RolePermission>();
@@ -105,6 +106,19 @@ public static class ApplicationDbContextSeed
             }
 
             await context.RolePermissions.AddRangeAsync(rolePermissions);
+            await context.SaveChangesAsync();
+        }
+
+        // Tương thích ngược: Seed thêm quyền cho module Users nếu DB đã có dữ liệu nhưng thiếu module này
+        if (await context.RolePermissions.AnyAsync() && !await context.RolePermissions.AnyAsync(rp => rp.Module == PermissionModule.Users))
+        {
+            var usersRolePermissions = new List<RolePermission>
+            {
+                new RolePermission { Role = UserRole.SuperAdmin, Module = PermissionModule.Users, Level = PermissionLevel.Edit },
+                new RolePermission { Role = UserRole.Manager, Module = PermissionModule.Users, Level = PermissionLevel.None },
+                new RolePermission { Role = UserRole.Employee, Module = PermissionModule.Users, Level = PermissionLevel.None }
+            };
+            await context.RolePermissions.AddRangeAsync(usersRolePermissions);
             await context.SaveChangesAsync();
         }
 

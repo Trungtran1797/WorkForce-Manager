@@ -3,7 +3,7 @@ import type { PaginatedResult } from '@/types/common'
 import type { ProjectComment } from '@/features/projects/types'
 
 const API_BASE_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5244/api/v1'
+  (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1'
 
 export function getProjectComments(
   projectId: number,

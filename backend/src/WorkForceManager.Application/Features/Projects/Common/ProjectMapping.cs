@@ -1,4 +1,5 @@
 using WorkForceManager.Domain.Entities;
+using WorkForceManager.Application.Features.Projects.Discussions.Common;
 
 namespace WorkForceManager.Application.Features.Projects.Common;
 
@@ -21,6 +22,11 @@ public static class ProjectMapping
                 AvatarColorForIndex(index)))
             .ToList();
 
+        var attachments = p.Attachments?
+            .OrderBy(a => a.Id)
+            .Select(a => a.ToDto())
+            .ToList() ?? new List<ProjectAttachmentDto>();
+
         return new ProjectDto(
             p.Id,
             p.Code,
@@ -34,7 +40,8 @@ public static class ProjectMapping
             p.Progress,
             members,
             p.ShippingDate?.ToString(DateFormat),
-            p.IsTemplate);
+            p.IsTemplate,
+            attachments);
     }
 
     public static ProjectTemplateDto ToTemplateDto(this Project p, int taskCount)

@@ -48,7 +48,10 @@ public class CreateEmployeeCommandHandler : IRequestHandler<CreateEmployeeComman
             DepartmentId = request.DepartmentId,
             Position = request.Position.Trim(),
             HireDate = DateTime.Parse(request.HireDate),
-            Status = Enum.Parse<EmployeeStatus>(request.Status)
+            Status = Enum.Parse<EmployeeStatus>(request.Status),
+            PlaceOfOrigin = request.PlaceOfOrigin?.Trim(),
+            MaritalStatus = request.MaritalStatus?.Trim(),
+            OneOfficeAccount = request.OneOfficeAccount?.Trim()
         };
 
         _context.Employees.Add(employee);

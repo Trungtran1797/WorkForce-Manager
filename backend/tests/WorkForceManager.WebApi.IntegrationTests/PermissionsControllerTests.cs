@@ -121,8 +121,8 @@ public class PermissionsControllerTests : IClassFixture<CustomWebApplicationFact
         var result = await response.Content.ReadFromJsonAsync<ApiResponseWrapper<PermissionMatrixDto>>();
         result!.Success.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data!.RolePermissions.Should().HaveCount(60);
-        result.Data!.Modules.Should().HaveCount(20);
+        result.Data!.RolePermissions.Should().HaveCount(63);
+        result.Data!.Modules.Should().HaveCount(21);
         result.Data!.Roles.Should().HaveCount(3);
 
         _client.DefaultRequestHeaders.Authorization = null;
@@ -201,7 +201,7 @@ public class PermissionsControllerTests : IClassFixture<CustomWebApplicationFact
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<ApiResponseWrapper<Dictionary<string, string>>>();
         result!.Success.Should().BeTrue();
-        result.Data.Should().HaveCount(20);
+        result.Data.Should().HaveCount(21);
 
         _client.DefaultRequestHeaders.Authorization = null;
     }

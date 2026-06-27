@@ -50,7 +50,9 @@ export function TaskBoardPage() {
   const [myTasksOnly, setMyTasksOnly] = useState(false)
   const [projectFilter, setProjectFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
-  const [monthFilter, setMonthFilter] = useState('')
+  const [timeFilterType, setTimeFilterType] = useState<'all' | 'today' | 'week' | 'month' | 'last-month' | 'custom'>('all')
+  const [startDateFilter, setStartDateFilter] = useState('')
+  const [endDateFilter, setEndDateFilter] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const filteredTasks = useMemo(() => {
@@ -78,13 +80,49 @@ export function TaskBoardPage() {
         return false
       }
 
-      if (monthFilter && !task.dueDate?.startsWith(monthFilter)) {
-        return false
+      if (timeFilterType !== 'all') {
+        if (!task.dueDate) return false
+        const dueDate = new Date(task.dueDate)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        if (timeFilterType === 'today') {
+          const tomorrow = new Date(today)
+          tomorrow.setDate(today.getDate() + 1)
+          if (dueDate < today || dueDate >= tomorrow) return false
+        } else if (timeFilterType === 'week') {
+          const day = today.getDay()
+          const diff = day === 0 ? -6 : 1 - day
+          const monday = new Date(today)
+          monday.setDate(today.getDate() + diff)
+          const nextMonday = new Date(monday)
+          nextMonday.setDate(monday.getDate() + 7)
+          if (dueDate < monday || dueDate >= nextMonday) return false
+        } else if (timeFilterType === 'month') {
+          const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+          const firstDayNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+          if (dueDate < firstDay || dueDate >= firstDayNextMonth) return false
+        } else if (timeFilterType === 'last-month') {
+          const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+          const firstDayThisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+          if (dueDate < firstDay || dueDate >= firstDayThisMonth) return false
+        } else if (timeFilterType === 'custom') {
+          if (startDateFilter) {
+            const start = new Date(startDateFilter)
+            start.setHours(0, 0, 0, 0)
+            if (dueDate < start) return false
+          }
+          if (endDateFilter) {
+            const end = new Date(endDateFilter)
+            end.setHours(23, 59, 59, 999)
+            if (dueDate > end) return false
+          }
+        }
       }
 
       return true
     })
-  }, [serverTasks, search, myTasksOnly, projectFilter, statusFilter, monthFilter, user])
+  }, [serverTasks, search, myTasksOnly, projectFilter, statusFilter, timeFilterType, startDateFilter, endDateFilter, user])
 
   const handleStatusChange = (taskId: number, status: TaskStatus): void => {
     updateStatus.mutate({ id: taskId, status })
@@ -155,14 +193,48 @@ export function TaskBoardPage() {
           </SelectContent>
         </Select>
 
-        <Input
-          type="month"
-          className="w-40"
-          value={monthFilter}
-          onChange={(e) => setMonthFilter(e.target.value)}
-        />
+        <Select
+          value={timeFilterType}
+          onValueChange={(value) => {
+            setTimeFilterType(value as any)
+            if (value !== 'custom') {
+              setStartDateFilter('')
+              setEndDateFilter('')
+            }
+          }}
+        >
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Thời gian" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả thời gian</SelectItem>
+            <SelectItem value="today">Hôm nay</SelectItem>
+            <SelectItem value="week">Tuần này</SelectItem>
+            <SelectItem value="month">Tháng này</SelectItem>
+            <SelectItem value="last-month">Tháng trước</SelectItem>
+            <SelectItem value="custom">Khoảng tự chọn...</SelectItem>
+          </SelectContent>
+        </Select>
 
-        {(myTasksOnly || projectFilter || statusFilter !== 'all' || monthFilter) && (
+        {timeFilterType === 'custom' && (
+          <div className="flex flex-row items-center gap-1.5">
+            <Input
+              type="date"
+              className="w-36 text-xs"
+              value={startDateFilter}
+              onChange={(e) => setStartDateFilter(e.target.value)}
+            />
+            <span className="text-muted-foreground text-xs">đến</span>
+            <Input
+              type="date"
+              className="w-36 text-xs"
+              value={endDateFilter}
+              onChange={(e) => setEndDateFilter(e.target.value)}
+            />
+          </div>
+        )}
+
+        {(myTasksOnly || projectFilter || statusFilter !== 'all' || timeFilterType !== 'all' || startDateFilter || endDateFilter) && (
           <Button
             variant="ghost"
             size="sm"
@@ -170,7 +242,9 @@ export function TaskBoardPage() {
               setMyTasksOnly(false)
               setProjectFilter('')
               setStatusFilter('all')
-              setMonthFilter('')
+              setTimeFilterType('all')
+              setStartDateFilter('')
+              setEndDateFilter('')
             }}
           >
             Xóa bộ lọc

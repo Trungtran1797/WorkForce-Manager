@@ -27,6 +27,7 @@ export const PERMISSION_MODULES: PermissionModuleInfo[] = [
   { key: 'Reports', label: 'Báo cáo' },
   { key: 'Notifications', label: 'Thông báo' },
   { key: 'PermissionMatrix', label: 'Phân quyền' },
+  { key: 'Users', label: 'Quản lý Tài khoản' },
 ]
 
 export interface RolePermissionDto {

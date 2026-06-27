@@ -24,5 +24,6 @@ public enum PermissionModule
     Training,
     Reports,
     Notifications,
-    PermissionMatrix
+    PermissionMatrix,
+    Users
 }

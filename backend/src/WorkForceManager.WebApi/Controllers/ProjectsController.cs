@@ -18,6 +18,7 @@ using WorkForceManager.Application.Features.Projects.Commands.MarkProjectAsTempl
 using WorkForceManager.Application.Features.Projects.Queries.GetProjectById;
 using WorkForceManager.Application.Features.Projects.Queries.GetProjectTemplates;
 using WorkForceManager.Application.Features.Projects.Queries.GetProjects;
+using WorkForceManager.Application.Features.Projects.Commands.UploadProjectAttachments;
 using WorkForceManager.Domain.Enums;
 using WorkForceManager.Infrastructure.Identity.Authorization;
 
@@ -157,6 +158,16 @@ public class ProjectsController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetProjectAttachmentDownloadQuery(id, attachmentId), ct);
         return File(result.Content, result.ContentType, result.FileName);
+    }
+
+    [HttpPost("{id:int}/attachments")]
+    [Consumes("multipart/form-data")]
+    [DisableRequestSizeLimit]
+    [Authorize(Policy = "Permission:" + nameof(PermissionModule.Projects) + ":" + nameof(PermissionLevel.Edit))]
+    public async Task<IActionResult> UploadAttachments(int id, [FromForm] List<IFormFile>? files, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new UploadProjectAttachmentsCommand(id, files), ct);
+        return Ok(result);
     }
 }
 

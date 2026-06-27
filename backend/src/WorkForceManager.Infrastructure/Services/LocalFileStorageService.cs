@@ -12,7 +12,7 @@ namespace WorkForceManager.Infrastructure.Services;
 /// </summary>
 public class LocalFileStorageService : IFileStorageService
 {
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10MB
+    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50MB
     private const string ProjectSubFolderPrefix = "projects/";
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)

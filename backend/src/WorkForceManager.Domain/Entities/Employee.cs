@@ -20,4 +20,8 @@ public class Employee : BaseAuditableEntity
     public string Position { get; set; } = string.Empty;
     public DateTime HireDate { get; set; }
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
+
+    public string? PlaceOfOrigin { get; set; }
+    public string? MaritalStatus { get; set; }
+    public string? OneOfficeAccount { get; set; }
 }

@@ -14,4 +14,7 @@ public record EmployeeDto(
     string DepartmentName,
     string Position,
     string HireDate,
-    string Status);
+    string Status,
+    string? PlaceOfOrigin,
+    string? MaritalStatus,
+    string? OneOfficeAccount);

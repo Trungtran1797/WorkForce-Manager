@@ -275,9 +275,8 @@ export function AttendancePage() {
   const todayRecord = records.find((r) => r.date === todayStr)
 
   const checkState: CheckState = (() => {
-    if (!todayRecord) return 'not-checked-in'
-    if (todayRecord.checkIn && !todayRecord.checkOut) return 'checked-in'
-    return 'checked-out'
+    if (!todayRecord || !todayRecord.checkIn) return 'not-checked-in'
+    return 'checked-in'
   })()
 
   const getCoords = (): Promise<{ latitude?: number; longitude?: number }> =>
@@ -360,12 +359,13 @@ export function AttendancePage() {
           {checkState === 'checked-in' && (
             <Button onClick={handleCheckOut} variant="destructive" className="min-w-[120px]" disabled={isMutating || isLoading}>
               {isMutating ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
-              Check Out
+              {todayRecord?.checkOut ? 'Check Out Lần Nữa' : 'Check Out'}
             </Button>
           )}
-          {checkState === 'checked-out' && (
-            <div className="rounded-lg bg-success/10 px-3 py-1 text-sm font-medium text-success">
-              Đã hoàn thành chấm công hôm nay
+
+          {todayRecord?.checkOut && (
+            <div className="text-xs text-muted-foreground italic">
+              Lần check-out cuối: <span className="font-semibold text-foreground">{todayRecord.checkOut}</span>
             </div>
           )}
 

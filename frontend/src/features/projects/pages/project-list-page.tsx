@@ -66,6 +66,7 @@ import {
 import { useCanEdit } from '@/features/permissions/lib/use-permission'
 import { useToast } from '@/hooks/use-toast'
 import type { Project, ProjectFormValues } from '@/features/projects/types'
+import { uploadProjectAttachments } from '@/features/projects/api/project-api'
 
 // ─── Projects table ───────────────────────────────────────────────────────────
 
@@ -314,8 +315,11 @@ export function ProjectListPage() {
   const deleteProject = useDeleteProject()
   const markAsTemplate = useMarkProjectAsTemplate()
 
-  const handleCreate = async (values: ProjectFormValues): Promise<void> => {
-    await createProject.mutateAsync(values)
+  const handleCreate = async (values: ProjectFormValues, files?: File[]): Promise<void> => {
+    const created = await createProject.mutateAsync(values)
+    if (files && files.length > 0 && created?.id) {
+      await uploadProjectAttachments(created.id, files)
+    }
   }
 
   const handleMarkTemplate = async (project: Project, isTemplate: boolean) => {

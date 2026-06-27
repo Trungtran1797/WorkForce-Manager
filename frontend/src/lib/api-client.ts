@@ -8,7 +8,7 @@
  */
 
 const API_BASE_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5244/api/v1'
+  (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1'
 
 const ACCESS_TOKEN_KEY = 'wf_access_token'
 const REFRESH_TOKEN_KEY = 'wf_refresh_token'

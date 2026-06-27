@@ -100,13 +100,17 @@ export function DepartmentListPage() {
 
   const handleOpenEditDialog = (department: Department): void => {
     setEditingDepartment(department)
-    setDialogOpen(true)
+    setTimeout(() => {
+      setDialogOpen(true)
+    }, 150)
   }
 
   const handleDelete = (department: Department): void => {
-    if (window.confirm(`Xóa phòng ban "${department.name}"?`)) {
-      deleteMutation.mutate(department.id)
-    }
+    setTimeout(() => {
+      if (window.confirm(`Xóa phòng ban "${department.name}"?`)) {
+        deleteMutation.mutate(department.id)
+      }
+    }, 150)
   }
 
   const handleFormSubmit = async (values: DepartmentFormValues): Promise<void> => {
