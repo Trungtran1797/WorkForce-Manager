@@ -34,6 +34,8 @@ import { UserListPage } from '@/features/users/pages/user-list-page'
 import { ProfilePage } from '@/features/employees/pages/profile-page'
 import { AccountPage } from '@/features/auth/pages/account-page'
 import { WallPage } from '@/features/wall/pages/wall-page'
+import { EmailAssistantPage } from '@/features/email-assistant/pages/email-assistant-page'
+
 
 
 function App() {
@@ -68,6 +70,7 @@ function App() {
                   <Route path="/training" element={<TrainingPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/email-assistant" element={<EmailAssistantPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/account" element={<AccountPage />} />
                 </Route>

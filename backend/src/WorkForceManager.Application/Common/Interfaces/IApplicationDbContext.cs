@@ -26,6 +26,7 @@ public interface IApplicationDbContext
     DbSet<Payslip> Payslips { get; }
     DbSet<PayslipItem> PayslipItems { get; }
     DbSet<User> Users { get; }
+    DbSet<UserEmailConfig> UserEmailConfigs { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<Notification> Notifications { get; }

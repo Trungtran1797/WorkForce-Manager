@@ -13,6 +13,8 @@ import {
   getWallGroups,
   createWallGroup,
   deleteWallGroup,
+  voteWallPoll,
+  addWallPollOption,
 } from '@/features/wall/api/wall-api'
 
 const WALL_KEYS = {
@@ -97,6 +99,13 @@ export function useCreateWallPost() {
       groupName,
       scheduledPublishDate,
       isCompanyPost,
+      pollOptions,
+      pollEndDate,
+      pollMultipleChoice,
+      pollAllowAddOptions,
+      pollAnonymous,
+      pollHideResultsBeforeVoting,
+      pollPinToTop,
     }: {
       title: string | null
       content: string
@@ -104,7 +113,29 @@ export function useCreateWallPost() {
       groupName?: string | null
       scheduledPublishDate?: string | null
       isCompanyPost?: boolean
-    }) => createWallPost(title, content, files, groupName, scheduledPublishDate, isCompanyPost),
+      pollOptions?: string[]
+      pollEndDate?: string | null
+      pollMultipleChoice?: boolean
+      pollAllowAddOptions?: boolean
+      pollAnonymous?: boolean
+      pollHideResultsBeforeVoting?: boolean
+      pollPinToTop?: boolean
+    }) =>
+      createWallPost(
+        title,
+        content,
+        files,
+        groupName,
+        scheduledPublishDate,
+        isCompanyPost,
+        pollOptions,
+        pollEndDate,
+        pollMultipleChoice,
+        pollAllowAddOptions,
+        pollAnonymous,
+        pollHideResultsBeforeVoting,
+        pollPinToTop,
+      ),
     onSuccess: invalidate,
   })
 }
@@ -133,6 +164,13 @@ export function useUpdateWallPost() {
       files,
       keptAttachments,
       scheduledPublishDate,
+      pollOptions,
+      pollEndDate,
+      pollMultipleChoice,
+      pollAllowAddOptions,
+      pollAnonymous,
+      pollHideResultsBeforeVoting,
+      pollPinToTop,
     }: {
       postId: number
       title: string | null
@@ -140,7 +178,29 @@ export function useUpdateWallPost() {
       files?: File[]
       keptAttachments?: string[]
       scheduledPublishDate?: string | null
-    }) => updateWallPost(postId, title, content, files, keptAttachments, scheduledPublishDate),
+      pollOptions?: string[]
+      pollEndDate?: string | null
+      pollMultipleChoice?: boolean
+      pollAllowAddOptions?: boolean
+      pollAnonymous?: boolean
+      pollHideResultsBeforeVoting?: boolean
+      pollPinToTop?: boolean
+    }) =>
+      updateWallPost(
+        postId,
+        title,
+        content,
+        files,
+        keptAttachments,
+        scheduledPublishDate,
+        pollOptions,
+        pollEndDate,
+        pollMultipleChoice,
+        pollAllowAddOptions,
+        pollAnonymous,
+        pollHideResultsBeforeVoting,
+        pollPinToTop,
+      ),
     onSuccess: invalidate,
   })
 }
@@ -181,5 +241,23 @@ export function useDeleteWallGroup() {
   return useMutation({
     mutationFn: deleteWallGroup,
     onSuccess: () => void qc.invalidateQueries({ queryKey: WALL_KEYS.groups }),
+  })
+}
+
+export function useVoteWallPoll() {
+  const invalidate = useInvalidateAll()
+  return useMutation({
+    mutationFn: ({ postId, options }: { postId: number; options: string[] }) =>
+      voteWallPoll(postId, options),
+    onSuccess: invalidate,
+  })
+}
+
+export function useAddWallPollOption() {
+  const invalidate = useInvalidateAll()
+  return useMutation({
+    mutationFn: ({ postId, option }: { postId: number; option: string }) =>
+      addWallPollOption(postId, option),
+    onSuccess: invalidate,
   })
 }

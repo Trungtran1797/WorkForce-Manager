@@ -27,6 +27,11 @@ import {
   History,
   BookOpen,
   RefreshCw,
+  Settings,
+  Calendar,
+  Circle,
+  CheckSquare,
+  Square,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -35,6 +40,12 @@ import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog'
+import { Switch } from '@/components/ui/switch'
+import { HelpCircle, Lock } from 'lucide-react'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { useMyProfile, useEmployees } from '@/features/employees/api/employee-queries'
 import { resolveMediaUrl } from '@/features/employees/api/employee-api'
@@ -55,6 +66,8 @@ import {
   usePublishNowWallPost,
   useCreateWallGroup,
   useDeleteWallGroup,
+  useVoteWallPoll,
+  useAddWallPollOption,
 } from '@/features/wall/api/wall-queries'
 import { downloadWallAttachment } from '@/features/wall/api/wall-api'
 import { useToast } from '@/hooks/use-toast'
@@ -83,6 +96,7 @@ interface PostCardProps {
   showActions?: boolean
   showApproveReject?: boolean
   showPublishNow?: boolean
+  employees?: any[]
 }
 
 function PostCard({
@@ -99,6 +113,7 @@ function PostCard({
   showActions = true,
   showApproveReject = false,
   showPublishNow = false,
+  employees,
 }: PostCardProps) {
   const [expandedContent, setExpandedContent] = useState(false)
   const [editingMode, setEditingMode] = useState(false)
@@ -109,18 +124,151 @@ function PostCard({
   const [commentInput, setCommentInput] = useState('')
   const editFileRef = useRef<HTMLInputElement>(null)
 
+  const [customOptionInput, setCustomOptionInput] = useState('')
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const voteMutation = useVoteWallPoll()
+  const addOptionMutation = useAddWallPollOption()
+
   const updatePost = useUpdateWallPost()
   const addComment = useAddWallPostComment()
   const { toast } = useToast()
 
+  const initialDate = post.poll?.endDate ? post.poll.endDate.split('T')[0] : ''
+  const initialTime = post.poll?.endDate ? post.poll.endDate.split('T')[1]?.substring(0, 5) ?? '' : ''
+
+  const [editShowPoll, setEditShowPoll] = useState(!!post.poll)
+  const [editPollOptions, setEditPollOptions] = useState<string[]>(post.poll?.options ?? ['', ''])
+  const [editPollEndTime, setEditPollEndTime] = useState(initialTime)
+  const [editPollEndDatePicker, setEditPollEndDatePicker] = useState(initialDate)
+  const [editPollMultipleChoice, setEditPollMultipleChoice] = useState(post.poll?.multipleChoice ?? false)
+  const [editPollAllowAddOptions, setEditPollAllowAddOptions] = useState(post.poll?.allowAddOptions ?? false)
+  const [editPollAnonymous, setEditPollAnonymous] = useState(post.poll?.anonymous ?? false)
+  const [editPollHideResultsBeforeVoting, setEditPollHideResultsBeforeVoting] = useState(post.poll?.hideResultsBeforeVoting ?? false)
+  const [editPollPinToTop, setEditPollPinToTop] = useState(post.poll?.pinToTop ?? false)
+  const [showEditSettings, setShowEditSettings] = useState(false)
+
   const isLiked = currentUserId ? post.likes.includes(currentUserId) : false
   const canEdit = post.authorId === currentUserId || currentUserRole === 'SuperAdmin'
+
+  const poll = post.poll
+  const isEnded = poll?.endDate ? new Date(poll.endDate) < new Date() : false
+
+  const hasVotedAny = useMemo(() => {
+    if (!poll || !currentUserId) return false
+    return poll.votes.some((v) => v.votedUserIds.includes(currentUserId))
+  }, [poll, currentUserId])
+
+  const shouldHideResults = useMemo(() => {
+    if (!poll) return false
+    return poll.hideResultsBeforeVoting && !hasVotedAny && !isEnded
+  }, [poll, hasVotedAny, isEnded])
+
+  const totalUniqueVoters = useMemo(() => {
+    if (!poll?.votes) return 0
+    const allVotedUserIds = poll.votes.flatMap((v) => v.votedUserIds)
+    return new Set(allVotedUserIds).size
+  }, [poll])
+
+  const handleVoteClick = async (optionText: string) => {
+    if (isEnded) return
+    if (!currentUserId) {
+      toast({ title: 'Bạn cần đăng nhập để bình chọn', variant: 'destructive' })
+      return
+    }
+
+    const currentVotes = poll?.votes ?? []
+    let newSelected: string[] = []
+
+    if (poll?.multipleChoice) {
+      const userVotedOptions = currentVotes
+        .filter((v) => v.votedUserIds.includes(currentUserId))
+        .map((v) => v.option)
+
+      if (userVotedOptions.includes(optionText)) {
+        newSelected = userVotedOptions.filter((o) => o !== optionText)
+      } else {
+        newSelected = [...userVotedOptions, optionText]
+      }
+    } else {
+      const userVotedOption = currentVotes.find((v) => v.votedUserIds.includes(currentUserId))?.option
+      if (userVotedOption === optionText) {
+        newSelected = []
+      } else {
+        newSelected = [optionText]
+      }
+    }
+
+    try {
+      await voteMutation.mutateAsync({ postId: post.id, options: newSelected })
+    } catch (err: any) {
+      toast({ title: err.message || 'Lỗi bình chọn', variant: 'destructive' })
+    }
+  }
+
+  const handleAddCustomOption = async () => {
+    const cleaned = customOptionInput.trim()
+    if (!cleaned) return
+    if (poll?.options.some((o) => o.toLowerCase() === cleaned.toLowerCase())) {
+      toast({ title: 'Lựa chọn này đã tồn tại', variant: 'destructive' })
+      return
+    }
+
+    try {
+      await addOptionMutation.mutateAsync({ postId: post.id, option: cleaned })
+      setCustomOptionInput('')
+      setShowCustomInput(false)
+      toast({ title: 'Đã thêm lựa chọn mới' })
+    } catch (err: any) {
+      toast({ title: err.message || 'Lỗi thêm lựa chọn', variant: 'destructive' })
+    }
+  }
+
+  const formatEndDate = (dateStr?: string) => {
+    if (!dateStr) return null
+    const date = new Date(dateStr)
+    return date.toLocaleString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editContent.trim()) return
+
+    let finalPollEndDate: string | null = null
+    const validPollOptions = editPollOptions.filter((o) => o.trim())
+
+    if (editShowPoll) {
+      if (validPollOptions.length < 2) {
+        alert('Vui lòng nhập ít nhất 2 lựa chọn bình chọn.')
+        return
+      }
+      if (editPollEndDatePicker) {
+        finalPollEndDate = editPollEndTime
+          ? `${editPollEndDatePicker}T${editPollEndTime}:00`
+          : `${editPollEndDatePicker}T23:59:59`
+      }
+    }
+
     try {
-      await updatePost.mutateAsync({ postId: post.id, title: editTitle.trim() || null, content: editContent.trim(), files: editFiles, keptAttachments: editKeptAttachments })
+      await updatePost.mutateAsync({
+        postId: post.id,
+        title: editTitle.trim() || null,
+        content: editContent.trim(),
+        files: editFiles,
+        keptAttachments: editKeptAttachments,
+        pollOptions: editShowPoll ? validPollOptions : undefined,
+        pollEndDate: editShowPoll ? finalPollEndDate : undefined,
+        pollMultipleChoice: editShowPoll ? editPollMultipleChoice : undefined,
+        pollAllowAddOptions: editShowPoll ? editPollAllowAddOptions : undefined,
+        pollAnonymous: editShowPoll ? editPollAnonymous : undefined,
+        pollHideResultsBeforeVoting: editShowPoll ? editPollHideResultsBeforeVoting : undefined,
+        pollPinToTop: editShowPoll ? editPollPinToTop : undefined,
+      })
       setEditingMode(false)
       toast({ title: 'Đã cập nhật bài viết' })
     } catch {
@@ -211,11 +359,147 @@ function PostCard({
                 })}
               </div>
             )}
+
+            {/* Edit Poll configurations */}
+            {editShowPoll && (
+              <div className="space-y-3 border border-border/60 rounded-xl p-3 bg-muted/5 my-2">
+                <p className="text-[10px] uppercase font-bold tracking-wider text-[#9c96f8]">Thiết lập bình chọn</p>
+                {/* Options list */}
+                <div className="space-y-2">
+                  {editPollOptions.map((opt, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        placeholder={`Lựa chọn ${idx + 1}`}
+                        value={opt}
+                        onChange={(e) => {
+                          const updated = [...editPollOptions]
+                          updated[idx] = e.target.value
+                          setEditPollOptions(updated)
+                        }}
+                        className="w-full bg-transparent border border-border/80 rounded-md px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-[#9c96f8]"
+                      />
+                      {editPollOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => setEditPollOptions(editPollOptions.filter((_, i) => i !== idx))}
+                          className="text-muted-foreground hover:text-destructive shrink-0 p-1"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add option + gear settings */}
+                <div className="flex gap-2 items-stretch">
+                  <button
+                    type="button"
+                    onClick={() => setEditPollOptions([...editPollOptions, ''])}
+                    className="flex-grow border-dashed border border-blue-500/60 rounded-md py-1.5 flex items-center justify-center text-blue-600 text-xs font-semibold hover:bg-blue-50/50 transition-colors"
+                  >
+                    <Plus className="size-3.5 mr-1" /> THÊM LỰA CHỌN
+                  </button>
+                  
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditSettings(!showEditSettings)}
+                      className="h-full px-3 border border-border/80 rounded-md bg-muted/20 hover:bg-muted/40 transition-colors flex items-center gap-1 text-muted-foreground"
+                    >
+                      <Settings className="size-4" /> <ChevronDown className="size-3" />
+                    </button>
+                    {showEditSettings && (
+                      <div className="absolute right-0 bottom-full mb-2 z-50 w-56 rounded-md border bg-card p-3 shadow-md text-xs space-y-2">
+                        <p className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Cấu hình bình chọn</p>
+                        <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                          <input
+                            type="checkbox"
+                            checked={editPollMultipleChoice}
+                            onChange={(e) => setEditPollMultipleChoice(e.target.checked)}
+                            className="rounded border-border text-[#9c96f8] focus:ring-[#9c96f8] size-3.5"
+                          />
+                          <span>Chọn nhiều phương án</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                          <input
+                            type="checkbox"
+                            checked={editPollAllowAddOptions}
+                            onChange={(e) => setEditPollAllowAddOptions(e.target.checked)}
+                            className="rounded border-border text-[#9c96f8] focus:ring-[#9c96f8] size-3.5"
+                          />
+                          <span>Cho phép thêm lựa chọn</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                          <input
+                            type="checkbox"
+                            checked={editPollAnonymous}
+                            onChange={(e) => setEditPollAnonymous(e.target.checked)}
+                            className="rounded border-border text-[#9c96f8] focus:ring-[#9c96f8] size-3.5"
+                          />
+                          <span>Ẩn người bình chọn</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                          <input
+                            type="checkbox"
+                            checked={editPollHideResultsBeforeVoting}
+                            onChange={(e) => setEditPollHideResultsBeforeVoting(e.target.checked)}
+                            className="rounded border-border text-[#9c96f8] focus:ring-[#9c96f8] size-3.5"
+                          />
+                          <span>Ẩn kết quả khi chưa bình chọn</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer py-0.5">
+                          <input
+                            type="checkbox"
+                            checked={editPollPinToTop}
+                            onChange={(e) => setEditPollPinToTop(e.target.checked)}
+                            className="rounded border-border text-[#9c96f8] focus:ring-[#9c96f8] size-3.5"
+                          />
+                          <span>Ghim lên đầu bảng tin</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* End date pickers */}
+                <div className="space-y-1">
+                  <div className="text-right text-[10px] text-muted-foreground font-medium pr-1">Thời gian kết thúc bình chọn</div>
+                  <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-4 relative flex items-center">
+                      <input
+                        type="time"
+                        value={editPollEndTime}
+                        onChange={(e) => setEditPollEndTime(e.target.value)}
+                        className="w-full bg-transparent border border-border/80 rounded-md px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-[#9c96f8] pr-8"
+                      />
+                      <Clock className="absolute right-2.5 size-3.5 text-muted-foreground/60 pointer-events-none" />
+                    </div>
+                    <div className="col-span-8 relative flex items-center">
+                      <input
+                        type="date"
+                        value={editPollEndDatePicker}
+                        onChange={(e) => setEditPollEndDatePicker(e.target.value)}
+                        className="w-full bg-transparent border border-border/80 rounded-md px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-[#9c96f8] pr-8"
+                      />
+                      <Calendar className="absolute right-2.5 size-3.5 text-muted-foreground/60 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <input type="file" multiple ref={editFileRef} onChange={(e) => e.target.files && setEditFiles(Array.from(e.target.files))} className="hidden" />
             <div className="flex items-center justify-between pt-1 border-t border-border/30">
-              <Button type="button" variant="ghost" size="sm" onClick={() => editFileRef.current?.click()} className="text-xs h-8 gap-1.5">
-                <Paperclip className="size-3.5 text-success" /> File mới
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => editFileRef.current?.click()} className="text-xs h-8 gap-1.5 text-muted-foreground hover:text-foreground">
+                  <Paperclip className="size-3.5 text-success" /> File mới
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setEditShowPoll(!editShowPoll)} className="text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5">
+                  <Smile className="size-3.5 text-warning" /> Bình chọn
+                </Button>
+              </div>
               <div className="flex gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setEditingMode(false)} className="text-xs h-8">Hủy</Button>
                 <Button type="submit" size="sm" disabled={!editContent.trim() || updatePost.isPending} className="bg-success text-success-foreground h-8 text-xs font-semibold px-4">
@@ -238,6 +522,154 @@ function PostCard({
                 </button>
               )}
             </div>
+
+            {/* Poll Box */}
+            {poll && (
+              <div className="border border-border/80 rounded-xl p-4 bg-muted/5 dark:bg-card/25 space-y-3 my-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-[#9c96f8] bg-[#9c96f8]/10 px-2 py-0.5 rounded">BÌNH CHỌN</span>
+                    {poll.multipleChoice && (
+                      <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">Chọn nhiều</span>
+                    )}
+                  </div>
+                  {poll.endDate && (
+                    <span className={`text-[10px] font-medium ${isEnded ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {isEnded ? 'Đã kết thúc' : `Hết hạn: ${formatEndDate(poll.endDate)}`}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {poll.options.map((opt, idx) => {
+                    const voteData = poll.votes.find((v) => v.option === opt)
+                    const votedUserIds = voteData?.votedUserIds ?? []
+                    const voteCount = votedUserIds.length
+                    const percentage = totalUniqueVoters > 0 ? Math.round((voteCount / totalUniqueVoters) * 100) : 0
+                    const hasVoted = currentUserId ? votedUserIds.includes(currentUserId) : false
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => !isEnded && void handleVoteClick(opt)}
+                        className={`relative overflow-hidden border rounded-xl p-3 flex items-center justify-between transition-all select-none ${
+                          isEnded ? 'cursor-not-allowed opacity-85' : 'cursor-pointer hover:bg-muted/10'
+                        } ${hasVoted ? 'border-[#9c96f8] bg-[#9c96f8]/5' : 'border-border/60 bg-transparent'}`}
+                      >
+                        {/* Background Progress bar */}
+                        <div
+                          className="absolute inset-y-0 left-0 bg-[#9c96f8]/10 dark:bg-[#9c96f8]/15 transition-all duration-500 z-0"
+                          style={{ width: `${shouldHideResults ? 0 : percentage}%` }}
+                        />
+
+                        {/* Left Side: checkbox + option text */}
+                        <div className="flex items-center gap-2.5 relative z-10 min-w-0">
+                          {poll.multipleChoice ? (
+                            hasVoted ? (
+                              <CheckSquare className="size-4 text-[#9c96f8] shrink-0" />
+                            ) : (
+                              <Square className="size-4 text-muted-foreground/60 shrink-0" />
+                            )
+                          ) : hasVoted ? (
+                            <CheckCircle2 className="size-4 text-[#9c96f8] shrink-0" />
+                          ) : (
+                            <Circle className="size-4 text-muted-foreground/60 shrink-0" />
+                          )}
+                          <span className="text-xs font-semibold text-foreground truncate pr-2">{opt}</span>
+                        </div>
+
+                        {/* Right Side: avatar stack + count */}
+                        <div className="flex items-center gap-2 relative z-10 shrink-0">
+                          {!shouldHideResults && !poll.anonymous && votedUserIds.length > 0 && employees && (
+                            <div className="flex -space-x-1.5 items-center mr-1">
+                              {votedUserIds.slice(0, 3).map((vUserId) => {
+                                const emp = employees.find((e) => e.id === vUserId)
+                                return (
+                                  <Avatar key={vUserId} className="size-5 border border-background shadow-sm" title={emp?.fullName}>
+                                    {emp?.avatarUrl && (
+                                      <AvatarImage src={resolveMediaUrl(emp.avatarUrl)} alt={emp?.fullName} />
+                                    )}
+                                    <AvatarFallback className="bg-primary/20 text-primary text-[8px] font-bold">
+                                      {(emp?.fullName ?? 'NN').slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                )
+                              })}
+                              {votedUserIds.length > 3 && (
+                                <span className="text-[9px] font-semibold text-muted-foreground bg-muted border rounded-full size-5 flex items-center justify-center border-background shadow-sm">
+                                  +{votedUserIds.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          <span className="text-xs font-bold font-mono text-foreground/80 flex items-center">
+                            {shouldHideResults ? (
+                            <span title="Bình chọn để xem kết quả"><Lock className="size-3.5 text-muted-foreground/50" /></span>
+                            ) : (
+                              `${voteCount} (${percentage}%)`
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Add Custom Option input */}
+                {poll.allowAddOptions && !isEnded && (
+                  showCustomInput ? (
+                    <div className="flex gap-2 items-center pt-1 relative">
+                      <input
+                        type="text"
+                        placeholder="Nhập lựa chọn khác..."
+                        value={customOptionInput}
+                        onChange={(e) => setCustomOptionInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void handleAddCustomOption()
+                        }}
+                        className="flex-grow bg-transparent border border-border/80 rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-[#9c96f8]"
+                        autoFocus
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!customOptionInput.trim() || addOptionMutation.isPending}
+                        onClick={() => void handleAddCustomOption()}
+                        className="h-8 text-xs bg-[#9c96f8] text-white hover:bg-[#8982f6] px-3.5 rounded-lg"
+                      >
+                        {addOptionMutation.isPending ? <Loader2 className="size-3 animate-spin mr-1" /> : null} Thêm
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowCustomInput(false)
+                          setCustomOptionInput('')
+                        }}
+                        className="h-8 text-xs text-muted-foreground hover:text-foreground px-3 rounded-lg"
+                      >
+                        Hủy
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomInput(true)}
+                      className="w-full border border-dashed border-border hover:border-[#9c96f8] rounded-xl py-2 flex items-center justify-center text-xs font-semibold text-muted-foreground hover:text-[#9c96f8] hover:bg-muted/5 transition-colors gap-1"
+                    >
+                      <Plus className="size-3.5" /> Thêm lựa chọn khác
+                    </button>
+                  )
+                )}
+
+                <div className="text-[10px] text-[#9c96f8] flex items-center justify-between pt-1 font-semibold">
+                  <span>Tổng số: {totalUniqueVoters} người đã bình chọn</span>
+                  {poll.anonymous && <span className="bg-muted px-2 py-0.5 rounded text-muted-foreground font-medium">Bình chọn ẩn danh</span>}
+                </div>
+              </div>
+            )}
 
             {/* Attachments */}
             {post.attachments.length > 0 && (() => {
@@ -375,7 +807,20 @@ function PostCard({
 interface PostCreatorProps {
   authorInitials: string
   groupName?: string | null
-  onSubmit: (title: string | null, content: string, files: File[], scheduledDate?: string | null, isCompanyPost?: boolean) => Promise<void>
+  onSubmit: (
+    title: string | null,
+    content: string,
+    files: File[],
+    scheduledDate?: string | null,
+    isCompanyPost?: boolean,
+    pollOptions?: string[],
+    pollEndDate?: string | null,
+    pollMultipleChoice?: boolean,
+    pollAllowAddOptions?: boolean,
+    pollAnonymous?: boolean,
+    pollHideResultsBeforeVoting?: boolean,
+    pollPinToTop?: boolean,
+  ) => Promise<void>
   isPending: boolean
   showSchedule?: boolean
   placeholder?: string
@@ -390,75 +835,361 @@ function PostCreator({ authorInitials, groupName, onSubmit, isPending, showSched
   const [showDatePicker, setShowDatePicker] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // Poll states
+  const [showPoll, setShowPoll] = useState(false)
+  const [showPollDialog, setShowPollDialog] = useState(false)
+  const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
+  const [pollEndTime, setPollEndTime] = useState('')
+  const [pollEndDatePicker, setPollEndDatePicker] = useState('')
+  const [pollMultipleChoice, setPollMultipleChoice] = useState(false)
+  const [pollAllowAddOptions, setPollAllowAddOptions] = useState(false)
+  const [pollAnonymous, setPollAnonymous] = useState(false)
+  const [pollHideResultsBeforeVoting, setPollHideResultsBeforeVoting] = useState(false)
+  const [pollPinToTop, setPollPinToTop] = useState(false)
+
+  const handleAddOption = () => {
+    setPollOptions([...pollOptions, ''])
+  }
+
+  const handleOptionChange = (idx: number, val: string) => {
+    const updated = [...pollOptions]
+    updated[idx] = val
+    setPollOptions(updated)
+  }
+
+  const handleRemoveOption = (idx: number) => {
+    if (pollOptions.length <= 2) return
+    setPollOptions(pollOptions.filter((_, i) => i !== idx))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim()) return
-    await onSubmit(title.trim() || null, content.trim(), files, scheduledDate || null, isCompanyPost)
+
+    let finalPollEndDate: string | null = null
+    const validPollOptions = pollOptions.filter((o) => o.trim())
+
+    if (showPoll) {
+      if (validPollOptions.length < 2) {
+        alert('Vui lòng nhập ít nhất 2 lựa chọn bình chọn.')
+        return
+      }
+      if (pollEndDatePicker) {
+        finalPollEndDate = pollEndTime
+          ? `${pollEndDatePicker}T${pollEndTime}:00`
+          : `${pollEndDatePicker}T23:59:59`
+      }
+    }
+
+    await onSubmit(
+      title.trim() || null,
+      content.trim(),
+      files,
+      scheduledDate || null,
+      isCompanyPost,
+      showPoll ? validPollOptions : undefined,
+      showPoll ? finalPollEndDate : undefined,
+      showPoll ? pollMultipleChoice : undefined,
+      showPoll ? pollAllowAddOptions : undefined,
+      showPoll ? pollAnonymous : undefined,
+      showPoll ? pollHideResultsBeforeVoting : undefined,
+      showPoll ? pollPinToTop : undefined,
+    )
+
     setTitle('')
     setContent('')
     setFiles([])
     setScheduledDate('')
     setShowDatePicker(false)
+
+    // Reset poll states
+    setShowPoll(false)
+    setShowPollDialog(false)
+    setPollOptions(['', ''])
+    setPollEndTime('')
+    setPollEndDatePicker('')
+    setPollMultipleChoice(false)
+    setPollAllowAddOptions(false)
+    setPollAnonymous(false)
+    setPollHideResultsBeforeVoting(false)
+    setPollPinToTop(false)
+
     if (fileRef.current) fileRef.current.value = ''
+  }
+
+  const handleSavePoll = () => {
+    const validPollOptions = pollOptions.filter((o) => o.trim())
+    if (validPollOptions.length < 2) {
+      alert('Vui lòng nhập ít nhất 2 lựa chọn bình chọn.')
+      return
+    }
+    setShowPoll(true)
+    setShowPollDialog(false)
   }
 
   return (
     <Card className="border-border shadow-sm p-4 bg-card/50">
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
-        <div className="flex items-start gap-3">
-          <Avatar className="size-10 shadow-sm border border-border">
-            <AvatarFallback className="bg-success text-success-foreground text-sm font-semibold">{authorInitials}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-2">
-            <input type="text" placeholder="Tiêu đề thông báo (không bắt buộc)..." className="w-full bg-transparent border-b border-border/40 pb-1.5 text-sm font-semibold text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-success/60" value={title} onChange={(e) => setTitle(e.target.value)} />
-            <textarea placeholder={placeholder ?? 'Đăng bài viết mới, chia sẻ thông báo...'} rows={3} className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none" value={content} onChange={(e) => setContent(e.target.value)} />
-            {groupName && <p className="text-[10px] text-success">Đăng vào nhóm: <strong>{groupName}</strong></p>}
+        <input type="file" multiple ref={fileRef} onChange={(e) => e.target.files && setFiles(Array.from(e.target.files))} className="hidden" />
+        
+        {/* Regular post form fields */}
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <Avatar className="size-10 shadow-sm border border-border">
+              <AvatarFallback className="bg-success/15 text-success text-sm font-semibold">{authorInitials}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-2">
+              <input
+                type="text"
+                placeholder="Tiêu đề thông báo (không bắt buộc)..."
+                className="w-full bg-transparent border-b border-border/40 pb-1.5 text-sm font-semibold text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-success/60"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <textarea
+                placeholder={placeholder ?? 'Đăng bài viết mới, chia sẻ thông báo...'}
+                rows={3}
+                className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+              {groupName && <p className="text-[10px] text-success">Đăng vào nhóm: <strong>{groupName}</strong></p>}
+            </div>
           </div>
-        </div>
 
-        {files.length > 0 && (
-          <div className="flex flex-wrap gap-2 rounded-lg bg-muted/40 p-2">
-            {files.map((file, idx) => (
-              <div key={idx} className="flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 text-xs text-foreground">
-                <FileText className="size-3.5 text-success" />
-                <span className="truncate max-w-[150px]">{file.name}</span>
-                <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive">×</button>
+          {showPoll && (
+            <div className="border border-border/60 rounded-xl p-3 bg-[#9c96f8]/5 dark:bg-[#9c96f8]/10 flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle2 className="size-4 text-[#9c96f8] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">Bình chọn: {content || 'Chủ đề chưa nhập'}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {pollOptions.filter(o => o.trim()).length} lựa chọn • {pollMultipleChoice ? 'Chọn nhiều' : 'Chọn một'} • {pollAnonymous ? 'Ẩn danh' : 'Công khai'}
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="flex items-center gap-1 shrink-0">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowPollDialog(true)} className="h-7 text-[10px] text-[#9c96f8] hover:text-[#8982f6] font-semibold gap-1">
+                  <Settings className="size-3.5" /> Thiết lập
+                </Button>
+                <button type="button" onClick={() => { setShowPoll(false); setPollOptions(['', '']) }} className="text-muted-foreground hover:text-destructive p-1">
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
 
-        {showSchedule && showDatePicker && (
-          <div className="flex items-center gap-2">
-            <CalendarClock className="size-4 text-primary" />
-            <input type="datetime-local" className="text-xs bg-transparent border-b border-border/40 text-foreground focus:outline-none focus:border-primary/60 pb-1" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
-            <button type="button" onClick={() => { setShowDatePicker(false); setScheduledDate('') }} className="text-[11px] text-muted-foreground hover:text-foreground">Hủy</button>
-          </div>
-        )}
+          {files.length > 0 && (
+            <div className="flex flex-wrap gap-2 rounded-lg bg-muted/40 p-2">
+              {files.map((file, idx) => (
+                <div key={idx} className="flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 text-xs text-foreground">
+                  <FileText className="size-3.5 text-success" />
+                  <span className="truncate max-w-[150px]">{file.name}</span>
+                  <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive">×</button>
+                </div>
+              ))}
+            </div>
+          )}
 
-        <Separator className="bg-border/30" />
+          {showSchedule && showDatePicker && (
+            <div className="flex items-center gap-2">
+              <CalendarClock className="size-4 text-primary" />
+              <input type="datetime-local" className="text-xs bg-transparent border-b border-border/40 text-foreground focus:outline-none focus:border-primary/60 pb-1" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
+              <button type="button" onClick={() => { setShowDatePicker(false); setScheduledDate('') }} className="text-[11px] text-muted-foreground hover:text-foreground">Hủy</button>
+            </div>
+          )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <input type="file" multiple ref={fileRef} onChange={(e) => e.target.files && setFiles(Array.from(e.target.files))} className="hidden" />
-            <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()} className="text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5">
-              <Paperclip className="size-3.5 text-success" /> Ảnh/File
-            </Button>
-            <Button type="button" variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5">
-              <Smile className="size-3.5 text-warning" /> Bình chọn
-            </Button>
-            {showSchedule && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => setShowDatePicker(!showDatePicker)} className="text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5">
-                <CalendarClock className="size-3.5 text-primary" />
-                {scheduledDate ? 'Đổi lịch' : 'Hẹn giờ'}
+          <Separator className="bg-border/30" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()} className="text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5">
+                <Paperclip className="size-3.5 text-success" /> Ảnh/File
               </Button>
-            )}
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowPollDialog(true)} className={`text-xs h-8 gap-1.5 ${showPoll ? 'text-[#9c96f8] bg-[#9c96f8]/10' : 'text-muted-foreground hover:text-foreground'}`}>
+                <Smile className="size-3.5 text-warning" /> Bình chọn
+              </Button>
+              {showSchedule && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowDatePicker(!showDatePicker)} className="text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5">
+                  <CalendarClock className="size-3.5 text-primary" />
+                  {scheduledDate ? 'Đổi lịch' : 'Hẹn giờ'}
+                </Button>
+              )}
+            </div>
+            <Button type="submit" size="sm" disabled={!content.trim() || isPending} className="bg-success text-success-foreground hover:bg-success/90 h-8 text-xs font-semibold px-4 rounded-md">
+              {isPending ? <Loader2 className="size-3 animate-spin mr-1.5" /> : null}
+              {scheduledDate ? 'Hẹn giờ' : 'Đăng tin'}
+            </Button>
           </div>
-          <Button type="submit" size="sm" disabled={!content.trim() || isPending} className="bg-success text-success-foreground hover:bg-success/90 h-8 text-xs font-semibold px-4 rounded-md">
-            {isPending ? <Loader2 className="size-3 animate-spin mr-1.5" /> : null}
-            {scheduledDate ? 'Hẹn giờ' : 'Đăng tin'}
-          </Button>
         </div>
+
+        {/* Tạo bình chọn Modal (Styled exactly like the screenshot mockup) */}
+        <Dialog open={showPollDialog} onOpenChange={setShowPollDialog}>
+          <DialogContent className="max-w-2xl bg-white text-slate-800 p-0 overflow-hidden rounded-xl border border-slate-200">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
+              <span className="text-sm font-bold text-slate-800">Tạo bình chọn</span>
+              <button type="button" onClick={() => setShowPollDialog(false)} className="text-slate-400 hover:text-slate-600 font-medium text-lg">×</button>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6 p-5">
+              {/* Left Column: Subject & Options */}
+              <div className="col-span-7 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Chủ đề bình chọn</label>
+                  <div className="relative">
+                    <textarea
+                      placeholder="Đặt câu hỏi bình chọn"
+                      maxLength={200}
+                      rows={4}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value.slice(0, 200))}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white resize-none"
+                    />
+                    <div className="absolute bottom-2.5 right-3 text-[10px] text-slate-400 font-medium">{content.length}/200</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Các lựa chọn</label>
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                    {pollOptions.map((opt, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          placeholder={`Lựa chọn ${idx + 1}`}
+                          value={opt}
+                          onChange={(e) => handleOptionChange(idx, e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-400"
+                        />
+                        {pollOptions.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOption(idx)}
+                            className="text-slate-400 hover:text-destructive shrink-0 p-1"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAddOption}
+                    className="text-blue-500 hover:text-blue-600 text-xs font-bold flex items-center gap-1 pt-1.5 transition-colors"
+                  >
+                    <Plus className="size-4" /> Thêm lựa chọn
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: settings */}
+              <div className="col-span-5 space-y-4 border-l border-slate-100 pl-6">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Thời hạn bình chọn</label>
+                  <div className="relative flex items-center">
+                    <input
+                      type={pollEndDatePicker ? 'datetime-local' : 'text'}
+                      value={pollEndDatePicker && pollEndTime ? `${pollEndDatePicker}T${pollEndTime}` : 'Không thời hạn'}
+                      onFocus={(e) => {
+                        e.target.type = 'datetime-local'
+                      }}
+                      onBlur={(e) => {
+                        if (!e.target.value) {
+                          e.target.type = 'text'
+                        }
+                      }}
+                      onChange={(e) => {
+                        if (e.target.value && e.target.value !== 'Không thời hạn') {
+                          const parts = e.target.value.split('T')
+                          setPollEndDatePicker(parts[0] || '')
+                          setPollEndTime(parts[1] || '')
+                        } else {
+                          setPollEndDatePicker('')
+                          setPollEndTime('')
+                        }
+                      }}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-400 cursor-pointer pr-8"
+                    />
+                    <Calendar className="absolute right-3 size-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block border-b border-slate-100 pb-1">Thiết lập nâng cao</label>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs py-0.5">
+                      <span className="text-slate-700 font-medium">Ghim lên đầu bảng tin</span>
+                      <Switch checked={pollPinToTop} onCheckedChange={setPollPinToTop} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs py-0.5">
+                      <span className="text-slate-700 font-medium flex items-center gap-1">
+                        Chọn nhiều phương án <span title="Cho phép người dùng bầu chọn nhiều hơn một phương án"><HelpCircle className="size-3.5 text-slate-400" /></span>
+                      </span>
+                      <Switch checked={pollMultipleChoice} onCheckedChange={setPollMultipleChoice} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs py-0.5">
+                      <span className="text-slate-700 font-medium flex items-center gap-1">
+                        Có thể thêm phương án <span title="Cho phép người dùng tự nhập thêm phương án bình chọn của họ"><HelpCircle className="size-3.5 text-slate-400" /></span>
+                      </span>
+                      <Switch checked={pollAllowAddOptions} onCheckedChange={setPollAllowAddOptions} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block border-b border-slate-100 pb-1">Bình chọn ẩn danh</label>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs py-0.5">
+                      <span className="text-slate-700 font-medium flex items-center gap-1">
+                        Ẩn kết quả khi chưa bình chọn <span title="Chỉ hiển thị kết quả sau khi người dùng đã bầu chọn hoặc khi kết thúc"><HelpCircle className="size-3.5 text-slate-400" /></span>
+                      </span>
+                      <Switch checked={pollHideResultsBeforeVoting} onCheckedChange={setPollHideResultsBeforeVoting} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs py-0.5">
+                      <span className="text-slate-700 font-medium flex items-center gap-1">
+                        Ẩn người bình chọn <span title="Không hiển thị danh tính (avatar, họ tên) của người bình chọn"><HelpCircle className="size-3.5 text-slate-400" /></span>
+                      </span>
+                      <Switch checked={pollAnonymous} onCheckedChange={setPollAnonymous} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-blue-100 bg-blue-50/20 text-blue-600 hover:bg-blue-50 size-9 p-0 flex items-center justify-center rounded-lg"
+              >
+                <Settings className="size-4" />
+              </Button>
+              
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowPollDialog(false)
+                    if (!showPoll) setPollOptions(['', ''])
+                  }}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 h-9 rounded-lg"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSavePoll}
+                  className="bg-[#a0c4ff] hover:bg-[#85b3ff] text-white text-xs font-semibold px-5 h-9 rounded-lg transition-colors shadow-sm"
+                >
+                  Tạo bình chọn
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </form>
     </Card>
   )
@@ -545,9 +1276,32 @@ export function WallPage() {
     try { await publishNow.mutateAsync(postId); toast({ title: 'Đã đăng ngay bài viết' }) } catch { toast({ title: 'Lỗi', variant: 'destructive' }) }
   }
 
-  const handleCreatePost = async (title: string | null, content: string, files: File[], scheduledDate?: string | null, isCompanyPost?: boolean) => {
+  const handleCreatePost = async (
+    title: string | null,
+    content: string,
+    files: File[],
+    scheduledDate?: string | null,
+    isCompanyPost?: boolean,
+    pollOptions?: string[],
+    pollEndDate?: string | null,
+    pollMultipleChoice?: boolean,
+    pollAllowAddOptions?: boolean,
+    pollAnonymous?: boolean,
+  ) => {
     try {
-      await createPost.mutateAsync({ title, content, files, groupName: selectedGroup ?? undefined, scheduledPublishDate: scheduledDate, isCompanyPost })
+      await createPost.mutateAsync({
+        title,
+        content,
+        files,
+        groupName: selectedGroup ?? undefined,
+        scheduledPublishDate: scheduledDate,
+        isCompanyPost,
+        pollOptions,
+        pollEndDate,
+        pollMultipleChoice,
+        pollAllowAddOptions,
+        pollAnonymous,
+      })
       toast({ title: scheduledDate ? 'Đã lên lịch đăng bài' : 'Đăng bài thành công' })
     } catch (err) {
       toast({ title: 'Lỗi đăng bài', description: err instanceof Error ? err.message : undefined, variant: 'destructive' })
@@ -582,6 +1336,7 @@ export function WallPage() {
     onLike: (id: number) => void handleLike(id),
     onDelete: (id: number) => void handleDelete(id),
     onDownload: (postId: number, fileName: string) => void handleDownload(postId, fileName),
+    employees: employees,
   }
 
   // ─── Feed skeleton ──────────────────────────────────────────────────────

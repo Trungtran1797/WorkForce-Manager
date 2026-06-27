@@ -23,6 +23,7 @@ import {
   Users,
   Wallet,
   X,
+  Mail,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -58,6 +59,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/office-locations', label: 'Địa điểm chấm công', icon: MapPin, module: 'OfficeLocations' },
   { to: '/reports', label: 'Báo cáo', icon: FileBarChart, module: 'Reports' },
   { to: '/notifications', label: 'Thông báo', icon: Bell, module: 'Notifications' },
+  { to: '/email-assistant', label: 'Trợ lý Email', icon: Mail },
   { to: '/settings/permissions', label: 'Phân quyền', icon: ShieldCheck, module: 'PermissionMatrix' },
   { to: '/settings/users', label: 'Quản lý tài khoản', icon: UserCog, module: 'Users' },
   { to: '/settings/system', label: 'Cài đặt hệ thống', icon: Settings2, module: 'PermissionMatrix' },
@@ -68,6 +70,11 @@ function useNavItems(): NavItem[] {
   const permissions = user?.permissions
 
   return NAV_ITEMS.filter((item) => {
+    // Chỉ Admin và Ban giám đốc (SuperAdmin/Manager) mới được dùng Trợ lý Email
+    if (item.to === '/email-assistant') {
+      return user?.role === 'SuperAdmin' || user?.role === 'Manager'
+    }
+
     if (!item.module) return true
     return (permissions?.[item.module] ?? 'None') !== 'None'
   })

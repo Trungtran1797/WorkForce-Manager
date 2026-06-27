@@ -25,6 +25,13 @@ export async function createWallPost(
   groupName?: string | null,
   scheduledPublishDate?: string | null,
   isCompanyPost?: boolean,
+  pollOptions?: string[],
+  pollEndDate?: string | null,
+  pollMultipleChoice?: boolean,
+  pollAllowAddOptions?: boolean,
+  pollAnonymous?: boolean,
+  pollHideResultsBeforeVoting?: boolean,
+  pollPinToTop?: boolean,
 ): Promise<WallPost> {
   const formData = new FormData()
   if (title) formData.append('title', title)
@@ -33,6 +40,18 @@ export async function createWallPost(
   if (groupName) formData.append('groupName', groupName)
   if (scheduledPublishDate) formData.append('scheduledPublishDate', scheduledPublishDate)
   if (isCompanyPost) formData.append('isCompanyPost', 'true')
+
+  if (pollOptions && pollOptions.length > 0) {
+    pollOptions.forEach((opt) => {
+      if (opt.trim()) formData.append('pollOptions', opt.trim())
+    })
+    if (pollEndDate) formData.append('pollEndDate', pollEndDate)
+    if (pollMultipleChoice) formData.append('pollMultipleChoice', 'true')
+    if (pollAllowAddOptions) formData.append('pollAllowAddOptions', 'true')
+    if (pollAnonymous) formData.append('pollAnonymous', 'true')
+    if (pollHideResultsBeforeVoting) formData.append('pollHideResultsBeforeVoting', 'true')
+    if (pollPinToTop) formData.append('pollPinToTop', 'true')
+  }
 
   const token = tokenStore.getAccess()
   const headers: Record<string, string> = {}
@@ -53,6 +72,13 @@ export async function updateWallPost(
   files?: File[],
   keptAttachments?: string[],
   scheduledPublishDate?: string | null,
+  pollOptions?: string[],
+  pollEndDate?: string | null,
+  pollMultipleChoice?: boolean,
+  pollAllowAddOptions?: boolean,
+  pollAnonymous?: boolean,
+  pollHideResultsBeforeVoting?: boolean,
+  pollPinToTop?: boolean,
 ): Promise<WallPost> {
   const formData = new FormData()
   if (title) formData.append('title', title)
@@ -60,6 +86,18 @@ export async function updateWallPost(
   if (files) files.forEach((f) => formData.append('files', f))
   if (keptAttachments) formData.append('keptAttachmentsJson', JSON.stringify(keptAttachments))
   if (scheduledPublishDate) formData.append('scheduledPublishDate', scheduledPublishDate)
+
+  if (pollOptions && pollOptions.length > 0) {
+    pollOptions.forEach((opt) => {
+      if (opt.trim()) formData.append('pollOptions', opt.trim())
+    })
+    if (pollEndDate) formData.append('pollEndDate', pollEndDate)
+    if (pollMultipleChoice) formData.append('pollMultipleChoice', 'true')
+    if (pollAllowAddOptions) formData.append('pollAllowAddOptions', 'true')
+    if (pollAnonymous) formData.append('pollAnonymous', 'true')
+    if (pollHideResultsBeforeVoting) formData.append('pollHideResultsBeforeVoting', 'true')
+    if (pollPinToTop) formData.append('pollPinToTop', 'true')
+  }
 
   const token = tokenStore.getAccess()
   const headers: Record<string, string> = {}
@@ -144,4 +182,38 @@ export function createWallGroup(name: string, description?: string): Promise<Wal
 
 export function deleteWallGroup(name: string): Promise<unknown> {
   return apiClient.delete(`${BASE}/groups/${encodeURIComponent(name)}`)
+}
+
+export async function voteWallPoll(postId: number, options: string[]): Promise<WallPost> {
+  const formData = new FormData()
+  if (options) {
+    options.forEach((opt) => formData.append('options', opt))
+  }
+
+  const token = tokenStore.getAccess()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const API_BASE_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1'
+
+  const response = await fetch(`${API_BASE_URL}${BASE}/${postId}/vote`, { method: 'POST', headers, body: formData })
+  if (!response.ok) throw new Error(`Bình chọn thất bại (${response.status}).`)
+  const envelope = await response.json()
+  return envelope.data as WallPost
+}
+
+export async function addWallPollOption(postId: number, option: string): Promise<WallPost> {
+  const formData = new FormData()
+  formData.append('option', option)
+
+  const token = tokenStore.getAccess()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const API_BASE_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1'
+
+  const response = await fetch(`${API_BASE_URL}${BASE}/${postId}/add-option`, { method: 'POST', headers, body: formData })
+  if (!response.ok) throw new Error(`Thêm lựa chọn thất bại (${response.status}).`)
+  const envelope = await response.json()
+  return envelope.data as WallPost
 }

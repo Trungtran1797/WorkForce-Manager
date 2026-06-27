@@ -1,0 +1,38 @@
+using WorkForceManager.Domain.Entities;
+
+namespace WorkForceManager.Application.Common.Interfaces;
+
+public interface IMailClientService
+{
+    /// <summary>
+    /// Tìm kiếm và lọc email dựa trên cấu hình hòm thư và từ khóa tìm kiếm.
+    /// </summary>
+    Task<List<EmailMessageDto>> SearchEmailsAsync(UserEmailConfig config, string? query, int maxResults = 10, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lấy toàn bộ nội dung chi tiết (Body) của email theo ID.
+    /// </summary>
+    Task<EmailMessageDto?> GetEmailDetailsAsync(UserEmailConfig config, string messageId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gửi email bằng cấu hình SMTP (cho custom email) hoặc Gmail REST API.
+    /// </summary>
+    Task SendEmailAsync(UserEmailConfig config, string toEmail, string subject, string body, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Kiểm tra kết nối hòm thư với cấu hình đã cung cấp.
+    /// </summary>
+    Task<bool> TestConnectionAsync(UserEmailConfig config, CancellationToken ct = default);
+}
+
+public class EmailMessageDto
+{
+    public string MessageId { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string From { get; set; } = string.Empty;
+    public string To { get; set; } = string.Empty;
+    public DateTime? Date { get; set; }
+    public string Snippet { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public bool IsRead { get; set; }
+}

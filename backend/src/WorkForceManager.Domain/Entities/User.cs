@@ -15,5 +15,7 @@ public class User : BaseAuditableEntity
     public int? EmployeeId { get; set; }
     public Employee? Employee { get; set; }
 
+    public UserEmailConfig? EmailConfig { get; set; }
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }
+

@@ -277,6 +277,7 @@ public class EmployeesController : ApiControllerBase
         public bool IsCompanyPost { get; set; } = false;
         public string? GroupName { get; set; }
         public DateTime? ScheduledPublishDate { get; set; }
+        public WallController.WallPoll? Poll { get; set; }
     }
 
     private sealed class WallAttachmentMinimal

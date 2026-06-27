@@ -1,1 +1,45 @@
-[]
+[
+  {
+    "Id": 1,
+    "AuthorId": 1,
+    "AuthorName": "Nguy\u1EC5n V\u0103n An",
+    "AuthorPosition": "Tr\u01B0\u1EDFng ph\u00F2ng Kinh doanh",
+    "AuthorDepartment": "Ph\u00F2ng Kinh doanh",
+    "AuthorAvatarUrl": null,
+    "Title": "U\u1ED1ng tr\u00E0 Chi\u1EC1u",
+    "Content": "U\u1ED1ng tr\u00E0 s\u1EEFa kh\u00F4ng?",
+    "CreatedDate": "2026-06-27T23:48:19.1500942+07:00",
+    "Likes": [],
+    "Attachments": [],
+    "Comments": [],
+    "IsApproved": true,
+    "IsRejected": false,
+    "IsCompanyPost": false,
+    "GroupName": null,
+    "ScheduledPublishDate": null,
+    "Poll": {
+      "Options": [
+        "Tr\u00E0 \u0111\u00E0o cam x\u1EA3",
+        "Tr\u00E0 t\u1EAFc x\u00ED mu\u1ED9i"
+      ],
+      "Votes": [
+        {
+          "Option": "Tr\u00E0 \u0111\u00E0o cam x\u1EA3",
+          "VotedUserIds": [
+            1
+          ]
+        },
+        {
+          "Option": "Tr\u00E0 t\u1EAFc x\u00ED mu\u1ED9i",
+          "VotedUserIds": []
+        }
+      ],
+      "EndDate": "2026-06-27T00:04:00",
+      "MultipleChoice": true,
+      "AllowAddOptions": false,
+      "Anonymous": false,
+      "HideResultsBeforeVoting": false,
+      "PinToTop": false
+    }
+  }
+]

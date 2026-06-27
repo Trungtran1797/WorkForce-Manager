@@ -54,6 +54,10 @@ public static class DependencyInjection
 
         services.AddScoped<INotificationService, Notifications.NotificationService>();
         services.AddScoped<IEmailService, LoggingEmailService>();
+        services.AddHttpClient();
+        services.AddScoped<IEncryptionService, EncryptionService>();
+        services.AddScoped<IMailClientService, MailClientService>();
+        services.AddScoped<IAiService, GeminiAiService>();
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         // OneDrivePathSettings: singleton giữ đường dẫn hiện tại, khởi tạo từ config, ghi đè từ DB

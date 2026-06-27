@@ -36,6 +36,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Payslip> Payslips => Set<Payslip>();
     public DbSet<PayslipItem> PayslipItems => Set<PayslipItem>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserEmailConfig> UserEmailConfigs => Set<UserEmailConfig>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Notification> Notifications => Set<Notification>();

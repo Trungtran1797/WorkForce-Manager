@@ -143,7 +143,11 @@ public class WallController : ApiControllerBase
                 posts = posts.Where(p => p.IsCompanyPost).ToList();
         }
 
-        return Ok(ApiResponse<List<WallPost>>.Ok(posts.OrderByDescending(p => p.CreatedDate).ToList()));
+        return Ok(ApiResponse<List<WallPost>>.Ok(
+            posts.OrderByDescending(p => p.Poll != null && p.Poll.PinToTop)
+                 .ThenByDescending(p => p.CreatedDate)
+                 .ToList()
+        ));
     }
 
     // ── POST /wall ────────────────────────────────────────────────────────
@@ -156,7 +160,14 @@ public class WallController : ApiControllerBase
         [FromForm] List<IFormFile>? files,
         [FromForm] string? groupName,
         [FromForm] DateTime? scheduledPublishDate,
-        [FromForm] bool isCompanyPost = false)
+        [FromForm] bool isCompanyPost = false,
+        [FromForm] List<string>? pollOptions = null,
+        [FromForm] DateTime? pollEndDate = null,
+        [FromForm] bool pollMultipleChoice = false,
+        [FromForm] bool pollAllowAddOptions = false,
+        [FromForm] bool pollAnonymous = false,
+        [FromForm] bool pollHideResultsBeforeVoting = false,
+        [FromForm] bool pollPinToTop = false)
     {
         if (string.IsNullOrWhiteSpace(content))
             return BadRequest(ApiResponse<object>.Fail("Nội dung bài viết không được để trống."));
@@ -201,6 +212,26 @@ public class WallController : ApiControllerBase
         // Scheduled posts: approved but hidden until date; Employee posts without schedule need approval
         bool isApproved = role == UserRole.SuperAdmin || role == UserRole.Manager || scheduledPublishDate.HasValue;
 
+        WallPoll? poll = null;
+        if (pollOptions != null && pollOptions.Count > 0)
+        {
+            var validOptions = pollOptions.Where(o => !string.IsNullOrWhiteSpace(o)).Select(o => o.Trim()).ToList();
+            if (validOptions.Count > 0)
+            {
+                poll = new WallPoll
+                {
+                    Options = validOptions,
+                    Votes = validOptions.Select(o => new PollOptionVote { Option = o, VotedUserIds = new() }).ToList(),
+                    EndDate = pollEndDate,
+                    MultipleChoice = pollMultipleChoice,
+                    AllowAddOptions = pollAllowAddOptions,
+                    Anonymous = pollAnonymous,
+                    HideResultsBeforeVoting = pollHideResultsBeforeVoting,
+                    PinToTop = pollPinToTop
+                };
+            }
+        }
+
         var newPost = new WallPost
         {
             Id = newId,
@@ -219,7 +250,8 @@ public class WallController : ApiControllerBase
             IsRejected = false,
             IsCompanyPost = isCompanyPost,
             GroupName = string.IsNullOrWhiteSpace(groupName) ? null : groupName.Trim(),
-            ScheduledPublishDate = scheduledPublishDate
+            ScheduledPublishDate = scheduledPublishDate,
+            Poll = poll
         };
 
         posts.Add(newPost);
@@ -376,7 +408,14 @@ public class WallController : ApiControllerBase
         [FromForm] string content,
         [FromForm] List<IFormFile>? files,
         [FromForm] string? keptAttachmentsJson,
-        [FromForm] DateTime? scheduledPublishDate)
+        [FromForm] DateTime? scheduledPublishDate,
+        [FromForm] List<string>? pollOptions = null,
+        [FromForm] DateTime? pollEndDate = null,
+        [FromForm] bool pollMultipleChoice = false,
+        [FromForm] bool pollAllowAddOptions = false,
+        [FromForm] bool pollAnonymous = false,
+        [FromForm] bool pollHideResultsBeforeVoting = false,
+        [FromForm] bool pollPinToTop = false)
     {
         if (string.IsNullOrWhiteSpace(content))
             return BadRequest(ApiResponse<object>.Fail("Nội dung bài viết không được để trống."));
@@ -390,6 +429,53 @@ public class WallController : ApiControllerBase
 
         if (post.AuthorId != employeeId && role != UserRole.SuperAdmin)
             return Forbid();
+
+        if (pollOptions != null && pollOptions.Count > 0)
+        {
+            var validOptions = pollOptions.Where(o => !string.IsNullOrWhiteSpace(o)).Select(o => o.Trim()).ToList();
+            if (validOptions.Count > 0)
+            {
+                if (post.Poll == null)
+                {
+                    post.Poll = new WallPoll
+                    {
+                        Options = validOptions,
+                        Votes = validOptions.Select(o => new PollOptionVote { Option = o, VotedUserIds = new() }).ToList(),
+                        EndDate = pollEndDate,
+                        MultipleChoice = pollMultipleChoice,
+                        AllowAddOptions = pollAllowAddOptions,
+                        Anonymous = pollAnonymous,
+                        HideResultsBeforeVoting = pollHideResultsBeforeVoting,
+                        PinToTop = pollPinToTop
+                    };
+                }
+                else
+                {
+                    post.Poll.EndDate = pollEndDate;
+                    post.Poll.MultipleChoice = pollMultipleChoice;
+                    post.Poll.AllowAddOptions = pollAllowAddOptions;
+                    post.Poll.Anonymous = pollAnonymous;
+                    post.Poll.HideResultsBeforeVoting = pollHideResultsBeforeVoting;
+                    post.Poll.PinToTop = pollPinToTop;
+
+                    var newVotesList = new List<PollOptionVote>();
+                    foreach (var option in validOptions)
+                    {
+                        var existingVote = post.Poll.Votes.FirstOrDefault(v => v.Option.Equals(option, StringComparison.OrdinalIgnoreCase));
+                        if (existingVote != null)
+                        {
+                            newVotesList.Add(existingVote);
+                        }
+                        else
+                        {
+                            newVotesList.Add(new PollOptionVote { Option = option, VotedUserIds = new() });
+                        }
+                    }
+                    post.Poll.Options = validOptions;
+                    post.Poll.Votes = newVotesList;
+                }
+            }
+        }
 
         post.Title = string.IsNullOrWhiteSpace(title) ? null : title.Trim();
         post.Content = content.Trim();
@@ -531,6 +617,101 @@ public class WallController : ApiControllerBase
         return Ok(ApiResponse<object>.Ok("Đã xóa nhóm thảo luận."));
     }
 
+    // ── POST /wall/{id}/vote ──────────────────────────────────────────────
+
+    [HttpPost("{id:int}/vote")]
+    public IActionResult Vote(int id, [FromForm] List<string> options)
+    {
+        var employeeId = _currentUserService.EmployeeId;
+        if (!employeeId.HasValue || employeeId.Value <= 0)
+            return Unauthorized(ApiResponse<object>.Fail("Bạn cần đăng nhập để bình chọn."));
+
+        var posts = LoadPosts();
+        var post = posts.FirstOrDefault(p => p.Id == id);
+        if (post == null) return NotFound();
+        if (post.Poll == null) return BadRequest(ApiResponse<object>.Fail("Bài viết không có bình chọn."));
+
+        // Check if poll has ended
+        if (post.Poll.EndDate.HasValue && post.Poll.EndDate.Value < DateTime.Now)
+            return BadRequest(ApiResponse<object>.Fail("Bình chọn đã kết thúc."));
+
+        var userId = employeeId.Value;
+
+        // Clean user's previous votes
+        foreach (var vote in post.Poll.Votes)
+        {
+            vote.VotedUserIds.Remove(userId);
+        }
+
+        // Add new votes
+        if (options != null)
+        {
+            foreach (var option in options)
+            {
+                var trimmedOption = option.Trim();
+                var matchedVote = post.Poll.Votes.FirstOrDefault(v => v.Option.Equals(trimmedOption, StringComparison.OrdinalIgnoreCase));
+                if (matchedVote != null)
+                {
+                    if (!matchedVote.VotedUserIds.Contains(userId))
+                    {
+                        matchedVote.VotedUserIds.Add(userId);
+                    }
+                }
+                else if (post.Poll.AllowAddOptions)
+                {
+                    // If it's a new option and adding options is allowed
+                    if (!post.Poll.Options.Any(o => o.Equals(trimmedOption, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        post.Poll.Options.Add(trimmedOption);
+                    }
+                    var newVote = new PollOptionVote
+                    {
+                        Option = trimmedOption,
+                        VotedUserIds = new List<int> { userId }
+                    };
+                    post.Poll.Votes.Add(newVote);
+                }
+            }
+        }
+
+        SavePosts(posts);
+        return Ok(ApiResponse<WallPost>.Ok(post));
+    }
+
+    // ── POST /wall/{id}/add-option ────────────────────────────────────────
+
+    [HttpPost("{id:int}/add-option")]
+    public IActionResult AddOption(int id, [FromForm] string option)
+    {
+        var employeeId = _currentUserService.EmployeeId;
+        if (!employeeId.HasValue || employeeId.Value <= 0)
+            return Unauthorized(ApiResponse<object>.Fail("Bạn cần đăng nhập để thêm lựa chọn."));
+
+        var posts = LoadPosts();
+        var post = posts.FirstOrDefault(p => p.Id == id);
+        if (post == null) return NotFound();
+        if (post.Poll == null) return BadRequest(ApiResponse<object>.Fail("Bài viết không có bình chọn."));
+
+        if (!post.Poll.AllowAddOptions)
+            return BadRequest(ApiResponse<object>.Fail("Không được phép thêm lựa chọn mới."));
+
+        if (post.Poll.EndDate.HasValue && post.Poll.EndDate.Value < DateTime.Now)
+            return BadRequest(ApiResponse<object>.Fail("Bình chọn đã kết thúc."));
+
+        var cleanedOption = option.Trim();
+        if (string.IsNullOrWhiteSpace(cleanedOption))
+            return BadRequest(ApiResponse<object>.Fail("Lựa chọn không hợp lệ."));
+
+        if (post.Poll.Options.Any(o => o.Equals(cleanedOption, StringComparison.OrdinalIgnoreCase)))
+            return BadRequest(ApiResponse<object>.Fail("Lựa chọn này đã tồn tại."));
+
+        post.Poll.Options.Add(cleanedOption);
+        post.Poll.Votes.Add(new PollOptionVote { Option = cleanedOption, VotedUserIds = new() });
+
+        SavePosts(posts);
+        return Ok(ApiResponse<WallPost>.Ok(post));
+    }
+
     // ── Models ────────────────────────────────────────────────────────────
 
     public class WallPost
@@ -552,6 +733,25 @@ public class WallController : ApiControllerBase
         public bool IsCompanyPost { get; set; } = false;
         public string? GroupName { get; set; }
         public DateTime? ScheduledPublishDate { get; set; }
+        public WallPoll? Poll { get; set; }
+    }
+
+    public class WallPoll
+    {
+        public List<string> Options { get; set; } = new();
+        public List<PollOptionVote> Votes { get; set; } = new();
+        public DateTime? EndDate { get; set; }
+        public bool MultipleChoice { get; set; } = false;
+        public bool AllowAddOptions { get; set; } = false;
+        public bool Anonymous { get; set; } = false;
+        public bool HideResultsBeforeVoting { get; set; } = false;
+        public bool PinToTop { get; set; } = false;
+    }
+
+    public class PollOptionVote
+    {
+        public string Option { get; set; } = string.Empty;
+        public List<int> VotedUserIds { get; set; } = new();
     }
 
     public class WallAttachment

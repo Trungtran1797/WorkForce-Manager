@@ -32,6 +32,23 @@ export interface WallPost {
   isCompanyPost: boolean
   groupName?: string
   scheduledPublishDate?: string
+  poll?: WallPoll
+}
+
+export interface PollOptionVote {
+  option: string
+  votedUserIds: number[]
+}
+
+export interface WallPoll {
+  options: string[]
+  votes: PollOptionVote[]
+  endDate?: string
+  multipleChoice: boolean
+  allowAddOptions: boolean
+  anonymous: boolean
+  hideResultsBeforeVoting: boolean
+  pinToTop: boolean
 }
 
 export interface WallGroup {
