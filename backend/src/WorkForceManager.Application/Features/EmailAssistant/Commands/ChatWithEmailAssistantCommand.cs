@@ -92,18 +92,18 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
             }
         }
         // 2. Tải ngữ cảnh email liên quan (chạy vô điều kiện để AI luôn có dữ liệu chính xác)
-        int limit = 15;
+        int limit = 20;
         var limitMatch = Regex.Match(text, @"(\d+)\s*(?:email|thư|mail|tin nhắn)");
         if (limitMatch.Success && int.TryParse(limitMatch.Groups[1].Value, out int parsedLimit))
         {
-            limit = Math.Clamp(parsedLimit, 1, 20);
+            limit = Math.Clamp(parsedLimit, 1, 30);
         }
         else
         {
             var limitMatchTrailing = Regex.Match(text, @"(?:email|thư|mail|tin nhắn)\s*(\d+)");
             if (limitMatchTrailing.Success && int.TryParse(limitMatchTrailing.Groups[1].Value, out int parsedLimitTrailing))
             {
-                limit = Math.Clamp(parsedLimitTrailing, 1, 20);
+                limit = Math.Clamp(parsedLimitTrailing, 1, 30);
             }
         }
 
