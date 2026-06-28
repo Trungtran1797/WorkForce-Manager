@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Bot,
@@ -373,15 +373,15 @@ export function EmailAssistantPage() {
                 <div className="space-y-3">
                   {matchingEmails.map((email) => (
                     <div
-                      key={email.id}
+                      key={email.messageId}
                       onClick={() => setSelectedEmail(email)}
                       className={`border rounded-xl p-3 cursor-pointer transition-all hover:bg-muted/10 bg-card ${
-                        selectedEmail?.id === email.id ? 'border-primary shadow-sm bg-primary/5' : 'border-sidebar-border'
+                        selectedEmail?.messageId === email.messageId ? 'border-primary shadow-sm bg-primary/5' : 'border-sidebar-border'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1.5">
                         <span className="text-[10px] font-semibold text-primary truncate max-w-[140px]">
-                          {email.fromName || email.fromAddress}
+                          {email.from}
                         </span>
                         <span className="text-[9px] text-muted-foreground shrink-0 font-mono">
                           {email.date ? new Date(email.date).toLocaleDateString('vi-VN') : ''}
@@ -391,7 +391,7 @@ export function EmailAssistantPage() {
                         {email.subject || '(Không có tiêu đề)'}
                       </h4>
                       <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">
-                        {email.bodySnippet || email.snippet}
+                        {email.snippet}
                       </p>
                     </div>
                   ))}
@@ -429,13 +429,13 @@ export function EmailAssistantPage() {
                 <div>
                   <span className="text-muted-foreground font-medium block text-[10px]">Người gửi:</span>
                   <span className="font-bold text-foreground block mt-0.5">
-                    {selectedEmail.fromName ? `${selectedEmail.fromName} <${selectedEmail.fromAddress}>` : selectedEmail.fromAddress}
+                    {selectedEmail.from}
                   </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground font-medium block text-[10px]">Người nhận:</span>
                   <span className="font-semibold text-foreground block mt-0.5">
-                    {selectedEmail.toAddress}
+                    {selectedEmail.to}
                   </span>
                 </div>
                 <div>
@@ -458,7 +458,7 @@ export function EmailAssistantPage() {
               <div className="space-y-2">
                 <span className="text-muted-foreground font-medium text-[10px]">Nội dung thư:</span>
                 <div className="whitespace-pre-line text-foreground/90 leading-relaxed font-sans bg-accent/5 p-4 rounded-xl max-h-[300px] overflow-y-auto border">
-                  {selectedEmail.bodySnippet || selectedEmail.snippet}
+                  {selectedEmail.body || selectedEmail.snippet}
                 </div>
               </div>
             </CardContent>

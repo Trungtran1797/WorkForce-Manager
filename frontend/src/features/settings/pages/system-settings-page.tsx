@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { getSystemSettings, updateSystemSetting, SystemSettingDto } from '@/features/settings/api/system-settings-api'
+import { getSystemSettings, updateSystemSetting } from '@/features/settings/api/system-settings-api'
+import type { SystemSettingDto } from '@/features/settings/api/system-settings-api'
 
 const SETTING_LABELS: Record<string, { label: string; hint: string }> = {
   OneDriveProjectsBasePath: {
