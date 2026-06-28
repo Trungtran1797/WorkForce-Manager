@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using WorkForceManager.Application.Common.Interfaces;
+using WorkForceManager.Domain.Entities;
 
 namespace WorkForceManager.Application.Features.EmailAssistant.Commands;
 
@@ -51,47 +52,51 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
         // Chuẩn bị danh sách tin nhắn gửi sang LLM
         var messagesToSend = new List<AiChatMessageDto>(request.Messages);
 
+        // 0. Đồng bộ email từ hòm thư về cơ sở dữ liệu cục bộ trước khi chat (gia tăng)
+        await _mailClientService.SyncEmailsAsync(config, userId.Value, _context, cancellationToken);
+
         // 1. Kiểm tra xem người dùng có nhắc đến số thứ tự email cụ thể hay không (VD: email 1, email số 2)
         var emailIndexMatch = Regex.Match(text, @"(?:email|thư)\s*(?:số)?\s*(\d+)", RegexOptions.IgnoreCase);
         if (emailIndexMatch.Success && int.TryParse(emailIndexMatch.Groups[1].Value, out int emailIndex))
         {
-            // Tìm danh sách email gần nhất để lấy ID
-            var recentEmails = await _mailClientService.SearchEmailsAsync(config, null, 10, cancellationToken);
+            // Tìm danh sách email gần nhất từ DB để lấy ID
+            var recentEmails = await _context.UserEmailMessages
+                .Where(m => m.UserId == userId.Value)
+                .OrderByDescending(m => m.Date ?? m.CreatedDate)
+                .Take(30)
+                .ToListAsync(cancellationToken);
+
             if (emailIndex >= 1 && emailIndex <= recentEmails.Count)
             {
                 var targetEmail = recentEmails[emailIndex - 1];
-                // Lấy chi tiết nội dung đầy đủ của email mục tiêu
-                var detailedEmail = await _mailClientService.GetEmailDetailsAsync(config, targetEmail.MessageId, cancellationToken);
-                if (detailedEmail != null)
+                // Chèn nội dung chi tiết đầy đủ vào ngữ cảnh hệ thống ngay trước tin nhắn cuối cùng của người dùng
+                var detailContext = new AiChatMessageDto
                 {
-                    // Chèn nội dung chi tiết vào ngữ cảnh hệ thống ngay trước tin nhắn cuối cùng của người dùng
-                    var detailContext = new AiChatMessageDto
-                    {
-                        Role = "system",
-                        Content = $"[HỆ THỐNG - DỮ LIỆU EMAIL CHI TIẾT]\n" +
-                                 $"Người dùng đang yêu cầu thông tin về Email số {emailIndex}.\n" +
-                                 $"Chi tiết Email:\n" +
-                                 $"- ID: {detailedEmail.MessageId}\n" +
-                                 $"- Từ: {detailedEmail.From}\n" +
-                                 $"- Đến: {detailedEmail.To}\n" +
-                                 $"- Ngày: {detailedEmail.Date?.ToString("dd/MM/yyyy HH:mm")}\n" +
-                                 $"- Tiêu đề: {detailedEmail.Subject}\n" +
-                                 $"- Nội dung đầy đủ (Body):\n{detailedEmail.Body}\n" +
-                                 $"[HẾ THỐNG - HẾT DỮ LIỆU]"
-                    };
-                    
-                    if (messagesToSend.Count > 0)
-                    {
-                        messagesToSend.Insert(messagesToSend.Count - 1, detailContext);
-                    }
-                    else
-                    {
-                        messagesToSend.Add(detailContext);
-                    }
+                    Role = "system",
+                    Content = $"[HỆ THỐNG - DỮ LIỆU EMAIL CHI TIẾT]\n" +
+                             $"Người dùng đang yêu cầu thông tin về Email số {emailIndex}.\n" +
+                             $"Chi tiết Email:\n" +
+                             $"- ID: {targetEmail.MessageId}\n" +
+                             $"- Từ: {targetEmail.From}\n" +
+                             $"- Đến: {targetEmail.To}\n" +
+                             $"- Ngày: {targetEmail.Date?.ToString("dd/MM/yyyy HH:mm")}\n" +
+                             $"- Tiêu đề: {targetEmail.Subject}\n" +
+                             $"- Nội dung đầy đủ (Body):\n{targetEmail.Body}\n" +
+                             $"[HỆ THỐNG - HẾT DỮ LIỆU]"
+                };
+                
+                if (messagesToSend.Count > 0)
+                {
+                    messagesToSend.Insert(messagesToSend.Count - 1, detailContext);
+                }
+                else
+                {
+                    messagesToSend.Add(detailContext);
                 }
             }
         }
-        // 2. Tải ngữ cảnh email liên quan (chạy vô điều kiện để AI luôn có dữ liệu chính xác)
+
+        // 2. Tải ngữ cảnh email liên quan từ CSDL (chạy vô điều kiện để AI luôn có dữ liệu chính xác)
         int limit = 20;
         var limitMatch = Regex.Match(text, @"(\d+)\s*(?:email|thư|mail|tin nhắn)");
         if (limitMatch.Success && int.TryParse(limitMatch.Groups[1].Value, out int parsedLimit))
@@ -115,17 +120,28 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
             searchKeyword = null;
         }
 
-        List<EmailMessageDto> foundEmails = new();
+        List<UserEmailMessage> foundEmails = new();
         if (!string.IsNullOrEmpty(searchKeyword))
         {
-            // Thử tìm kiếm theo từ khóa trước
-            foundEmails = await _mailClientService.SearchEmailsAsync(config, searchKeyword, limit, cancellationToken);
+            // Tìm kiếm theo từ khóa từ cơ sở dữ liệu cục bộ (quét toàn bộ tiêu đề, người gửi và nội dung đầy đủ)
+            foundEmails = await _context.UserEmailMessages
+                .Where(m => m.UserId == userId.Value && 
+                           (m.Subject.Contains(searchKeyword) || 
+                            m.Body.Contains(searchKeyword) || 
+                            m.From.Contains(searchKeyword)))
+                .OrderByDescending(m => m.Date ?? m.CreatedDate)
+                .Take(limit)
+                .ToListAsync(cancellationToken);
         }
 
         // Nếu không tìm kiếm theo từ khóa hoặc kết quả tìm kiếm rỗng, tải danh sách email mới nhất làm ngữ cảnh mặc định
         if (!foundEmails.Any())
         {
-            foundEmails = await _mailClientService.SearchEmailsAsync(config, null, limit, cancellationToken);
+            foundEmails = await _context.UserEmailMessages
+                .Where(m => m.UserId == userId.Value)
+                .OrderByDescending(m => m.Date ?? m.CreatedDate)
+                .Take(limit)
+                .ToListAsync(cancellationToken);
         }
         
         if (foundEmails.Any())

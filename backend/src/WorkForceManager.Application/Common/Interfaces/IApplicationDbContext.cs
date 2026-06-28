@@ -44,6 +44,7 @@ public interface IApplicationDbContext
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<DepartmentPermissionOverride> DepartmentPermissionOverrides { get; }
     DbSet<SystemSetting> SystemSettings { get; }
+    DbSet<UserEmailMessage> UserEmailMessages { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

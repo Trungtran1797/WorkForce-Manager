@@ -23,6 +23,11 @@ public interface IMailClientService
     /// Kiểm tra kết nối hòm thư với cấu hình đã cung cấp.
     /// </summary>
     Task<bool> TestConnectionAsync(UserEmailConfig config, CancellationToken ct = default);
+
+    /// <summary>
+    /// Đồng bộ email từ hòm thư về cơ sở dữ liệu cục bộ phục vụ cho AI phản hồi đầy đủ và tức thì.
+    /// </summary>
+    Task SyncEmailsAsync(UserEmailConfig config, int userId, IApplicationDbContext context, CancellationToken ct = default);
 }
 
 public class EmailMessageDto

@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 using WorkForceManager.Application.Common.Interfaces;
 using WorkForceManager.Domain.Entities;
 
@@ -524,6 +525,157 @@ public class MailClientService : IMailClientService
         text = Regex.Replace(text, @"\s+", " ");
         text = text.Trim();
         return text.Length > 200 ? text.Substring(0, 200) + "..." : text;
+    }
+
+    public async Task SyncEmailsAsync(UserEmailConfig config, int userId, IApplicationDbContext context, CancellationToken ct = default)
+    {
+        if (config.Provider.Equals("Gmail", StringComparison.OrdinalIgnoreCase))
+        {
+            await SyncGmailAsync(config, userId, context, ct);
+        }
+        else
+        {
+            await SyncImapAsync(config, userId, context, ct);
+        }
+    }
+
+    private async Task SyncImapAsync(UserEmailConfig config, int userId, IApplicationDbContext context, CancellationToken ct)
+    {
+        using var client = new ImapClient();
+        try
+        {
+            await client.ConnectAsync(config.ImapHost, config.ImapPort ?? 993, config.UseSsl, ct);
+            var password = _encryptionService.Decrypt(config.ImapPassword ?? string.Empty);
+            await client.AuthenticateAsync(config.ImapUsername, password, ct);
+
+            var inbox = client.Inbox;
+            await inbox.OpenAsync(FolderAccess.ReadOnly, ct);
+
+            var maxUid = await context.UserEmailMessages
+                .IgnoreQueryFilters()
+                .Where(m => m.UserId == userId)
+                .MaxAsync(m => (uint?)m.Uid, cancellationToken: ct) ?? 0;
+
+            IList<UniqueId> uidsToFetch;
+            var allUids = await inbox.SearchAsync(SearchQuery.All, ct);
+            if (maxUid == 0)
+            {
+                uidsToFetch = allUids.TakeLast(100).ToList();
+            }
+            else
+            {
+                uidsToFetch = allUids.Where(uid => uid.Id > maxUid).ToList();
+            }
+
+            bool hasNew = false;
+            foreach (var uid in uidsToFetch)
+            {
+                var exists = await context.UserEmailMessages
+                    .IgnoreQueryFilters()
+                    .AnyAsync(m => m.UserId == userId && m.Uid == uid.Id, cancellationToken: ct);
+
+                if (exists) continue;
+
+                var message = await inbox.GetMessageAsync(uid, ct);
+                var emailMessage = new UserEmailMessage
+                {
+                    UserId = userId,
+                    MessageId = uid.ToString(),
+                    Uid = uid.Id,
+                    Subject = message.Subject ?? "(Không có tiêu đề)",
+                    From = message.From.ToString(),
+                    To = message.To.ToString(),
+                    Date = message.Date.DateTime,
+                    Snippet = GetMailSnippet(message.TextBody ?? message.HtmlBody),
+                    Body = message.TextBody ?? message.HtmlBody ?? string.Empty
+                };
+
+                context.UserEmailMessages.Add(emailMessage);
+                hasNew = true;
+            }
+
+            if (hasNew)
+            {
+                await context.SaveChangesAsync(ct);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi đồng bộ IMAP về DB cho UserId {UserId}", userId);
+        }
+        finally
+        {
+            if (client.IsConnected)
+            {
+                await client.DisconnectAsync(true, ct);
+            }
+        }
+    }
+
+    private async Task SyncGmailAsync(UserEmailConfig config, int userId, IApplicationDbContext context, CancellationToken ct)
+    {
+        try
+        {
+            var accessToken = await GetGmailAccessTokenAsync(config, ct);
+            if (string.IsNullOrEmpty(accessToken)) return;
+
+            using var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var hasCached = await context.UserEmailMessages
+                .IgnoreQueryFilters()
+                .AnyAsync(m => m.UserId == userId, cancellationToken: ct);
+
+            int maxResults = hasCached ? 30 : 100;
+            var url = $"https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults={maxResults}";
+            var response = await client.GetAsync(url, ct);
+            if (!response.IsSuccessStatusCode) return;
+
+            var root = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
+            if (root.TryGetProperty("messages", out var messagesProp) && messagesProp.ValueKind == JsonValueKind.Array)
+            {
+                bool hasNew = false;
+                foreach (var msgObj in messagesProp.EnumerateArray())
+                {
+                    var id = msgObj.GetProperty("id").GetString() ?? string.Empty;
+                    if (string.IsNullOrEmpty(id)) continue;
+
+                    var exists = await context.UserEmailMessages
+                        .IgnoreQueryFilters()
+                        .AnyAsync(m => m.UserId == userId && m.MessageId == id, cancellationToken: ct);
+
+                    if (exists) continue;
+
+                    var detail = await GetGmailDetailsInternalAsync(client, id, ct);
+                    if (detail != null)
+                    {
+                        var emailMessage = new UserEmailMessage
+                        {
+                            UserId = userId,
+                            MessageId = id,
+                            Uid = 0,
+                            Subject = detail.Subject,
+                            From = detail.From,
+                            To = detail.To,
+                            Date = detail.Date,
+                            Snippet = detail.Snippet,
+                            Body = detail.Body
+                        };
+                        context.UserEmailMessages.Add(emailMessage);
+                        hasNew = true;
+                    }
+                }
+
+                if (hasNew)
+                {
+                    await context.SaveChangesAsync(ct);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi đồng bộ Gmail về DB cho UserId {UserId}", userId);
+        }
     }
 
     #endregion

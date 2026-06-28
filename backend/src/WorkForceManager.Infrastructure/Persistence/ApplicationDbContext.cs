@@ -54,6 +54,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<DepartmentPermissionOverride> DepartmentPermissionOverrides => Set<DepartmentPermissionOverride>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<UserEmailMessage> UserEmailMessages => Set<UserEmailMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

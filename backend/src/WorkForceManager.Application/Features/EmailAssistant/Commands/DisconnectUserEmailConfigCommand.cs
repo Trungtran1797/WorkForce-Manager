@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using WorkForceManager.Application.Common.Interfaces;
 
+using WorkForceManager.Domain.Entities;
+
 namespace WorkForceManager.Application.Features.EmailAssistant.Commands;
 
 public class DisconnectUserEmailConfigCommand : IRequest<bool>
@@ -32,6 +34,16 @@ public class DisconnectUserEmailConfigCommandHandler : IRequestHandler<Disconnec
         if (config != null)
         {
             _context.UserEmailConfigs.Remove(config);
+
+            var cachedMessages = await _context.UserEmailMessages
+                .Where(m => m.UserId == userId)
+                .ToListAsync(cancellationToken);
+
+            if (cachedMessages.Any())
+            {
+                _context.UserEmailMessages.RemoveRange(cachedMessages);
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
         }
 
