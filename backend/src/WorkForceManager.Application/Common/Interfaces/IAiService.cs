@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace WorkForceManager.Application.Common.Interfaces;
 
 public interface IAiService
@@ -10,6 +12,9 @@ public interface IAiService
 
 public class AiChatMessageDto
 {
+    [JsonPropertyName("role")]
     public string Role { get; set; } = string.Empty; // "user", "assistant", "system"
+
+    [JsonPropertyName("content")]
     public string Content { get; set; } = string.Empty;
 }

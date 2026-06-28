@@ -431,6 +431,7 @@ export function EmailAssistantPage() {
                         onChange={(e) => handleCommonPasswordChange(e.target.value)}
                         required={!(config?.hasImapPassword || config?.hasSmtpPassword)}
                         className="bg-background text-xs"
+                        autoComplete="new-password"
                       />
                       <p className="text-[10px] text-muted-foreground">Chỉ cần nhập email và mật khẩu. Các thông số máy chủ sẽ được tự động cấu hình.</p>
                     </div>
@@ -494,6 +495,7 @@ export function EmailAssistantPage() {
                               value={imapPassword}
                               onChange={(e) => setImapPassword(e.target.value)}
                               className="bg-background text-xs"
+                              autoComplete="new-password"
                             />
                           </div>
                         </div>
@@ -547,6 +549,7 @@ export function EmailAssistantPage() {
                               value={smtpPassword}
                               onChange={(e) => setSmtpPassword(e.target.value)}
                               className="bg-background text-xs"
+                              autoComplete="new-password"
                             />
                           </div>
                         </div>
@@ -609,6 +612,7 @@ export function EmailAssistantPage() {
                         onChange={(e) => setGmailAccessToken(e.target.value)}
                         required
                         className="bg-background text-xs"
+                        autoComplete="new-password"
                       />
                     </div>
 
@@ -624,6 +628,7 @@ export function EmailAssistantPage() {
                         onChange={(e) => setGmailRefreshToken(e.target.value)}
                         required={!config?.hasGmailRefreshToken}
                         className="bg-background text-xs"
+                        autoComplete="new-password"
                       />
                     </div>
 
@@ -691,6 +696,7 @@ export function EmailAssistantPage() {
                       onChange={(e) => setAiApiKey(e.target.value)}
                       className="bg-background text-xs"
                       required={!config?.hasAiApiKey}
+                      autoComplete="new-password"
                     />
                   </div>
                 </div>

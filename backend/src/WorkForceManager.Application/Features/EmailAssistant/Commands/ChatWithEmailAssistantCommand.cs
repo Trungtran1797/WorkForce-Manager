@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using WorkForceManager.Application.Common.Interfaces;
 
@@ -8,6 +9,7 @@ namespace WorkForceManager.Application.Features.EmailAssistant.Commands;
 
 public class ChatWithEmailAssistantCommand : IRequest<string>
 {
+    [JsonPropertyName("messages")]
     public List<AiChatMessageDto> Messages { get; set; } = new();
 }
 

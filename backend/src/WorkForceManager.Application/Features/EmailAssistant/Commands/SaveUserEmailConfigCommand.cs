@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using WorkForceManager.Application.Common.Interfaces;
 using WorkForceManager.Domain.Entities;
 
@@ -29,8 +30,13 @@ public class SaveUserEmailConfigCommand : IRequest<bool>
     public string? GmailAccessToken { get; set; }
 
     // AI Connection
+    [JsonPropertyName("aiProvider")]
     public string? AiProvider { get; set; }
+
+    [JsonPropertyName("aiModel")]
     public string? AiModel { get; set; }
+
+    [JsonPropertyName("aiApiKey")]
     public string? AiApiKey { get; set; }
 }
 

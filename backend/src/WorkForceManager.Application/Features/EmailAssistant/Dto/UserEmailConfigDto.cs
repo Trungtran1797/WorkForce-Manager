@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace WorkForceManager.Application.Features.EmailAssistant.Dto;
 
 public class UserEmailConfigDto
@@ -24,7 +26,12 @@ public class UserEmailConfigDto
     public string? GmailAccessToken { get; set; }
 
     // AI Connection
+    [JsonPropertyName("aiProvider")]
     public string? AiProvider { get; set; }
+
+    [JsonPropertyName("aiModel")]
     public string? AiModel { get; set; }
+
+    [JsonPropertyName("hasAiApiKey")]
     public bool HasAiApiKey { get; set; }
 }
