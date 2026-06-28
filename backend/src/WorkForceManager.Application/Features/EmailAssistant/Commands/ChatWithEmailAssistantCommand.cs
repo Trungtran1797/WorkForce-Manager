@@ -177,7 +177,9 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
         string[] stopWords = { 
             "tìm kiếm", "tìm", "lọc", "các", "những", "email", "thư", "mail", "nội dung", 
             "gần đây", "mới nhất", "chứa từ", "có từ", "hôm nay", "ngày hôm nay", 
-            "hôm qua", "ngày hôm qua", "nhất", "gần", "đây", "tin nhắn", "tin", "số", "lượng"
+            "hôm qua", "ngày hôm qua", "nhất", "gần", "đây", "tin nhắn", "tin", "số", "lượng",
+            "tóm tắt", "tổng hợp", "đọc", "xem", "viết", "soạn", "trả lời", "dịch", "gửi",
+            "hãy", "giúp", "yêu cầu", "vui lòng"
         };
         foreach (var word in stopWords)
         {
