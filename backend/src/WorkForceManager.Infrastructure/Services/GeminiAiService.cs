@@ -107,7 +107,7 @@ public class GeminiAiService : IAiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Lỗi khi gọi API AI thật. Đang chuyển sang Mock AI Fallback.");
-            return GetMockAiResponse(messages) + "\n\n*(Lưu ý: Phản hồi này được tạo bởi Mock AI do lỗi kết nối tới API thật)*";
+            return GetMockAiResponse(messages) + $"\n\n*(Lưu ý: Phản hồi này được tạo bởi Mock AI do lỗi kết nối tới API thật. Chi tiết lỗi: {ex.Message})*";
         }
     }
 
