@@ -65,6 +65,7 @@ public class SaveUserEmailConfigCommandHandler : IRequestHandler<SaveUserEmailCo
         if (userId == null) return false;
 
         var config = await _context.UserEmailConfigs
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
 
         var isNew = false;
@@ -72,6 +73,12 @@ public class SaveUserEmailConfigCommandHandler : IRequestHandler<SaveUserEmailCo
         {
             config = new UserEmailConfig { UserId = userId.Value };
             isNew = true;
+        }
+        else if (config.IsDeleted)
+        {
+            config.IsDeleted = false;
+            config.DeletedBy = null;
+            config.DeletedDate = null;
         }
 
         config.Provider = request.Provider;
