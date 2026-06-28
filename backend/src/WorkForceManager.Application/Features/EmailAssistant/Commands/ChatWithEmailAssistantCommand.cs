@@ -92,10 +92,32 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
             }
         }
         // 2. Nếu không hỏi cụ thể email, nhưng có ý định tìm kiếm/lọc email mới
-        else if (text.Contains("tìm") || text.Contains("lọc") || text.Contains("email") || text.Contains("thư") || text.Contains("mới nhất"))
+        else if (text.Contains("tìm") || text.Contains("lọc") || text.Contains("email") || text.Contains("thư") || text.Contains("mail") || text.Contains("mới nhất"))
         {
+            int limit = 5;
+            var limitMatch = Regex.Match(text, @"(\d+)\s*(?:email|thư|mail|tin nhắn)");
+            if (limitMatch.Success && int.TryParse(limitMatch.Groups[1].Value, out int parsedLimit))
+            {
+                limit = Math.Clamp(parsedLimit, 1, 20);
+            }
+            else
+            {
+                var limitMatchTrailing = Regex.Match(text, @"(?:email|thư|mail|tin nhắn)\s*(\d+)");
+                if (limitMatchTrailing.Success && int.TryParse(limitMatchTrailing.Groups[1].Value, out int parsedLimitTrailing))
+                {
+                    limit = Math.Clamp(parsedLimitTrailing, 1, 20);
+                }
+            }
+
             string? searchKeyword = ExtractSearchKeyword(lastUserMessage);
-            var foundEmails = await _mailClientService.SearchEmailsAsync(config, searchKeyword, 5, cancellationToken);
+            
+            // Nếu từ khóa chỉ là một con số (đã dùng để xác định limit), ta đặt nó về null để tải email mới nhất
+            if (searchKeyword != null && int.TryParse(searchKeyword, out _))
+            {
+                searchKeyword = null;
+            }
+
+            var foundEmails = await _mailClientService.SearchEmailsAsync(config, searchKeyword, limit, cancellationToken);
             
             if (foundEmails.Any())
             {
@@ -155,7 +177,7 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
         string[] stopWords = { 
             "tìm kiếm", "tìm", "lọc", "các", "những", "email", "thư", "mail", "nội dung", 
             "gần đây", "mới nhất", "chứa từ", "có từ", "hôm nay", "ngày hôm nay", 
-            "hôm qua", "ngày hôm qua" 
+            "hôm qua", "ngày hôm qua", "nhất", "gần", "đây", "tin nhắn", "tin", "số", "lượng"
         };
         foreach (var word in stopWords)
         {
