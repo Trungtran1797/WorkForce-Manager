@@ -134,6 +134,7 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
         var systemInstruction = 
             "Bạn là Trợ lý Email tiếng Việt của SAIGON SPICES, một trợ lý hữu ích, ngắn gọn và bảo mật.\n" +
             "Hãy hỗ trợ người dùng lọc, tìm kiếm, tóm tắt và soạn email dựa trên thông tin được cung cấp.\n\n" +
+            $"Hôm nay là ngày: {DateTime.UtcNow.AddHours(7).ToString("dd/MM/yyyy")} (Vietnam Time).\n\n" +
             "Nguyên tắc trả lời:\n" +
             "1. Luôn mở đầu bằng lời chào/xác nhận ngắn gọn (VD: 'Dạ, tôi đã tìm thấy...', 'Dạ, đây là...').\n" +
             "2. Khi liệt kê danh sách email, hãy đánh số 1️⃣, 2️⃣, 3️⃣... Kèm ngày tháng gửi, tiêu đề và tóm tắt ngắn 2-3 câu chứa mục đích chính, deadline/hạn chót và việc cần làm.\n" +
@@ -151,7 +152,11 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
 
         // Xóa bớt các từ chỉ hành động tìm kiếm thông dụng để lấy từ khóa cốt lõi
         var clean = text;
-        string[] stopWords = { "tìm kiếm", "tìm", "lọc", "các", "những", "email", "thư", "gần đây", "mới nhất", "chứa từ", "có từ" };
+        string[] stopWords = { 
+            "tìm kiếm", "tìm", "lọc", "các", "những", "email", "thư", "mail", "nội dung", 
+            "gần đây", "mới nhất", "chứa từ", "có từ", "hôm nay", "ngày hôm nay", 
+            "hôm qua", "ngày hôm qua" 
+        };
         foreach (var word in stopWords)
         {
             clean = Regex.Replace(clean, "\\b" + word + "\\b", "", RegexOptions.IgnoreCase);

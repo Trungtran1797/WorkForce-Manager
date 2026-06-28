@@ -278,6 +278,22 @@ function MailboxConfigCard() {
   const [isLoadingConfig, setIsLoadingConfig] = useState(true)
   const [isSavingConfig, setIsSavingConfig] = useState(false)
 
+  // Sync emailAddress changes to IMAP/SMTP usernames & auto-configure hosts for Saigon Spices domain
+  useEffect(() => {
+    if (providerType === 'ImapSmtp' && emailAddress) {
+      setImapUsername(emailAddress)
+      setSmtpUsername(emailAddress)
+
+      if (emailAddress.endsWith('@saigonspices.com.vn')) {
+        setImapHost('mail.saigonspices.com.vn')
+        setImapPort(993)
+        setSmtpHost('mail.saigonspices.com.vn')
+        setSmtpPort(465)
+        setUseSsl(true)
+      }
+    }
+  }, [emailAddress, providerType])
+
   const loadConfig = async () => {
     setIsLoadingConfig(true)
     try {
