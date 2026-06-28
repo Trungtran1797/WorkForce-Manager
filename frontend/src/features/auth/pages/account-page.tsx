@@ -290,6 +290,12 @@ function MailboxConfigCard() {
         setSmtpHost('mail.saigonspices.com.vn')
         setSmtpPort(465)
         setUseSsl(true)
+      } else if (emailAddress.endsWith('@gmail.com')) {
+        setImapHost('imap.gmail.com')
+        setImapPort(993)
+        setSmtpHost('smtp.gmail.com')
+        setSmtpPort(465)
+        setUseSsl(true)
       }
     }
   }, [emailAddress, providerType])
