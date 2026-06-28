@@ -54,15 +54,51 @@ public static class ApplicationDbContextSeed
 
     private static async Task SeedSystemSettingsAsync(ApplicationDbContext context)
     {
-        if (await context.SystemSettings.AnyAsync()) return;
+        var existingKeys = await context.SystemSettings.Select(s => s.Key).ToListAsync();
 
-        context.SystemSettings.Add(new Domain.Entities.SystemSetting
+        if (!existingKeys.Contains("OneDriveProjectsBasePath"))
         {
-            Key = "OneDriveProjectsBasePath",
-            Value = string.Empty,
-            Description = "Đường dẫn thư mục gốc chứa các dự án trên OneDrive (hoặc ổ đĩa chia sẻ). Để trống nếu không dùng tính năng đồng bộ thư mục.",
-            UpdatedDate = DateTime.UtcNow
-        });
+            context.SystemSettings.Add(new Domain.Entities.SystemSetting
+            {
+                Key = "OneDriveProjectsBasePath",
+                Value = string.Empty,
+                Description = "Đường dẫn thư mục gốc chứa các dự án trên OneDrive (hoặc ổ đĩa chia sẻ). Để trống nếu không dùng tính năng đồng bộ thư mục.",
+                UpdatedDate = DateTime.UtcNow
+            });
+        }
+
+        if (!existingKeys.Contains("AiProvider"))
+        {
+            context.SystemSettings.Add(new Domain.Entities.SystemSetting
+            {
+                Key = "AiProvider",
+                Value = "Gemini",
+                Description = "Nhà cung cấp dịch vụ trí tuệ nhân tạo dùng chung (Gemini hoặc OpenAI).",
+                UpdatedDate = DateTime.UtcNow
+            });
+        }
+
+        if (!existingKeys.Contains("AiModel"))
+        {
+            context.SystemSettings.Add(new Domain.Entities.SystemSetting
+            {
+                Key = "AiModel",
+                Value = "gemini-2.5-flash",
+                Description = "Phiên bản mô hình AI mặc định (vd: gemini-2.5-flash, gpt-4o).",
+                UpdatedDate = DateTime.UtcNow
+            });
+        }
+
+        if (!existingKeys.Contains("AiApiKey"))
+        {
+            context.SystemSettings.Add(new Domain.Entities.SystemSetting
+            {
+                Key = "AiApiKey",
+                Value = string.Empty,
+                Description = "API Key dùng chung cho toàn bộ hệ thống (được mã hoá).",
+                UpdatedDate = DateTime.UtcNow
+            });
+        }
 
         await context.SaveChangesAsync();
     }

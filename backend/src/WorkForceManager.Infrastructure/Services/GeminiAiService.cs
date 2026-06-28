@@ -43,36 +43,48 @@ public class GeminiAiService : IAiService
 
         try
         {
-            var userId = _currentUserService.UserId;
-            if (userId != null)
+            var settings = await _context.SystemSettings.ToListAsync(ct);
+            var dbProviderSetting = settings.FirstOrDefault(s => s.Key.Equals("AiProvider", StringComparison.OrdinalIgnoreCase));
+            var dbModelSetting = settings.FirstOrDefault(s => s.Key.Equals("AiModel", StringComparison.OrdinalIgnoreCase));
+            var dbApiKeySetting = settings.FirstOrDefault(s => s.Key.Equals("AiApiKey", StringComparison.OrdinalIgnoreCase));
+
+            if (dbProviderSetting != null && !string.IsNullOrEmpty(dbProviderSetting.Value))
             {
-                var userConfig = await _context.UserEmailConfigs
-                    .FirstOrDefaultAsync(x => x.UserId == userId, ct);
-
-                if (userConfig != null && !string.IsNullOrEmpty(userConfig.AiProvider))
+                provider = dbProviderSetting.Value;
+            }
+            if (dbModelSetting != null && !string.IsNullOrEmpty(dbModelSetting.Value))
+            {
+                model = dbModelSetting.Value;
+            }
+            else
+            {
+                model = provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ? "gpt-4o" : "gemini-2.5-flash";
+            }
+            if (dbApiKeySetting != null && !string.IsNullOrEmpty(dbApiKeySetting.Value))
+            {
+                apiKey = dbApiKeySetting.Value;
+                try
                 {
-                    provider = userConfig.AiProvider;
-                    model = userConfig.AiModel ?? (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ? "gpt-4o" : "gemini-2.5-flash");
-
-                    if (!string.IsNullOrEmpty(userConfig.AiApiKey))
-                    {
-                        apiKey = _encryptionService.Decrypt(userConfig.AiApiKey);
-                    }
-
-                    if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
-                    {
-                        endpoint = "https://api.openai.com/v1";
-                    }
-                    else
-                    {
-                        endpoint = "https://generativelanguage.googleapis.com/v1beta/models";
-                    }
+                    apiKey = _encryptionService.Decrypt(apiKey);
                 }
+                catch
+                {
+                    // Ignore decryption error if already plain
+                }
+            }
+
+            if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+            {
+                endpoint = "https://api.openai.com/v1";
+            }
+            else
+            {
+                endpoint = "https://generativelanguage.googleapis.com/v1beta/models";
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Không thể tải cấu hình AI cá nhân của người dùng. Chuyển sang cấu hình hệ thống.");
+            _logger.LogWarning(ex, "Không thể tải cấu hình AI hệ thống từ database. Chuyển sang cấu hình appsettings.");
         }
 
         if (string.IsNullOrEmpty(apiKey) || apiKey.Equals("YOUR_GEMINI_API_KEY", StringComparison.OrdinalIgnoreCase))

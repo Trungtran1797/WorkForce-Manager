@@ -23,5 +23,9 @@ export const emailAssistantApi = {
 
   chat: async (messages: ChatMessage[]): Promise<string> => {
     return apiClient.post<string>(`${BASE}/chat`, { messages })
+  },
+
+  disconnectConfig: async (): Promise<boolean> => {
+    return apiClient.delete<boolean>(`${BASE}/config`)
   }
 }

@@ -32,6 +32,13 @@ public class EmailAssistantController : ApiControllerBase
         return Ok(ApiResponse<bool>.Ok(result));
     }
 
+    [HttpDelete("config")]
+    public async Task<IActionResult> DisconnectConfig(CancellationToken ct)
+    {
+        var result = await Mediator.Send(new DisconnectUserEmailConfigCommand(), ct);
+        return Ok(ApiResponse<bool>.Ok(result));
+    }
+
     [HttpGet("emails")]
     public async Task<IActionResult> GetEmails([FromQuery] string? query, [FromQuery] int limit = 10, CancellationToken ct = default)
     {

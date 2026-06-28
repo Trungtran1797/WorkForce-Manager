@@ -15,10 +15,17 @@ public class GetSystemSettingsQueryHandler : IRequestHandler<GetSystemSettingsQu
 
     public async Task<List<SystemSettingDto>> Handle(GetSystemSettingsQuery request, CancellationToken cancellationToken)
     {
-        return await _context.SystemSettings
+        var settings = await _context.SystemSettings
             .AsNoTracking()
             .OrderBy(s => s.Key)
-            .Select(s => new SystemSettingDto(s.Key, s.Value, s.Description, s.UpdatedDate, s.UpdatedBy))
             .ToListAsync(cancellationToken);
+
+        return settings.Select(s => new SystemSettingDto(
+            s.Key,
+            s.Key == "AiApiKey" && !string.IsNullOrEmpty(s.Value) ? "••••••••••••" : s.Value,
+            s.Description,
+            s.UpdatedDate,
+            s.UpdatedBy
+        )).ToList();
     }
 }
