@@ -85,6 +85,11 @@ export function EmailAssistantPage() {
   const [gmailAccessToken, setGmailAccessToken] = useState('')
   const [gmailRefreshToken, setGmailRefreshToken] = useState('')
 
+  // AI states
+  const [aiProvider, setAiProvider] = useState<'Gemini' | 'OpenAI'>('Gemini')
+  const [aiModel, setAiModel] = useState('gemini-1.5-flash')
+  const [aiApiKey, setAiApiKey] = useState('')
+
   // Chat states
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -144,6 +149,16 @@ export function EmailAssistantPage() {
           setGmailAccessToken(data.gmailAccessToken || '')
         }
 
+        if (data.aiProvider) {
+          setAiProvider(data.aiProvider as any)
+        }
+        if (data.aiModel) {
+          setAiModel(data.aiModel)
+        }
+        if (data.hasAiApiKey) {
+          setAiApiKey('••••••••••••')
+        }
+
 
 
         // Load some emails to side-pane
@@ -175,7 +190,10 @@ export function EmailAssistantPage() {
     let payload: Partial<UserEmailConfig> = {
       provider: providerType,
       emailAddress: providerType === 'Gmail' ? gmailEmail : emailAddress,
-      useSsl
+      useSsl,
+      aiProvider,
+      aiModel,
+      aiApiKey: aiApiKey && aiApiKey !== '••••••••••••' ? aiApiKey : undefined
     }
 
     if (providerType === 'ImapSmtp') {
@@ -621,6 +639,63 @@ export function EmailAssistantPage() {
                     </Button>
                   </TabsContent>
                 </Tabs>
+
+                <Separator className="my-4" />
+
+                <div className="space-y-4">
+                  <Label className="text-xs font-bold flex items-center gap-1.5 text-primary">
+                    <Sparkles className="size-4 text-warning" />
+                    Cấu hình Trí tuệ Nhân tạo (AI)
+                  </Label>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="aiProvider" className="text-[11px] font-semibold">Nhà cung cấp (Provider)</Label>
+                      <select
+                        id="aiProvider"
+                        value={aiProvider}
+                        onChange={(e) => {
+                          const provider = e.target.value as any
+                          setAiProvider(provider)
+                          setAiModel(provider === 'OpenAI' ? 'gpt-4o' : 'gemini-1.5-flash')
+                        }}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="Gemini">Gemini</option>
+                        <option value="OpenAI">OpenAI</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <Label htmlFor="aiModel" className="text-[11px] font-semibold">Mẫu (Model)</Label>
+                      <Input
+                        id="aiModel"
+                        value={aiModel}
+                        onChange={(e) => setAiModel(e.target.value)}
+                        className="bg-background text-xs h-9"
+                        placeholder={aiProvider === 'OpenAI' ? 'gpt-4o' : 'gemini-1.5-flash'}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="aiApiKey" className="text-[11px] font-semibold">
+                      AI API Key {config?.hasAiApiKey && <span className="text-success text-[10px]">(Đã lưu)</span>}
+                    </Label>
+                    <Input
+                      id="aiApiKey"
+                      type="password"
+                      placeholder={config?.hasAiApiKey ? "••••••••••••" : "Nhập API Key để kích hoạt AI"}
+                      value={aiApiKey}
+                      onChange={(e) => setAiApiKey(e.target.value)}
+                      className="bg-background text-xs"
+                      required={!config?.hasAiApiKey}
+                    />
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
 
                 <div className="pt-2">
                   <Button

@@ -25,6 +25,7 @@ services:
       - Cors__AllowedOrigins__0=${PUBLIC_URL}
       - EnableSwagger=${ENABLE_SWAGGER:-true}
       - Seed__Enabled=${SEED_ENABLED:-true}
+      - AiSettings__ApiKey=${GEMINI_API_KEY}
     volumes:
       - uploads-data:/app/wwwroot/uploads
     depends_on:
