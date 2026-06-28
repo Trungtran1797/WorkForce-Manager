@@ -324,6 +324,7 @@ export function EmailAssistantPage() {
                   onChange={(e) => setChatInput(e.target.value)}
                   disabled={isSending}
                   className="flex-1 bg-accent/10 border-sidebar-border h-10 text-xs focus-visible:ring-1"
+                  autoComplete="off"
                 />
                 <Button type="submit" size="icon" className="h-10 w-10 shrink-0" disabled={isSending}>
                   <Send className="size-4" />
