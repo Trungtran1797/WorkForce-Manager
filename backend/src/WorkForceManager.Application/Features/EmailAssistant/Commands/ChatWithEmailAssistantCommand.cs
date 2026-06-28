@@ -91,64 +91,76 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
                 }
             }
         }
-        // 2. Nếu không hỏi cụ thể email, nhưng có ý định tìm kiếm/lọc email mới
-        else if (text.Contains("tìm") || text.Contains("lọc") || text.Contains("email") || text.Contains("thư") || text.Contains("mail") || text.Contains("mới nhất"))
+        // 2. Tải ngữ cảnh email liên quan (chạy vô điều kiện để AI luôn có dữ liệu chính xác)
+        int limit = 15;
+        var limitMatch = Regex.Match(text, @"(\d+)\s*(?:email|thư|mail|tin nhắn)");
+        if (limitMatch.Success && int.TryParse(limitMatch.Groups[1].Value, out int parsedLimit))
         {
-            int limit = 5;
-            var limitMatch = Regex.Match(text, @"(\d+)\s*(?:email|thư|mail|tin nhắn)");
-            if (limitMatch.Success && int.TryParse(limitMatch.Groups[1].Value, out int parsedLimit))
+            limit = Math.Clamp(parsedLimit, 1, 20);
+        }
+        else
+        {
+            var limitMatchTrailing = Regex.Match(text, @"(?:email|thư|mail|tin nhắn)\s*(\d+)");
+            if (limitMatchTrailing.Success && int.TryParse(limitMatchTrailing.Groups[1].Value, out int parsedLimitTrailing))
             {
-                limit = Math.Clamp(parsedLimit, 1, 20);
+                limit = Math.Clamp(parsedLimitTrailing, 1, 20);
+            }
+        }
+
+        string? searchKeyword = ExtractSearchKeyword(lastUserMessage);
+        
+        // Nếu từ khóa chỉ là một con số (đã dùng để xác định limit), ta đặt nó về null để tải email mới nhất
+        if (searchKeyword != null && int.TryParse(searchKeyword, out _))
+        {
+            searchKeyword = null;
+        }
+
+        List<EmailMessageDto> foundEmails = new();
+        if (!string.IsNullOrEmpty(searchKeyword))
+        {
+            // Thử tìm kiếm theo từ khóa trước
+            foundEmails = await _mailClientService.SearchEmailsAsync(config, searchKeyword, limit, cancellationToken);
+        }
+
+        // Nếu không tìm kiếm theo từ khóa hoặc kết quả tìm kiếm rỗng, tải danh sách email mới nhất làm ngữ cảnh mặc định
+        if (!foundEmails.Any())
+        {
+            foundEmails = await _mailClientService.SearchEmailsAsync(config, null, limit, cancellationToken);
+        }
+        
+        if (foundEmails.Any())
+        {
+            var emailListContext = new StringBuilder();
+            emailListContext.AppendLine("[HỆ THỐNG - DANH SÁCH EMAIL GẦN NHẤT ĐƯỢC TÌM THẤY]");
+            if (!string.IsNullOrEmpty(searchKeyword))
+            {
+                emailListContext.AppendLine($"*(Được lọc theo từ khóa: \"{searchKeyword}\")*");
+            }
+            int idx = 1;
+            foreach (var email in foundEmails)
+            {
+                emailListContext.AppendLine($"{idx}️⃣ **[{email.Date?.ToString("dd/MM/yyyy HH:mm")}]** Từ: {email.From}");
+                emailListContext.AppendLine($"   Tiêu đề: {email.Subject}");
+                emailListContext.AppendLine($"   Tóm tắt: {email.Snippet}");
+                emailListContext.AppendLine($"   ID: {email.MessageId}");
+                emailListContext.AppendLine();
+                idx++;
+            }
+            emailListContext.AppendLine("[HỆ THỐNG - HẾT DANH SÁCH]");
+
+            var searchContext = new AiChatMessageDto
+            {
+                Role = "system",
+                Content = emailListContext.ToString()
+            };
+            
+            if (messagesToSend.Count > 0)
+            {
+                messagesToSend.Insert(messagesToSend.Count - 1, searchContext);
             }
             else
             {
-                var limitMatchTrailing = Regex.Match(text, @"(?:email|thư|mail|tin nhắn)\s*(\d+)");
-                if (limitMatchTrailing.Success && int.TryParse(limitMatchTrailing.Groups[1].Value, out int parsedLimitTrailing))
-                {
-                    limit = Math.Clamp(parsedLimitTrailing, 1, 20);
-                }
-            }
-
-            string? searchKeyword = ExtractSearchKeyword(lastUserMessage);
-            
-            // Nếu từ khóa chỉ là một con số (đã dùng để xác định limit), ta đặt nó về null để tải email mới nhất
-            if (searchKeyword != null && int.TryParse(searchKeyword, out _))
-            {
-                searchKeyword = null;
-            }
-
-            var foundEmails = await _mailClientService.SearchEmailsAsync(config, searchKeyword, limit, cancellationToken);
-            
-            if (foundEmails.Any())
-            {
-                var emailListContext = new StringBuilder();
-                emailListContext.AppendLine("[HỆ THỐNG - DANH SÁCH EMAIL GẦN NHẤT ĐƯỢC TÌM THẤY]");
-                int idx = 1;
-                foreach (var email in foundEmails)
-                {
-                    emailListContext.AppendLine($"{idx}️⃣ **[{email.Date?.ToString("dd/MM/yyyy HH:mm")}]** Từ: {email.From}");
-                    emailListContext.AppendLine($"   Tiêu đề: {email.Subject}");
-                    emailListContext.AppendLine($"   Tóm tắt: {email.Snippet}");
-                    emailListContext.AppendLine($"   ID: {email.MessageId}");
-                    emailListContext.AppendLine();
-                    idx++;
-                }
-                emailListContext.AppendLine("[HỆ THỐNG - HẾT DANH SÁCH]");
-
-                var searchContext = new AiChatMessageDto
-                {
-                    Role = "system",
-                    Content = emailListContext.ToString()
-                };
-                
-                if (messagesToSend.Count > 0)
-                {
-                    messagesToSend.Insert(messagesToSend.Count - 1, searchContext);
-                }
-                else
-                {
-                    messagesToSend.Add(searchContext);
-                }
+                messagesToSend.Add(searchContext);
             }
         }
 
