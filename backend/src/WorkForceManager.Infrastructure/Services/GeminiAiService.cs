@@ -38,7 +38,7 @@ public class GeminiAiService : IAiService
     {
         var provider = _configuration["AiSettings:Provider"] ?? "Gemini";
         var apiKey = _configuration["AiSettings:ApiKey"];
-        var model = _configuration["AiSettings:Model"] ?? "gemini-1.5-flash";
+        var model = _configuration["AiSettings:Model"] ?? "gemini-2.5-flash";
         var endpoint = _configuration["AiSettings:Endpoint"] ?? "https://generativelanguage.googleapis.com/v1beta/models";
 
         try
@@ -52,7 +52,7 @@ public class GeminiAiService : IAiService
                 if (userConfig != null && !string.IsNullOrEmpty(userConfig.AiProvider))
                 {
                     provider = userConfig.AiProvider;
-                    model = userConfig.AiModel ?? (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ? "gpt-4o" : "gemini-1.5-flash");
+                    model = userConfig.AiModel ?? (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ? "gpt-4o" : "gemini-2.5-flash");
 
                     if (!string.IsNullOrEmpty(userConfig.AiApiKey))
                     {

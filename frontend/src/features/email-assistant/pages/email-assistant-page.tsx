@@ -87,7 +87,7 @@ export function EmailAssistantPage() {
 
   // AI states
   const [aiProvider, setAiProvider] = useState<'Gemini' | 'OpenAI'>('Gemini')
-  const [aiModel, setAiModel] = useState('gemini-1.5-flash')
+  const [aiModel, setAiModel] = useState('gemini-2.5-flash')
   const [aiApiKey, setAiApiKey] = useState('')
 
   // Chat states
@@ -662,7 +662,7 @@ export function EmailAssistantPage() {
                         onChange={(e) => {
                           const provider = e.target.value as any
                           setAiProvider(provider)
-                          setAiModel(provider === 'OpenAI' ? 'gpt-4o' : 'gemini-1.5-flash')
+                          setAiModel(provider === 'OpenAI' ? 'gpt-4o' : 'gemini-2.5-flash')
                         }}
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
@@ -678,7 +678,7 @@ export function EmailAssistantPage() {
                         value={aiModel}
                         onChange={(e) => setAiModel(e.target.value)}
                         className="bg-background text-xs h-9"
-                        placeholder={aiProvider === 'OpenAI' ? 'gpt-4o' : 'gemini-1.5-flash'}
+                        placeholder={aiProvider === 'OpenAI' ? 'gpt-4o' : 'gemini-2.5-flash'}
                         required
                       />
                     </div>
