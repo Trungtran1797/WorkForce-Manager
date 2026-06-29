@@ -83,7 +83,7 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-4 sm:px-6">
+    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border/60 glass-header px-4 sm:px-6">
       <div className="flex flex-1 items-center gap-2">
         <Button
           variant="ghost"
@@ -204,8 +204,8 @@ export function Header() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-accent">
-              <Avatar className="size-8">
-                <AvatarFallback>{initialsOf(displayName)}</AvatarFallback>
+              <Avatar className="size-8 ring-2 ring-primary/20">
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-indigo-500/20 text-primary font-semibold">{initialsOf(displayName)}</AvatarFallback>
               </Avatar>
               <div className="hidden text-left text-sm sm:block">
                 <div className="font-medium leading-tight">{displayName}</div>

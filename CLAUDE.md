@@ -451,6 +451,16 @@ Employee → Manager Approval → HR Approval → Completed
   - **Luồng download tệp đính kèm**: click link → Vite proxy `/api` → backend `GET /api/v1/email-assistant/attachment` (có `[AllowAnonymous]`) → fetch từ IMAP server → trả file với `Content-Disposition: attachment` → browser download/preview tự động.
   - *(Files sửa: `GeminiAiService.cs`, `email-assistant-page.tsx`, `email-assistant-chat-bubble.tsx`. File mới: `ai-markdown-content.tsx`. Frontend `npx tsc --noEmit` 0 lỗi.)*
 
+- [x] **Bước 25 — UI Refresh: Modern SaaS Visual Upgrade (thuần CSS/JSX, không đổi logic)**
+  - **Mục tiêu**: Nâng cấp visual lên "Modern SaaS" — bắt mắt hơn, tươi sáng hơn, chuyên nghiệp hơn — **không thay đổi bất kỳ logic, routing hay API nào**.
+  - **Phase 1 — Design Tokens (`globals.css`)**: `--radius` tăng `0.625rem` → `0.75rem`; nền app `0 0% 100%` → `220 20% 98%` (off-white premium); border visibility `220 15% 88%`; thêm tokens `--header-bg` (glassmorphism), `--card-shadow`/`--card-shadow-hover`; thêm `@layer utilities`: `.glass-header` (backdrop-blur-12px), `.icon-bg-primary/success/warning/destructive` (gradient icon containers), `.gradient-text-primary/success` (gradient text cho số liệu KPI), `.card-hover` (lift effect on hover), `.nav-active` (gradient pill + left border accent cho sidebar), `.page-hero` (gradient strip cho tiêu đề trang).
+  - **Phase 2 — Sidebar + Header**: Brand logo thêm shadow glow `shadow-success/30`, `font-black tracking-widest`; active nav item: `bg-primary/10` → class `nav-active` (gradient pill xanh-violet + left border 2px); Header thêm `sticky top-0 z-40` + glassmorphism `glass-header`; Avatar thêm `ring-2 ring-primary/20`.
+  - **Phase 3 — Dashboard KPI + Charts**: KPI icon container: `bg-X/10 text-X` → `div.icon-bg-* size-10 rounded-xl text-white`; metric numbers dùng `.gradient-text-*`; card thêm `card-hover` + `border-l-4`; Weekly chart bars dùng SVG `<linearGradient>` (gradient xanh lá & xanh blue); Dashboard title wrapped trong `.page-hero`.
+  - **Phase 4 — Tables + Badges**: TableHeader dùng `bg-gradient-to-r from-muted/80 to-muted/30`; TableHead `text-xs font-semibold uppercase tracking-wide h-11`; TableRow zebra `even:bg-muted/20`, hover `bg-primary/[0.03]`; TableCell `py-3.5`; Badge `px-2.5 font-semibold bg-X/12 border-X/25`.
+  - **Phase 5 — Buttons + Inputs + Dialogs**: Button default gradient `from-primary to-indigo-500 shadow-primary/25`; thêm variant `gradient` (`from-primary via-indigo-500 to-violet-500`); Input `h-10 bg-background` + blue glow focus; Dialog overlay `backdrop-blur-sm`, content `border-t-2 border-t-primary/40 shadow-2xl`, title `font-bold`.
+  - **Files sửa**: `globals.css`, `sidebar.tsx`, `header.tsx`, `kpi-card.tsx`, `weekly-progress-chart.tsx`, `dashboard-page.tsx`, `table.tsx`, `badge.tsx`, `button.tsx`, `input.tsx`, `dialog.tsx`.
+  - *(Đã verify: `npx tsc --noEmit` 0 lỗi. 7 test fail là pre-existing (mock thiếu hook) không liên quan UI. Sidebar theo theme — light ở Light Mode, dark ở Dark Mode như thiết kế.)*
+
 ---
 
 ### Lưu ý vận hành (cập nhật 2026-06-29)
@@ -468,6 +478,7 @@ Employee → Manager Approval → HR Approval → Completed
 - **Tường công ty vs Bảng tin**: Hai tab riêng biệt từ session 2026-06-27. "Tường công ty" (`?companyOnly=true`) chỉ Admin/Manager được đăng; "Bảng tin" hiện tất cả, bài công ty có badge "Thông báo CT". Field `IsCompanyPost` lưu trong `wall_posts.json`.
 - **Email Assistant — link tệp đính kèm**: Từ Bước 24, AI response được render bằng `react-markdown` → link `[file.pdf](/api/v1/...)` là `<a>` thật, click mở tab mới. Endpoint `/api/v1/email-assistant/attachment` có `[AllowAnonymous]` — không cần JWT, browser download trực tiếp. Nếu mock AI vẫn hiện lời chào generic (không có danh sách email): kiểm tra backend có inject system context không (cần hòm thư đã cấu hình + `SyncEmailsAsync` thành công).
 - **Email Assistant — Mock AI model**: Mặc định `gemini-2.0-flash` (quota 1.500 req/ngày free tier). Nếu thấy lỗi quota → AI tự fallback sang mock mode + hiện thông báo thân thiện (không lộ JSON error).
+- **UI Refresh (Bước 25)**: Toàn bộ thay đổi visual nằm trong CSS/JSX — không có logic mới. Nếu UI cũ hiện lại sau khi restart `npm run dev` → hard refresh **Ctrl+Shift+R**. Tailwind v4 không có `tailwind.config.ts` — mọi token và utility custom đều trong `frontend/src/styles/globals.css`. Shadcn component (table, badge, button, input, dialog) là local files trong `src/components/ui/` — đã được sửa trực tiếp.
 
 ---
 

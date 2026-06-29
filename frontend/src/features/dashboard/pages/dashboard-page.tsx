@@ -262,9 +262,9 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Tổng quan</h1>
-        <p className="text-sm text-muted-foreground">Tổng quan hệ thống WorkForce Manager</p>
+      <div className="page-hero -mx-4 sm:-mx-6 px-4 sm:px-6 py-5 mb-2">
+        <h1 className="text-2xl font-bold">Tổng quan</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Tổng quan hệ thống WorkForce Manager</p>
       </div>
 
       {/* KPI Cards */}

@@ -15,6 +15,16 @@ export function WeeklyProgressChart({ data }: { data: WeeklyProgressPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} barGap={4}>
+        <defs>
+          <linearGradient id="grad-completed" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(142 71% 42%)" />
+            <stop offset="100%" stopColor="hsl(158 64% 32%)" />
+          </linearGradient>
+          <linearGradient id="grad-inProgress" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(217 91% 60%)" />
+            <stop offset="100%" stopColor="hsl(234 89% 48%)" />
+          </linearGradient>
+        </defs>
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
         <XAxis
           dataKey="day"
@@ -36,13 +46,13 @@ export function WeeklyProgressChart({ data }: { data: WeeklyProgressPoint[] }) {
         <Bar
           dataKey="completed"
           name="Hoàn thành"
-          fill="hsl(var(--success))"
+          fill="url(#grad-completed)"
           radius={[4, 4, 0, 0]}
         />
         <Bar
           dataKey="inProgress"
           name="Đang thực hiện"
-          fill="hsl(var(--primary))"
+          fill="url(#grad-inProgress)"
           radius={[4, 4, 0, 0]}
         />
       </BarChart>

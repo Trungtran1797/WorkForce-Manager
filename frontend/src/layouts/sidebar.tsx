@@ -87,12 +87,12 @@ function BrandLogo({ collapsed, onClick }: { collapsed?: boolean; onClick?: () =
       onClick={onClick}
       className="flex items-center gap-2 hover:opacity-85 transition-opacity"
     >
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success font-bold text-white">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success font-bold text-white shadow-md shadow-success/30">
         <Leaf className="size-4.5" />
       </div>
       {!collapsed && (
         <div className="leading-tight">
-          <div className="text-sm font-extrabold tracking-wide text-warning">SAIGON SPICES</div>
+          <div className="text-sm font-black tracking-widest text-warning">SAIGON SPICES</div>
           <div className="text-[11px] text-muted-foreground">WorkForce Manager</div>
         </div>
       )}
@@ -107,7 +107,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
       <div className="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-5">
         <BrandLogo collapsed={collapsed} onClick={onNavigate} />
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4 scrollbar-thin">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -116,10 +116,10 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 hover:bg-accent/80 hover:text-foreground',
                 isActive
-                  ? 'bg-primary/10 font-semibold text-primary dark:bg-primary/20'
-                  : 'text-muted-foreground hover:text-foreground',
+                  ? 'nav-active font-semibold text-primary'
+                  : 'text-muted-foreground',
                 collapsed && 'justify-center px-2'
               )
             }
@@ -177,7 +177,7 @@ export function MobileSidebar() {
             <X className="size-5" />
           </Button>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4 scrollbar-thin">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -186,10 +186,10 @@ export function MobileSidebar() {
               onClick={() => setMobileSidebarOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 hover:bg-accent/80 hover:text-foreground',
                   isActive
-                    ? 'bg-primary/10 font-semibold text-primary dark:bg-primary/20'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'nav-active font-semibold text-primary'
+                    : 'text-muted-foreground'
                 )
               }
             >
