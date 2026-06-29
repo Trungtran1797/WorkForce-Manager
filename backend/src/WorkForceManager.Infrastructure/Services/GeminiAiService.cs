@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ public class GeminiAiService : IAiService
     {
         var provider = _configuration["AiSettings:Provider"] ?? "Gemini";
         var apiKey = _configuration["AiSettings:ApiKey"];
-        var model = _configuration["AiSettings:Model"] ?? "gemini-2.5-flash";
+        var model = _configuration["AiSettings:Model"] ?? "gemini-2.0-flash";
         var endpoint = _configuration["AiSettings:Endpoint"] ?? "https://generativelanguage.googleapis.com/v1beta/models";
 
         try
@@ -58,7 +59,7 @@ public class GeminiAiService : IAiService
             }
             else
             {
-                model = provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ? "gpt-4o" : "gemini-2.5-flash";
+                model = provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ? "gpt-4o" : "gemini-2.0-flash";
             }
             if (dbApiKeySetting != null && !string.IsNullOrEmpty(dbApiKeySetting.Value))
             {
@@ -104,10 +105,15 @@ public class GeminiAiService : IAiService
                 return await CallGeminiApiAsync(endpoint, apiKey, model, messages, systemPrompt, ct);
             }
         }
+        catch (Exception ex) when (ex.Message.Contains("429") || ex.Message.Contains("TooManyRequests") || ex.Message.Contains("RESOURCE_EXHAUSTED"))
+        {
+            _logger.LogWarning(ex, "AI API quota exceeded (429). Đang chuyển sang Mock AI Fallback.");
+            return GetMockAiResponse(messages) + "\n\n*(Lưu ý: Trợ lý AI đang ở chế độ mô phỏng do vượt giới hạn quota API hôm nay. Quota sẽ tự reset vào ngày mai, hoặc bạn có thể cập nhật API Key trong Cài đặt hệ thống.)*";
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Lỗi khi gọi API AI thật. Đang chuyển sang Mock AI Fallback.");
-            return GetMockAiResponse(messages) + $"\n\n*(Lưu ý: Phản hồi này được tạo bởi Mock AI do lỗi kết nối tới API thật. Chi tiết lỗi: {ex.Message})*";
+            return GetMockAiResponse(messages) + "\n\n*(Lưu ý: Trợ lý AI đang ở chế độ mô phỏng do không kết nối được API. Vui lòng kiểm tra cấu hình AI trong Cài đặt hệ thống.)*";
         }
     }
 
@@ -238,53 +244,180 @@ public class GeminiAiService : IAiService
     private string GetMockAiResponse(List<AiChatMessageDto> messages)
     {
         var lastUserMessage = messages.LastOrDefault(m => m.Role.Equals("user", StringComparison.OrdinalIgnoreCase))?.Content ?? "";
-        var text = lastUserMessage.ToLower();
+        var text = lastUserMessage.ToLower().Trim();
 
-        if (text.Contains("tìm") || text.Contains("lọc") || text.Contains("search"))
+        // Thử đọc dữ liệu email thật từ system context được inject bởi ChatWithEmailAssistantCommandHandler
+        var systemContext = messages
+            .Where(m => m.Role.Equals("system", StringComparison.OrdinalIgnoreCase) && m.Content.Contains("[HỆ THỐNG - DANH SÁCH EMAIL"))
+            .FirstOrDefault()?.Content;
+
+        var detailContext = messages
+            .Where(m => m.Role.Equals("system", StringComparison.OrdinalIgnoreCase) && m.Content.Contains("[HỆ THỐNG - DỮ LIỆU EMAIL CHI TIẾT]"))
+            .FirstOrDefault()?.Content;
+
+        // 1. Chào hỏi/Xác định danh tính
+        if (text.Contains("chào") || text.Contains("hello") || text.Contains("hi") || text.Contains("hey") || text.Contains("bạn là ai") || text.Contains("tên là gì"))
         {
-            return "Dạ, tôi đã tìm thấy 3 email phù hợp với yêu cầu của bạn từ hộp thư. Dưới đây là tóm tắt:\n\n" +
-                   "1️⃣ **[28/06 - 09:30]** Từ: **sales@saigonspices.com.vn**\n" +
-                   "   *Tiêu đề:* Xác nhận đơn hàng Hồ Tiêu Đen xuất khẩu #SP-2026-098\n" +
-                   "   *Tóm tắt:* Đơn hàng 5 tấn hồ tiêu đen đã được xác nhận. Yêu cầu bộ phận kho chuẩn bị hàng để đóng container trước ngày 05/07. Cần phản hồi lịch xuất kho cho Logistics.\n\n" +
-                   "2️⃣ **[27/06 - 15:45]** Từ: **hr@saigonspices.com.vn**\n" +
-                   "   *Tiêu đề:* Thông báo lịch đánh giá năng lực nhân sự Q2/2026\n" +
-                   "   *Tóm tắt:* Lịch đánh giá năng lực của phòng Kỹ Thuật và Văn Phòng sẽ diễn ra từ ngày 01/07 đến 05/07. Yêu cầu nhân viên tự nộp biểu mẫu tự đánh giá trước 30/06.\n\n" +
-                   "3️⃣ **[25/06 - 11:15]** Từ: **ceo@saigonspices.com.vn**\n" +
-                   "   *Tiêu đề:* Triệu tập họp khẩn Ban Giám Đốc sáng thứ Hai tuần tới\n" +
-                   "   *Tóm tắt:* Cuộc họp về kế hoạch kinh doanh 6 tháng cuối năm sẽ bắt đầu lúc 08:30 sáng thứ Hai (29/06) tại Phòng Họp A. Yêu cầu chuẩn bị báo cáo tiến độ OKR.\n\n" +
-                   "Bạn có muốn xem chi tiết hoặc trả lời email nào trong số này không?";
+            return "Chào bạn! Tôi là **Trợ lý Email AI** của SAIGON SPICES (đang chạy ở chế độ mô phỏng).\n\n" +
+                   "Bạn có thể yêu cầu tôi tìm kiếm email (VD: *'Tìm email mới nhất'*, *'Lọc thư từ HR'*) hoặc đọc chi tiết thư (VD: *'Xem email số 1'*).";
         }
 
-        if (text.Contains("chi tiết email 1") || text.Contains("email số 1") || text.Contains("email 1"))
+        // 2. Ý định trò chuyện phi email / phản hồi lại việc trò chuyện
+        if (text.Contains("trò chuyện") || text.Contains("nói chuyện") || text.Contains("tán gẫu") || text.Contains("chơi") || text.Contains("hỏi thăm") || text.Contains("với bạn"))
         {
-            return "Dạ, đây là chi tiết của **Email số 1**:\n\n" +
-                   "**Người gửi:** sales@saigonspices.com.vn\n" +
-                   "**Thời gian:** 28/06/2026 09:30\n" +
-                   "**Tiêu đề:** Xác nhận đơn hàng Hồ Tiêu Đen xuất khẩu #SP-2026-098\n\n" +
-                   "**Nội dung đầy đủ:**\n" +
-                   "Chào bộ phận điều hành,\n\n" +
-                   "Chúng tôi xin xác nhận đơn hàng xuất khẩu 5 tấn Hồ Tiêu Đen đi thị trường Châu Âu (mã hợp đồng #SP-2026-098) đã hoàn tất thủ tục thanh toán đặt cọc 30%.\n\n" +
-                   "Kế hoạch đóng hàng container dự kiến vào ngày 05/07/2026 tại Cảng Cát Lái. Yêu cầu ban quản lý kho phối hợp đóng gói tiêu chuẩn xuất khẩu và bàn giao phiếu cân (VGM) trước ngày 03/07/2026.\n\n" +
-                   "Vui lòng phản hồi mail này để xác nhận lịch trình chuẩn bị.\n\n" +
-                   "Trân trọng,\n" +
-                   "Nguyễn Văn Nam - Phòng Kinh doanh.";
+            return "Hiện tại tôi đang hoạt động ở **chế độ mô phỏng (Mock mode)** nên khả năng trò chuyện tự do bị giới hạn.\n\n" +
+                   "Vui lòng thiết lập **API Key thật** (Gemini/OpenAI) trong **Cài đặt hệ thống** để có thể trò chuyện tự nhiên và phân tích thông tin đầy đủ.";
         }
 
-        if (text.Contains("deadline") || text.Contains("hạn chót") || text.Contains("công việc"))
+        // 3. Đọc chi tiết email
+        bool isDetailIntent = text.Contains("chi tiết") || text.Contains("xem") || text.Contains("đọc") || text.Contains("mở");
+        bool hasNumber = Regex.IsMatch(text, @"(?:email|thư|số)?\s*\d+");
+        if (!string.IsNullOrEmpty(detailContext) && (isDetailIntent || hasNumber))
         {
-            return "Dạ, tổng hợp các mốc thời gian và hạn chót quan trọng từ email gần nhất:\n\n" +
-                   "- **30/06/2026**: Hạn cuối nộp biểu mẫu tự đánh giá năng lực nhân sự Q2 (từ email HR ngày 27/06).\n" +
-                   "- **03/07/2026**: Hạn cuối bàn giao phiếu cân (VGM) đóng hàng xuất khẩu (từ email Sales ngày 28/06).\n" +
-                   "- **05/07/2026**: Kế hoạch đóng hàng container xuất khẩu tiêu tại cảng (từ email Sales ngày 28/06).\n\n" +
-                   "Bạn có cần tôi nhắc nhở hoặc đặt lịch hẹn cho mốc nào không?";
+            return FormatEmailDetailFromContext(detailContext);
         }
 
-        return "Dạ, tôi là **Trợ lý Email AI** của bạn. Hiện tại tôi đang chạy ở chế độ mô phỏng (Mock mode) do chưa kết nối API Key.\n\n" +
-               "Tôi có thể hỗ trợ bạn:\n" +
-               "1. Tìm kiếm và lọc email mới nhất (ví dụ gõ: *'Tìm email mới'*).\n" +
-               "2. Tóm tắt nội dung chính và hạn chót (ví dụ gõ: *'Hạn chót tuần này là gì?'*).\n" +
-               "3. Xem chi tiết từng thư để xử lý tiếp (ví dụ gõ: *'Xem email số 1'*).\n\n" +
-               "Hãy cho tôi biết bạn muốn thực hiện hành động nào!";
+        // 4. Tìm kiếm/Lọc email (Có từ khóa tìm kiếm rõ ràng)
+        bool isSearchIntent = text.Contains("email") || text.Contains("thư") || text.Contains("mail") ||
+                             text.Contains("tìm") || text.Contains("lọc") || text.Contains("danh sách") ||
+                             text.Contains("gần nhất") || text.Contains("mới nhất") || text.Contains("list") ||
+                             text.Contains("show") || text.Contains("hiển thị");
+
+        if (!string.IsNullOrEmpty(systemContext) && (isSearchIntent || string.IsNullOrEmpty(text)))
+        {
+            return FormatEmailListFromContext(systemContext);
+        }
+
+        // 5. Câu hỏi về deadline/hạn chót
+        if (text.Contains("deadline") || text.Contains("hạn chót") || text.Contains("lịch") || text.Contains("công việc"))
+        {
+            return "Để phân tích chính xác hạn chót từ hòm thư, bạn cần cấu hình API Key thật (Gemini/OpenAI) trong Cài đặt hệ thống.";
+        }
+
+        // 6. Cảm ơn
+        if (text.Contains("cảm ơn") || text.Contains("cám ơn") || text.Contains("thank"))
+        {
+            return "Không có gì. Tôi luôn sẵn sàng hỗ trợ tìm kiếm và tóm tắt email công việc của bạn.";
+        }
+
+        // 7. Fallback cuối cùng nếu có system context và không có ý định trò chuyện phi email rõ ràng
+        if (!string.IsNullOrEmpty(systemContext))
+        {
+            return FormatEmailListFromContext(systemContext);
+        }
+
+        return "Tôi là Trợ lý Email AI (chế độ mô phỏng). Bạn có thể tìm kiếm email mới hoặc yêu cầu đọc chi tiết thư (VD: *'Xem email số 1'*).";
+    }
+
+    private static string FormatEmailListFromContext(string systemContext)
+    {
+        // Trích xuất khối email từ system context đã được inject
+        // System context có định dạng:
+        //   1️⃣ **[date]** Từ: sender
+        //      Tiêu đề: subject
+        //      Tóm tắt: snippet
+        //      ID: messageId
+        //      Tệp đính kèm:
+        //        - Tên: file.pdf (Size: ... | PartSpecifier: 1 | AttachmentId: abc)
+
+        var lines = systemContext.Split('\n');
+        var sb = new StringBuilder();
+        sb.AppendLine("Dạ, đây là danh sách email từ hòm thư của bạn:\n");
+
+        string currentMessageId = "";
+        bool inAttachment = false;
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.TrimEnd();
+
+            if (line.StartsWith("[HỆ THỐNG")) continue;
+            if (line.StartsWith("*(Được lọc")) continue;
+
+            // Dòng đánh số email: 1️⃣, 2️⃣, ...
+            if (Regex.IsMatch(line, @"^\d+️⃣"))
+            {
+                sb.AppendLine(line);
+                inAttachment = false;
+                continue;
+            }
+
+            if (line.Contains("ID:"))
+            {
+                var idMatch = Regex.Match(line, @"ID:\s*(.+)");
+                if (idMatch.Success) currentMessageId = idMatch.Groups[1].Value.Trim();
+                continue; // Không hiển thị raw ID line
+            }
+
+            if (line.TrimStart().StartsWith("Tệp đính kèm:"))
+            {
+                sb.AppendLine("   📎 **Tệp đính kèm:**");
+                inAttachment = true;
+                continue;
+            }
+
+            if (inAttachment && line.TrimStart().StartsWith("- Tên:"))
+            {
+                // Phân tích: - Tên: file.pdf (Size: 123 KB | PartSpecifier: 2 | AttachmentId: xyz)
+                var nameMatch = Regex.Match(line, @"Tên:\s*([^\(]+)");
+                var partMatch = Regex.Match(line, @"PartSpecifier:\s*([^\|]+)");
+                var attIdMatch = Regex.Match(line, @"AttachmentId:\s*([^\)]+)");
+                var sizeMatch = Regex.Match(line, @"Size:\s*([^\|]+)");
+
+                var fileName = nameMatch.Success ? nameMatch.Groups[1].Value.Trim() : "attachment";
+                var partSpecifier = partMatch.Success ? partMatch.Groups[1].Value.Trim() : "";
+                var attachmentId = attIdMatch.Success ? attIdMatch.Groups[1].Value.Trim() : "";
+                var size = sizeMatch.Success ? sizeMatch.Groups[1].Value.Trim() : "";
+
+                var encodedFileName = Uri.EscapeDataString(fileName);
+                var downloadUrl = $"/api/v1/email-assistant/attachment?messageId={Uri.EscapeDataString(currentMessageId)}&partSpecifier={Uri.EscapeDataString(partSpecifier)}&attachmentId={Uri.EscapeDataString(attachmentId)}&fileName={encodedFileName}";
+
+                sb.AppendLine($"   📎 [**{fileName}**]({downloadUrl}) ({size})");
+                continue;
+            }
+
+            if (inAttachment && string.IsNullOrWhiteSpace(line))
+            {
+                inAttachment = false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                sb.AppendLine(line);
+            }
+            else
+            {
+                sb.AppendLine();
+            }
+        }
+
+        sb.AppendLine("\nBạn có muốn xem chi tiết hoặc tải tệp đính kèm của email nào không?");
+        return sb.ToString();
+    }
+
+    private static string FormatEmailDetailFromContext(string detailContext)
+    {
+        var lines = detailContext.Split('\n');
+        var sb = new StringBuilder();
+        sb.AppendLine("Dạ, đây là chi tiết email:\n");
+
+        string messageId = "";
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.TrimEnd();
+            if (line.StartsWith("[HỆ THỐNG")) continue;
+
+            if (line.StartsWith("- ID:"))
+            {
+                var idMatch = Regex.Match(line, @"- ID:\s*(.+)");
+                if (idMatch.Success) messageId = idMatch.Groups[1].Value.Trim();
+                continue;
+            }
+
+            sb.AppendLine(line.TrimStart('-').Trim());
+        }
+
+        return sb.ToString();
     }
 
     #endregion

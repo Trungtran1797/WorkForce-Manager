@@ -15,6 +15,7 @@ import { useAuth } from '@/features/auth/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { emailAssistantApi } from '../api/email-assistant-api'
 import type { ChatMessage } from '../types'
+import { AiMarkdownContent } from './ai-markdown-content'
 
 export function EmailAssistantChatBubble() {
   const { user } = useAuth()
@@ -159,9 +160,11 @@ export function EmailAssistantChatBubble() {
                         : 'bg-card text-foreground border-sidebar-border rounded-tl-none'
                     }`}
                   >
-                    <div className="whitespace-pre-line prose prose-sm dark:prose-invert">
-                      {m.content}
-                    </div>
+                    {m.role === 'user' ? (
+                      <div className="whitespace-pre-line">{m.content}</div>
+                    ) : (
+                      <AiMarkdownContent content={m.content} className="text-xs leading-relaxed" />
+                    )}
                   </div>
                 </div>
               ))}

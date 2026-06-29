@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using WorkForceManager.Application.Common.Interfaces;
@@ -159,6 +160,24 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
                 emailListContext.AppendLine($"   Tiêu đề: {email.Subject}");
                 emailListContext.AppendLine($"   Tóm tắt: {email.Snippet}");
                 emailListContext.AppendLine($"   ID: {email.MessageId}");
+
+                if (!string.IsNullOrEmpty(email.AttachmentsJson) && email.AttachmentsJson != "[]")
+                {
+                    try
+                    {
+                        var atts = JsonSerializer.Deserialize<List<EmailAttachmentDto>>(email.AttachmentsJson);
+                        if (atts != null && atts.Any())
+                        {
+                            emailListContext.AppendLine("   Tệp đính kèm:");
+                            foreach (var att in atts)
+                            {
+                                emailListContext.AppendLine($"     - Tên: {att.FileName} (Size: {FormatFileSize(att.Size)} | PartSpecifier: {att.PartSpecifier} | AttachmentId: {att.AttachmentId})");
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
                 emailListContext.AppendLine();
                 idx++;
             }
@@ -182,14 +201,17 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
 
         // Định hình System Prompt tiếng Việt cho Trợ lý Email
         var systemInstruction = 
-            "Bạn là Trợ lý Email tiếng Việt của SAIGON SPICES, một trợ lý hữu ích, ngắn gọn và bảo mật.\n" +
-            "Hãy hỗ trợ người dùng lọc, tìm kiếm, tóm tắt và soạn email dựa trên thông tin được cung cấp.\n\n" +
+            "Bạn là Trợ lý Email tiếng Việt của SAIGON SPICES, một trợ lý hữu ích, ngắn gọn, trung thực, chính xác và bảo mật.\n" +
+            "Nhiệm vụ của bạn là hỗ trợ người dùng lọc, tìm kiếm, tóm tắt và soạn email dựa trên thông tin thực tế được cung cấp trong ngữ cảnh.\n\n" +
             $"Hôm nay là ngày: {DateTime.UtcNow.AddHours(7).ToString("dd/MM/yyyy")} (Vietnam Time).\n\n" +
             "Nguyên tắc trả lời:\n" +
-            "1. Luôn mở đầu bằng lời chào/xác nhận ngắn gọn (VD: 'Dạ, tôi đã tìm thấy...', 'Dạ, đây là...').\n" +
-            "2. Khi liệt kê danh sách email, hãy đánh số 1️⃣, 2️⃣, 3️⃣... Kèm ngày tháng gửi, tiêu đề và tóm tắt ngắn 2-3 câu chứa mục đích chính, deadline/hạn chót và việc cần làm.\n" +
-            "3. Khi người dùng hỏi thêm về một thư (VD: 'Thư số 2 nói gì?'), hãy sử dụng thông tin trong ngữ cảnh hệ thống có chứa 'Nội dung đầy đủ' để trả lời chi tiết và tham chiếu chính xác (VD: 'Email số 2 đề cập...').\n" +
-            "4. Quyền riêng tư: Không hiển thị toàn bộ nội dung email trừ khi người dùng yêu cầu trực tiếp. Không tự bịa thông tin email nếu không có trong dữ liệu hòm thư.";
+            "1. Trung thực và chính xác: Chỉ trả lời dựa trên thông tin thực tế có trong email được cung cấp trong ngữ cảnh. Tuyệt đối không tự bịa thông tin email hoặc thông tin người gửi/người nhận/nội dung/tệp đính kèm nếu không có trong dữ liệu hòm thư.\n" +
+            "2. Trực tiếp và không thừa nội dung: Trả lời thẳng vào câu hỏi của người dùng, tập trung chính xác vào thông tin được yêu cầu. Không thêm các lời chào hỏi/kết thúc rườm rà, giải thích dài dòng hoặc các thông tin lan man ngoài lề không được hỏi.\n" +
+            "3. Khi liệt kê danh sách email: Đánh số 1️⃣, 2️⃣, 3️⃣... Kèm ngày tháng gửi, người gửi, tiêu đề và tóm tắt cực kỳ ngắn gọn (1-2 câu) về nội dung chính/deadline nếu có.\n" +
+            "4. Khi email có tệp đính kèm (Attachments): Bạn phải hiển thị liên kết tải trực tiếp ở định dạng Markdown ngay sau email đó:\n" +
+            "   `📎 Tải về tệp đính kèm: [Tên_tệp](/api/v1/email-assistant/attachment?messageId=MESSAGE_ID&partSpecifier=PART_SPECIFIER&attachmentId=ATTACHMENT_ID&fileName=TEN_TEP)`\n" +
+            "   (Thay thế các tham số tương ứng từ dữ liệu hệ thống. Nếu thiếu AttachmentId hoặc PartSpecifier thì bỏ trống tham số nhưng giữ nguyên tên tham số).\n" +
+            "5. Quyền riêng tư: Không hiển thị toàn bộ nội dung chi tiết của email trừ khi người dùng yêu cầu trực tiếp.";
 
         return await _aiService.GetChatCompletionAsync(messagesToSend, systemInstruction, cancellationToken);
     }
@@ -216,5 +238,17 @@ public class ChatWithEmailAssistantCommandHandler : IRequestHandler<ChatWithEmai
 
         clean = clean.Replace("?", "").Replace(".", "").Trim();
         return string.IsNullOrEmpty(clean) ? null : clean;
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        string[] suffix = { "B", "KB", "MB", "GB", "TB" };
+        int i;
+        double dblSByte = bytes;
+        for (i = 0; i < suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+        {
+            dblSByte = bytes / 1024.0;
+        }
+        return $"{dblSByte:0.##} {suffix[i]}";
     }
 }

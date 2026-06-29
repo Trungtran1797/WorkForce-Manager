@@ -427,9 +427,33 @@ Employee → Manager Approval → HR Approval → Completed
   - Ẩn dòng menu "Tường công ty" khỏi sidebar (`layouts/sidebar.tsx`) — route `/wall` vẫn hoạt động bình thường, chỉ truy cập qua icon trên header thay vì sidebar.
   - *(Thay đổi thuần frontend. Files sửa: `header.tsx`, `sidebar.tsx`.)*
 
+- [x] **Bước 22 — Thiết kế lại màn hình đăng nhập (Production-ready, Saigon Spices branding)**
+  - **Xoá hộp thông tin demo**: Giao diện chính thức gửi khách hàng — bỏ hoàn toàn khung "Tài khoản demo" khỏi login page.
+  - **Layout floating card (MISA-style)**: Viết lại `frontend/src/features/auth/pages/login-page.tsx` từ centered card đơn giản sang floating card `max-w-3xl` căn giữa toàn màn hình, bên trong chia 2 panel:
+    - **Brand panel** (ẩn trên mobile): `w-5/12`, dark orange gradient (`from-orange-950 via-orange-900 to-amber-900`), logo Saigon Spices + icon `Flame` + tiêu đề WorkForce Manager + 3 feature bullets (Users/BarChart3/CheckSquare2).
+    - **Form panel** (`flex-1`): `bg-card`, form đăng nhập (`max-w-xs`) với field Username + Password + Submit button.
+  - **Background**: gradient `from-sky-300 via-amber-100 to-orange-200` + overlay tối dưới + sun glow blur; top-right bar hiển thị 🇻🇳 Việt Nam + Trợ giúp (backdrop-blur pill).
+  - **Toàn bộ logic giữ nguyên**: react-hook-form + zod, error state, loading spinner, auth context, navigate.
+  - *(File sửa: `frontend/src/features/auth/pages/login-page.tsx`. Không thay đổi logic, chỉ thay đổi JSX/layout.)*
+
+- [x] **Bước 23 — Fix build error MailClientService + Cải thiện AI Email error handling**
+  - **Fix CS1503 MailClientService** (`backend/src/WorkForceManager.Infrastructure/Services/MailClientService.cs`): `inbox.GetBodyPartAsync()` yêu cầu tham số `MailKit.BodyPart` object, không phải `string`. Fix: thêm helper `FindBodyPart(BodyPart, specifier)` duyệt cây BodyPart đệ quy; `DownloadImapAttachmentAsync` gọi `FetchAsync(..., MessageSummaryItems.BodyStructure)` trước, rồi tìm đúng BodyPart, sau đó mới gọi `GetBodyPartAsync`. Build: 0 Error(s).
+  - **Ẩn raw JSON error khỏi AI chat response** (`GeminiAiService.cs`): Tách catch block riêng cho lỗi 429/TooManyRequests/RESOURCE_EXHAUSTED — hiển thị message thân thiện *"vượt giới hạn quota hôm nay, reset ngày mai"* thay vì lộ toàn bộ JSON error cho user. Catch block chung cho lỗi khác cũng được làm sạch tương tự.
+  - **Đổi model AI mặc định** từ `gemini-2.5-flash` → `gemini-2.0-flash` (quota free tier cao hơn: 1.500 req/ngày thay vì 10–20 req/ngày).
+  - *(Files sửa: `MailClientService.cs`, `GeminiAiService.cs`. Backend build: 0 error.)*
+
+- [x] **Bước 24 — Email Assistant: Fix Mock AI + Render Markdown tệp đính kèm có thể click**
+  - **Fix Mock AI không hiển thị danh sách email** (`GeminiAiService.cs`): `GetMockAiResponse()` trước đây kiểm tra keyword quá chặt (cần "email", "thư", "tìm"...) — nút "5 mail gần nhất" gửi text có "mail" nhưng không có "email" nên trả về lời chào generic. Fix: xóa hoàn toàn keyword check, nếu có `systemContext` ([HỆ THỐNG - DANH SÁCH EMAIL...]) thì **luôn** gọi `FormatEmailListFromContext()`.
+  - **Render AI response dạng Markdown có thể tương tác** (Frontend): AI trả về link tệp đính kèm dạng `[**CV.pdf**](/api/v1/email-assistant/attachment?...)` nhưng cả 2 màn hình chat đang render plain text (class `whitespace-pre-line`) nên link hiện ra như chữ thô — không click được.
+  - **Cài `react-markdown`** (78 packages) vào `frontend/`.
+  - **Tạo `frontend/src/features/email-assistant/components/ai-markdown-content.tsx`**: component dùng chung render markdown AI với custom `Components` map — link mở `target="_blank"`, styled `text-primary underline`; strong/em/p/ul/ol/li/code đều có class Tailwind tương ứng.
+  - **Cập nhật `email-assistant-page.tsx`** và **`email-assistant-chat-bubble.tsx`**: tin nhắn `user` giữ `whitespace-pre-line`, tin nhắn `assistant`/`system` dùng `<AiMarkdownContent>` thay vì plain text.
+  - **Luồng download tệp đính kèm**: click link → Vite proxy `/api` → backend `GET /api/v1/email-assistant/attachment` (có `[AllowAnonymous]`) → fetch từ IMAP server → trả file với `Content-Disposition: attachment` → browser download/preview tự động.
+  - *(Files sửa: `GeminiAiService.cs`, `email-assistant-page.tsx`, `email-assistant-chat-bubble.tsx`. File mới: `ai-markdown-content.tsx`. Frontend `npx tsc --noEmit` 0 lỗi.)*
+
 ---
 
-### Lưu ý vận hành (cập nhật 2026-06-27)
+### Lưu ý vận hành (cập nhật 2026-06-29)
 
 - **VPS demo đang chạy**: `http://171.244.143.243` — project tại `/root/app/` trên VPS Ubuntu 24.04. Tài khoản demo: admin/Admin@123, manager/Manager@123, employee/Employee@123.
 - **Cập nhật VPS khi có code mới**: Chạy `deploy.bat` ở thư mục gốc. Script tự động commit/push → git pull VPS → `docker compose build --no-cache` → `up -d`. Timeout SSH 600s vì build `--no-cache` mất 5–10 phút.
@@ -442,6 +466,8 @@ Employee → Manager Approval → HR Approval → Completed
 - **Wall page không có `components.json`**: Shadcn component được thêm thủ công vào `src/components/ui/`. Khi cần component mới (vd. `progress`, `slider`...) → copy pattern từ file có sẵn + cài `@radix-ui/react-<name>` qua npm.
 - **Wall storage dùng JSON file** (`App_Data/wall_posts.json`, `App_Data/wall_groups.json`) — không phải SQL Server. Seed nhóm chạy tự động khi `wall_groups.json` chưa tồn tại.
 - **Tường công ty vs Bảng tin**: Hai tab riêng biệt từ session 2026-06-27. "Tường công ty" (`?companyOnly=true`) chỉ Admin/Manager được đăng; "Bảng tin" hiện tất cả, bài công ty có badge "Thông báo CT". Field `IsCompanyPost` lưu trong `wall_posts.json`.
+- **Email Assistant — link tệp đính kèm**: Từ Bước 24, AI response được render bằng `react-markdown` → link `[file.pdf](/api/v1/...)` là `<a>` thật, click mở tab mới. Endpoint `/api/v1/email-assistant/attachment` có `[AllowAnonymous]` — không cần JWT, browser download trực tiếp. Nếu mock AI vẫn hiện lời chào generic (không có danh sách email): kiểm tra backend có inject system context không (cần hòm thư đã cấu hình + `SyncEmailsAsync` thành công).
+- **Email Assistant — Mock AI model**: Mặc định `gemini-2.0-flash` (quota 1.500 req/ngày free tier). Nếu thấy lỗi quota → AI tự fallback sang mock mode + hiện thông báo thân thiện (không lộ JSON error).
 
 ---
 

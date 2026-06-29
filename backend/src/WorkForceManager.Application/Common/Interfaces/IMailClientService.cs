@@ -28,6 +28,16 @@ public interface IMailClientService
     /// Đồng bộ email từ hòm thư về cơ sở dữ liệu cục bộ phục vụ cho AI phản hồi đầy đủ và tức thì.
     /// </summary>
     Task SyncEmailsAsync(UserEmailConfig config, int userId, IApplicationDbContext context, CancellationToken ct = default);
+
+    /// <summary>
+    /// Tải dữ liệu nhị phân của tệp đính kèm từ hòm thư.
+    /// </summary>
+    Task<(Stream Content, string ContentType, string FileName)> DownloadAttachmentAsync(
+        UserEmailConfig config, 
+        string messageId, 
+        string? partSpecifier, 
+        string? attachmentId, 
+        CancellationToken ct = default);
 }
 
 public class EmailMessageDto
@@ -40,4 +50,14 @@ public class EmailMessageDto
     public string Snippet { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public bool IsRead { get; set; }
+    public List<EmailAttachmentDto> Attachments { get; set; } = new();
+}
+
+public class EmailAttachmentDto
+{
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long Size { get; set; }
+    public string? PartSpecifier { get; set; } // IMAP body part index, e.g. "2"
+    public string? AttachmentId { get; set; }  // Gmail API attachment ID
 }

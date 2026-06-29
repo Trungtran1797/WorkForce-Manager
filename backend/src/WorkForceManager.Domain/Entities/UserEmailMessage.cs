@@ -16,4 +16,5 @@ public class UserEmailMessage : BaseAuditableEntity
     public DateTime? Date { get; set; }
     public string Body { get; set; } = string.Empty;
     public string Snippet { get; set; } = string.Empty;
+    public string AttachmentsJson { get; set; } = "[]";
 }

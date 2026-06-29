@@ -63,4 +63,30 @@ public class EmailAssistantController : ApiControllerBase
         var result = await Mediator.Send(command, ct);
         return Ok(ApiResponse<string>.Ok(result));
     }
+
+    [AllowAnonymous]
+    [HttpGet("attachment")]
+    public async Task<IActionResult> DownloadAttachment(
+        [FromQuery] string messageId, 
+        [FromQuery] string? partSpecifier, 
+        [FromQuery] string? attachmentId, 
+        [FromQuery] string fileName, 
+        [FromQuery] int? userId, 
+        CancellationToken ct)
+    {
+        var result = await Mediator.Send(new DownloadEmailAttachmentQuery 
+        { 
+            MessageId = messageId, 
+            PartSpecifier = partSpecifier, 
+            AttachmentId = attachmentId, 
+            UserId = userId 
+        }, ct);
+
+        if (result == null)
+        {
+            return NotFound("Không tìm thấy tệp đính kèm hoặc kết nối hòm thư thất bại.");
+        }
+
+        return File(result.Content, result.ContentType, result.FileName);
+    }
 }

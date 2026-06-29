@@ -397,6 +397,8 @@ public class MailClientService : IMailClientService
         }
 
         string body = string.Empty;
+        var attachments = new List<EmailAttachmentDto>();
+        
         if (payload.TryGetProperty("body", out var bodyProp) && bodyProp.TryGetProperty("data", out var dataProp))
         {
             var base64Data = dataProp.GetString();
@@ -408,7 +410,9 @@ public class MailClientService : IMailClientService
         
         if (string.IsNullOrEmpty(body) && payload.TryGetProperty("parts", out var partsProp) && partsProp.ValueKind == JsonValueKind.Array)
         {
-            body = ParseGmailParts(partsProp);
+            var sb = new StringBuilder();
+            ParseGmailParts(partsProp, attachments, sb);
+            body = sb.ToString();
         }
 
         return new EmailMessageDto
@@ -420,7 +424,8 @@ public class MailClientService : IMailClientService
             Date = date,
             Snippet = snippet,
             Body = string.IsNullOrEmpty(body) ? snippet : body,
-            IsRead = true
+            IsRead = true,
+            Attachments = attachments
         };
     }
 
@@ -443,30 +448,46 @@ public class MailClientService : IMailClientService
         }
     }
 
-    private string ParseGmailParts(JsonElement parts)
+    private void ParseGmailParts(JsonElement parts, List<EmailAttachmentDto> attachments, StringBuilder sb)
     {
-        var sb = new StringBuilder();
         foreach (var part in parts.EnumerateArray())
         {
-            var mimeType = part.GetProperty("mimeType").GetString();
-            if (part.TryGetProperty("body", out var bodyProp) && bodyProp.TryGetProperty("data", out var dataProp))
+            var mimeType = part.GetProperty("mimeType").GetString() ?? string.Empty;
+            var filename = part.TryGetProperty("filename", out var f) ? f.GetString() ?? string.Empty : string.Empty;
+            
+            if (part.TryGetProperty("body", out var bodyProp))
             {
-                var data = dataProp.GetString();
-                if (!string.IsNullOrEmpty(data))
+                if (bodyProp.TryGetProperty("attachmentId", out var attIdProp))
                 {
-                    var decoded = DecodeGmailBody(data);
-                    if (mimeType == "text/plain" || mimeType == "text/html")
+                    var attId = attIdProp.GetString() ?? string.Empty;
+                    var size = bodyProp.TryGetProperty("size", out var sProp) ? sProp.GetInt64() : 0;
+                    attachments.Add(new EmailAttachmentDto
                     {
-                        sb.AppendLine(decoded);
+                        FileName = filename,
+                        ContentType = mimeType,
+                        Size = size,
+                        AttachmentId = attId
+                    });
+                }
+                else if (bodyProp.TryGetProperty("data", out var dataProp))
+                {
+                    var data = dataProp.GetString();
+                    if (!string.IsNullOrEmpty(data))
+                    {
+                        var decoded = DecodeGmailBody(data);
+                        if (mimeType == "text/plain" || mimeType == "text/html")
+                        {
+                            sb.AppendLine(decoded);
+                        }
                     }
                 }
             }
-            else if (part.TryGetProperty("parts", out var nestedParts))
+            
+            if (part.TryGetProperty("parts", out var nestedParts) && nestedParts.ValueKind == JsonValueKind.Array)
             {
-                sb.AppendLine(ParseGmailParts(nestedParts));
+                ParseGmailParts(nestedParts, attachments, sb);
             }
         }
-        return sb.ToString();
     }
 
     private async Task SendGmailAsync(UserEmailConfig config, string toEmail, string subject, string body, CancellationToken ct)
@@ -577,6 +598,12 @@ public class MailClientService : IMailClientService
                 if (exists) continue;
 
                 var message = await inbox.GetMessageAsync(uid, ct);
+                var atts = new List<EmailAttachmentDto>();
+                if (message.Body != null)
+                {
+                    ExtractAttachments(message.Body, "", atts);
+                }
+
                 var emailMessage = new UserEmailMessage
                 {
                     UserId = userId,
@@ -587,7 +614,8 @@ public class MailClientService : IMailClientService
                     To = message.To.ToString(),
                     Date = message.Date.DateTime,
                     Snippet = GetMailSnippet(message.TextBody ?? message.HtmlBody),
-                    Body = message.TextBody ?? message.HtmlBody ?? string.Empty
+                    Body = message.TextBody ?? message.HtmlBody ?? string.Empty,
+                    AttachmentsJson = JsonSerializer.Serialize(atts)
                 };
 
                 context.UserEmailMessages.Add(emailMessage);
@@ -659,7 +687,8 @@ public class MailClientService : IMailClientService
                             To = detail.To,
                             Date = detail.Date,
                             Snippet = detail.Snippet,
-                            Body = detail.Body
+                            Body = detail.Body,
+                            AttachmentsJson = JsonSerializer.Serialize(detail.Attachments)
                         };
                         context.UserEmailMessages.Add(emailMessage);
                         hasNew = true;
@@ -676,6 +705,135 @@ public class MailClientService : IMailClientService
         {
             _logger.LogError(ex, "Lỗi khi đồng bộ Gmail về DB cho UserId {UserId}", userId);
         }
+    }
+
+    private void ExtractAttachments(MimeEntity entity, string prefix, List<EmailAttachmentDto> list)
+    {
+        if (entity is Multipart multipart)
+        {
+            for (int i = 0; i < multipart.Count; i++)
+            {
+                var subPrefix = string.IsNullOrEmpty(prefix) ? (i + 1).ToString() : $"{prefix}.{i + 1}";
+                ExtractAttachments(multipart[i], subPrefix, list);
+            }
+        }
+        else if (entity is MessagePart messagePart)
+        {
+            var subPrefix = string.IsNullOrEmpty(prefix) ? "1" : $"{prefix}.1";
+            ExtractAttachments(messagePart.Message.Body, subPrefix, list);
+        }
+        else if (entity is MimePart mimePart && mimePart.IsAttachment)
+        {
+            list.Add(new EmailAttachmentDto
+            {
+                FileName = mimePart.FileName ?? "attachment",
+                ContentType = mimePart.ContentType?.MimeType ?? "application/octet-stream",
+                Size = mimePart.Content?.Stream?.Length ?? 0,
+                PartSpecifier = prefix
+            });
+        }
+    }
+
+    private static MailKit.BodyPart? FindBodyPart(MailKit.BodyPart part, string specifier)
+    {
+        if (part.PartSpecifier == specifier)
+            return part;
+        if (part is MailKit.BodyPartMultipart multipart)
+        {
+            foreach (var child in multipart.BodyParts)
+            {
+                var found = FindBodyPart(child, specifier);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    public async Task<(Stream Content, string ContentType, string FileName)> DownloadAttachmentAsync(
+        UserEmailConfig config, 
+        string messageId, 
+        string? partSpecifier, 
+        string? attachmentId, 
+        CancellationToken ct = default)
+    {
+        if (config.Provider.Equals("Gmail", StringComparison.OrdinalIgnoreCase))
+        {
+            return await DownloadGmailAttachmentAsync(config, messageId, attachmentId ?? string.Empty, ct);
+        }
+        else
+        {
+            return await DownloadImapAttachmentAsync(config, messageId, partSpecifier ?? string.Empty, ct);
+        }
+    }
+
+    private async Task<(Stream Content, string ContentType, string FileName)> DownloadImapAttachmentAsync(
+        UserEmailConfig config, 
+        string messageId, 
+        string partSpecifier, 
+        CancellationToken ct)
+    {
+        using var client = new ImapClient();
+        await client.ConnectAsync(config.ImapHost, config.ImapPort ?? 993, config.UseSsl, ct);
+        var password = _encryptionService.Decrypt(config.ImapPassword ?? string.Empty);
+        await client.AuthenticateAsync(config.ImapUsername, password, ct);
+
+        var inbox = client.Inbox;
+        await inbox.OpenAsync(FolderAccess.ReadOnly, ct);
+
+        if (UniqueId.TryParse(messageId, out var uid))
+        {
+            var summaries = await inbox.FetchAsync(new[] { uid }, MessageSummaryItems.BodyStructure, ct);
+            var summary = summaries.FirstOrDefault();
+            var bodyPart = summary?.Body != null ? FindBodyPart(summary.Body, partSpecifier) : null;
+            if (bodyPart != null)
+            {
+                var entity = await inbox.GetBodyPartAsync(uid, bodyPart, ct);
+                if (entity is MimePart mimePart)
+                {
+                    var contentStream = new MemoryStream();
+                    await mimePart.Content.DecodeToAsync(contentStream, ct);
+                    contentStream.Position = 0;
+                    return (contentStream, mimePart.ContentType.MimeType, mimePart.FileName ?? "attachment");
+                }
+            }
+        }
+        throw new FileNotFoundException("Không tìm thấy tệp đính kèm yêu cầu.");
+    }
+
+    private async Task<(Stream Content, string ContentType, string FileName)> DownloadGmailAttachmentAsync(
+        UserEmailConfig config, 
+        string messageId, 
+        string attachmentId, 
+        CancellationToken ct)
+    {
+        var accessToken = await GetGmailAccessTokenAsync(config, ct);
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            throw new InvalidOperationException("Không thể lấy Gmail Access Token.");
+        }
+
+        using var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var url = $"https://gmail.googleapis.com/gmail/v1/users/me/messages/{messageId}/attachments/{attachmentId}";
+        var response = await client.GetAsync(url, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new FileNotFoundException("Tải tệp đính kèm từ Gmail API thất bại.");
+        }
+
+        var root = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
+        if (root.TryGetProperty("data", out var dataProp))
+        {
+            var base64UrlData = dataProp.GetString();
+            if (!string.IsNullOrEmpty(base64UrlData))
+            {
+                var bytes = Convert.FromBase64String(base64UrlData.Replace('-', '+').Replace('_', '/'));
+                var contentStream = new MemoryStream(bytes);
+                return (contentStream, "application/octet-stream", "attachment");
+            }
+        }
+        throw new FileNotFoundException("Tệp đính kèm trống hoặc không hợp lệ.");
     }
 
     #endregion

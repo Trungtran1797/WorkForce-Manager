@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { emailAssistantApi } from '../api/email-assistant-api'
 import type { UserEmailConfig, EmailMessage, ChatMessage } from '../types'
+import { AiMarkdownContent } from '../components/ai-markdown-content'
 
 export function EmailAssistantPage() {
   const { toast } = useToast()
@@ -271,9 +272,11 @@ export function EmailAssistantPage() {
                         ? 'bg-primary text-primary-foreground rounded-tr-none'
                         : 'bg-card text-foreground border border-sidebar-border rounded-tl-none'
                     }`}>
-                      <div className="whitespace-pre-line prose dark:prose-invert max-w-none text-xs">
-                        {msg.content}
-                      </div>
+                      {msg.role === 'user' ? (
+                        <div className="whitespace-pre-line">{msg.content}</div>
+                      ) : (
+                        <AiMarkdownContent content={msg.content} className="text-xs leading-relaxed" />
+                      )}
                     </div>
                   </div>
                 ))}
